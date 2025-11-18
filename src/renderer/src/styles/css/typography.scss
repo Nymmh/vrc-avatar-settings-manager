@@ -1,0 +1,5 @@
+@use '../scss/typography.scss';
+
+:root {
+  --typography--heading: #{typography.$typography--heading};
+}

@@ -1,0 +1,10 @@
+@use '../scss/color.scss';
+
+:root {
+  --color--primary-a1: #{color.$color--primary-a1};
+  --color--primary-a2: #{color.$color--primary-a2};
+  --color--primary-a3: #{color.$color--primary-a3};
+  --color--primary-a4: #{color.$color--primary-a4};
+  --color--failed: #{color.$color--failed};
+  --color--success: #{color.$color--success};
+}

@@ -1,0 +1,3 @@
+provider: generic
+url: https://github.com/Nymmh/vrc-avi-settings-copy
+updaterCacheDirName: avi-settings-copy-updater
