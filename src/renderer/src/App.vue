@@ -51,15 +51,10 @@ const aviConfig = (): void => {
 
 const handleSave = async (): Promise<void> => {
   resetVars()
-  const res = await window.avatarApi.saveConfig(toRaw(avatarConfig.value.data))
 
-  if (res) {
-    fileSaved.value = res.success
-    showFileSaved.value = true
-  } else {
-    fileSaved.value = false
-    showFileSaved.value = true
-  }
+  const res = await window.avatarApi.saveConfig(toRaw(avatarConfig.value.data))
+  fileSaved.value = !!(res && res.success)
+  showFileSaved.value = true
 }
 
 const handleLoad = async (): Promise<void> => {
@@ -74,7 +69,7 @@ const handleUpload = async (): Promise<void> => {
 
   const res = await window.avatarApi.uploadConfig()
 
-  uploadStatus.value = res.success
+  uploadStatus.value = !!(res && res.success)
   showUploadStatus.value = true
 }
 
@@ -92,27 +87,25 @@ onMounted(() => {
 <template>
   <div class="main">
     <Waiting v-if="!avatarId" />
-    <template v-if="avatarId">
+    <div v-else>
       <div class="main__avatar-data">
-        <template v-if="showAvatarFoundFileMsg">
-          <p
-            :class="[
-              'main__avatar-found',
-              avatarFoundFile ? 'main__avatar-found--success' : 'main__avatar-found--failed',
-              avatarFoundFile ? 'success' : 'failed'
-            ]"
-          >
-            Found avatar data
-          </p>
-        </template>
+        <p
+          v-if="showAvatarFoundFileMsg"
+          :class="[
+            'main__avatar-found',
+            avatarFoundFile
+              ? 'main__avatar-found--success success'
+              : 'main__avatar-found--failed failed'
+          ]"
+        >
+          Found avatar data
+        </p>
         <p class="main__avatar-id">
           Avatar ID: <span class="main__avatar-id__id">{{ avatarId }}</span>
         </p>
-        <template v-if="avatarConfig?.data && avatarConfig?.data?.name">
-          <p class="main__avatar-name">
-            Name: <span class="main__avatar-name__name">{{ avatarConfig.data.name }}</span>
-          </p>
-        </template>
+        <p v-if="avatarConfig?.data && avatarConfig?.data?.name" class="main__avatar-name">
+          Name: <span class="main__avatar-name__name">{{ avatarConfig.data.name }}</span>
+        </p>
       </div>
       <div class="main__buttons">
         <p class="main__save-msg">
@@ -121,31 +114,35 @@ onMounted(() => {
         </p>
         <Button label="Save Config" @click="handleSave()" />
         <div v-if="showFileSaved" class="main__file-saved">
-          <p v-if="fileSaved" class="main__file-saved--success success">File Saved</p>
-          <p v-else class="main__filed-saved--failed failed">File failed To Save</p>
+          <p
+            :class="
+              fileSaved ? 'main__file-saved--success success' : 'main__filed-saved--failed failed'
+            "
+          >
+            {{ fileSaved ? 'File Saved' : 'File failed To Save' }}
+          </p>
         </div>
         <Button label="Load Config" @click="handleLoad()" />
         <p v-if="loadedConfigName" class="main__loaded-config">
           Loaded config: <span class="main__loaded-config__file">{{ loadedConfigName }}</span>
         </p>
         <Button v-if="loadedConfigName" label="Upload" @click="handleUpload()" />
-        <template v-if="showUploadStatus && loadedConfigName">
-          <p class="main__upload-status">
-            Upload Status:
-            <span
-              :class="[
-                'main__upload-status__status',
-                uploadStatus
-                  ? 'main__upload-status__status--success'
-                  : 'main__upload-status__status--failed',
-                uploadStatus ? 'success' : 'failed'
-              ]"
-              >{{ uploadStatus ? 'Success' : 'Failed' }}</span
-            >
-          </p>
-        </template>
+        <p v-if="showUploadStatus && loadedConfigName" class="main__upload-status">
+          Upload Status:
+          <span
+            :class="[
+              'main__upload-status__status',
+              uploadStatus
+                ? 'main__upload-status__status--success'
+                : 'main__upload-status__status--failed',
+              uploadStatus ? 'success' : 'failed'
+            ]"
+          >
+            {{ uploadStatus ? 'Success' : 'Failed' }}
+          </span>
+        </p>
       </div>
-    </template>
+    </div>
   </div>
   <Footer />
 </template>

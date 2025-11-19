@@ -14,6 +14,9 @@ importers:
       '@electron-toolkit/utils':
         specifier: ^4.0.0
         version: 4.0.0(electron@38.7.0)
+      electron-log:
+        specifier: ^5.4.3
+        version: 5.4.3
       electron-updater:
         specifier: ^6.3.9
         version: 6.6.2
@@ -45,9 +48,6 @@ importers:
       electron-builder:
         specifier: ^25.1.8
         version: 25.1.8(electron-builder-squirrel-windows@25.1.8)
-      electron-log:
-        specifier: ^5.4.3
-        version: 5.4.3
       electron-vite:
         specifier: ^4.0.1
         version: 4.0.1(vite@7.2.2(@types/node@22.19.1)(sass@1.94.1))
