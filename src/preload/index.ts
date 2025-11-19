@@ -1,6 +1,14 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import { avatarConfigType } from '../types/avatarConfigType'
 import { saveConfigExport } from '../ipc/saveConfig'
+import { uploadConfigType } from '../types/uploadConfigType'
+import { loadConfigType } from '../types/loadConfigType'
+
+const appApi = {
+  appVersion: (): Promise<string> => {
+    return ipcRenderer.invoke('appVersion')
+  }
+}
 
 const avatarApi = {
   avatarId: (meowback: (data: { id: string }) => void) => {
@@ -26,21 +34,24 @@ const avatarApi = {
       fileName: data?.name || 'avatar config'
     })
   },
-  loadConfig: async (): Promise<any> => {
+  loadConfig: async (): Promise<loadConfigType> => {
     return ipcRenderer.invoke('loadConfig')
   },
-  uploadConfig: async (): Promise<any> => {
+  uploadConfig: async (): Promise<uploadConfigType> => {
     return ipcRenderer.invoke('uploadConfig')
   }
 }
 
 if (process.contextIsolated) {
   try {
+    contextBridge.exposeInMainWorld('appApi', appApi)
     contextBridge.exposeInMainWorld('avatarApi', avatarApi)
   } catch (error) {
     console.error(error)
   }
 } else {
+  // @ts-ignore (define in dts)
+  window.appApi = appApi
   // @ts-ignore (define in dts)
   window.avatarApi = avatarApi
 }

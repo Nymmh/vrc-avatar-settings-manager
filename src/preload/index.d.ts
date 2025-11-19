@@ -33,9 +33,14 @@ export interface avatarApi {
   uploadConfig: () => { success: boolean }
 }
 
+export interface appApi {
+  appVersion: () => string
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI
+    appApi: appApi
     avatarApi: avatarApi
   }
 }
