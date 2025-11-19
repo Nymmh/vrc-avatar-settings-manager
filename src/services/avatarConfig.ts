@@ -4,8 +4,13 @@ import { lookForConfig } from './lookForConfig'
 import { BrowserWindow } from 'electron'
 import { formatConfig } from './formatConfig'
 import { lookForCache } from './lookForCache'
+import { avatarConfigType, pendingChangesType } from '../types/avatarConfigType'
 
-export async function avatarConfig(avatarId: string, mainWindow: BrowserWindow): Promise<void> {
+export async function avatarConfig(
+  avatarId: string,
+  mainWindow: BrowserWindow,
+  pendingChanges: pendingChangesType
+): Promise<void | avatarConfigType> {
   const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
   const [aviConfig, aviCache] = await Promise.all([
     lookForConfig(avatarId, vrcPath),
@@ -25,7 +30,7 @@ export async function avatarConfig(avatarId: string, mainWindow: BrowserWindow):
       .replace(/^[^{\[]+/, '')
       .trim()
 
-    const formattedDataConfig = await formatConfig(aviConfigData, aviCacheData)
+    const formattedDataConfig = await formatConfig(aviConfigData, aviCacheData, pendingChanges)
 
     mainWindow.webContents.send('foundAvatarFile', {
       success: true
@@ -33,6 +38,10 @@ export async function avatarConfig(avatarId: string, mainWindow: BrowserWindow):
     mainWindow.webContents.send('avatarConfig', {
       data: formattedDataConfig
     })
+
+    if (pendingChanges.length) {
+      return formattedDataConfig
+    }
   } else {
     mainWindow.webContents.send('foundAvatarFile', {
       success: false

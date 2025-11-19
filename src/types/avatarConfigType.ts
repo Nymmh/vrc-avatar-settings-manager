@@ -7,9 +7,11 @@ export type avatarConfigType = {
 
 export type animationParametersType = {
   name?: string
-  value?: number
+  value?: number | boolean
   type?: string
 }
+
+export type pendingChangesType = [name?: string, value?: number][]
 
 export type avatarCacheType = {
   animationParameters: animationParametersType

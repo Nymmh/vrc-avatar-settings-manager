@@ -8,15 +8,18 @@ import { oscClient } from '../services/oscClient'
 import { oscServer } from '../services/oscServer'
 import { oscListener } from '../services/oscListener'
 import { oscQuery } from '../services/oscQuery'
-import { avatarConfigType } from '../types/avatarConfigType'
+import { avatarConfigType, pendingChangesType } from '../types/avatarConfigType'
 import { getLoadDataName } from '../services/getLoadDataName'
 import { saveConfig } from '../ipc/saveConfig'
 import { loadConfig } from '../ipc/loadConfig'
 import { uploadConfigIPC } from '../ipc/uploadConfig'
 import icon from '../../resources/icon.png?asset'
+import { avatarConfig } from '../services/avatarConfig'
 
 let mainWindow: BrowserWindow | null = null
 let loadedJson: avatarConfigType | null = null
+let currentAviId: string = ''
+let pendingChanges: pendingChangesType = []
 let OSC_CLIENT: Client
 log.initialize()
 log.transports.file.fileName = 'meow.log'
@@ -68,7 +71,47 @@ async function setupOSC(): Promise<void> {
       throw new Error('Main window is not initialized')
     }
 
-    oscListener(log, OSC_SERVER, mainWindow)
+    if (!OSC_SERVER) {
+      log.error('OSC Server is not started')
+      throw new Error('OSC Server is not started')
+    }
+
+    log.info('OSC Listener ready')
+    // oscListener(log, OSC_SERVER, mainWindow)
+    OSC_SERVER.on('message', (data) => {
+      if (!data || data.length === 0) {
+        log.warn('Received malformed OSC message:', data)
+        return
+      }
+
+      let [address, payload] = data
+
+      if (/VF\d+_(Sync|TC_current|Customization)/.test(address)) {
+        return
+      }
+
+      if (address === '/avatar/change') {
+        if (!mainWindow) {
+          log.error('Main window is not initialized')
+          throw new Error('Main window is not initialized')
+        }
+        log.log('Received avatar change with ID: ', payload)
+
+        pendingChanges = []
+        mainWindow.webContents.send('avatarId', { id: payload })
+        currentAviId = payload
+        avatarConfig(payload, mainWindow, [])
+      } else if (address.includes('/avatar/parameters/')) {
+        address = address.replace('/avatar/parameters/', '')
+        const idx = pendingChanges.findIndex(([a]) => a === address)
+
+        if (idx !== -1) {
+          pendingChanges[idx][1] = payload
+        } else {
+          pendingChanges.push([address, payload])
+        }
+      }
+    })
   } catch (e) {
     log.error('Error setting up OSC:', e)
     dialog.showErrorBox('OSCQuery Error', 'Failed to start OSCQuery server.')
@@ -90,7 +133,15 @@ app.whenReady().then(async () => {
   ipcMain.handle('saveConfig', async (_event, { content, fileName }) => {
     if (!mainWindow) return { success: false }
 
-    return await saveConfig(log, mainWindow, content, fileName)
+    if (pendingChanges.length) {
+      const changedContent = await avatarConfig(currentAviId, mainWindow, pendingChanges)
+      content = JSON.stringify(changedContent)
+    }
+
+    const savedConfig = await saveConfig(log, mainWindow, content, fileName)
+
+    pendingChanges = []
+    return savedConfig
   })
 
   ipcMain.handle('loadConfig', async () => {
@@ -103,6 +154,7 @@ app.whenReady().then(async () => {
       return null
     }
 
+    pendingChanges = []
     const avatarName: string = await getLoadDataName(dataParsedConfig)
     loadedJson = dataParsedConfig
 
@@ -115,13 +167,15 @@ app.whenReady().then(async () => {
       return { success: false }
     }
 
+    pendingChanges = []
+
     const uploadingResult = await uploadConfigIPC(log, loadedJson, OSC_CLIENT)
     return { success: !!uploadingResult }
   })
 
   createWindow()
   await setupOSC()
-  update(log)
+  // update(log)
   log.info('App is ready')
 })
 
