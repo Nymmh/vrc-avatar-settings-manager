@@ -28,7 +28,7 @@ export function oscListener(log: Logger, OSC_SERVER: Server, mainWindow: Browser
       log.log('Received avatar change with ID: ', payload)
 
       mainWindow.webContents.send('avatarId', { id: payload })
-      avatarConfig(payload, mainWindow, [])
+      avatarConfig(payload, mainWindow, new Map())
     }
   })
 }
