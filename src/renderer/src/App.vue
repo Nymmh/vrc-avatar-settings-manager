@@ -2,6 +2,7 @@
 import { onMounted, ref, toRaw } from 'vue'
 
 import Button from './components/Button.vue'
+import Footer from './components/Footer.vue'
 import Waiting from './components/Waiting.vue'
 
 const avatarId = ref<string>('')
@@ -114,6 +115,10 @@ onMounted(() => {
         </template>
       </div>
       <div class="main__buttons">
+        <p class="main__save-msg">
+          If you make new changes you want to save, you must swap to another avatar, swap back, and
+          then save the configuration.
+        </p>
         <Button label="Save Config" @click="handleSave()" />
         <div v-if="showFileSaved" class="main__file-saved">
           <p v-if="fileSaved" class="main__file-saved--success success">File Saved</p>
@@ -142,6 +147,7 @@ onMounted(() => {
       </div>
     </template>
   </div>
+  <Footer />
 </template>
 
 <style lang="scss">
@@ -152,7 +158,7 @@ onMounted(() => {
   display: flex;
   flex-flow: column;
   gap: 16px;
-  height: 100%;
+  height: 94%;
   justify-content: center;
 
   &__avatar-data {
@@ -185,6 +191,10 @@ onMounted(() => {
     gap: 16px;
     justify-content: center;
     width: 100%;
+  }
+
+  &__save-msg {
+    text-align: center;
   }
 
   &__loaded-config {
