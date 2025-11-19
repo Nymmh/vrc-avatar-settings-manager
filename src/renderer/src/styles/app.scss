@@ -1,10 +1,13 @@
 html,
 body,
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  flex-flow: column;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  gap: 16px;
   max-width: 100%;
+  justify-content: center;
   overflow: hidden;
   width: 100%;
 }
@@ -28,4 +31,18 @@ h1 {
   flex-flow: column;
   font-size: 2rem;
   text-align: center;
+}
+
+a {
+  border-bottom: 1px solid transparent;
+  color: var(--color--primary-a3);
+  cursor: pointer;
+  transition:
+    border-color 0.25s,
+    color 0.25s;
+
+  &:hover {
+    border-color: var(--color--primary-a4);
+    color: var(--color--primary-a4);
+  }
 }
