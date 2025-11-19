@@ -8,7 +8,7 @@ import { oscClient } from '../services/oscClient'
 import { oscServer } from '../services/oscServer'
 import { oscListener } from '../services/oscListener'
 import { oscQuery } from '../services/oscQuery'
-import { avatarConfigType, pendingChangesType } from '../types/avatarConfigType'
+import { avatarConfigType } from '../types/avatarConfigType'
 import { getLoadDataName } from '../services/getLoadDataName'
 import { saveConfig } from '../ipc/saveConfig'
 import { loadConfig } from '../ipc/loadConfig'
@@ -19,7 +19,7 @@ import { avatarConfig } from '../services/avatarConfig'
 let mainWindow: BrowserWindow | null = null
 let loadedJson: avatarConfigType | null = null
 let currentAviId: string = ''
-let pendingChanges: pendingChangesType = []
+const pendingChanges: Map<string, any> = new Map()
 let OSC_CLIENT: Client
 log.initialize()
 log.transports.file.fileName = 'meow.log'
@@ -97,19 +97,13 @@ async function setupOSC(): Promise<void> {
         }
         log.log('Received avatar change with ID: ', payload)
 
-        pendingChanges = []
+        pendingChanges.clear()
         mainWindow.webContents.send('avatarId', { id: payload })
         currentAviId = payload
-        avatarConfig(payload, mainWindow, [])
+        avatarConfig(payload, mainWindow, new Map())
       } else if (address.includes('/avatar/parameters/')) {
         address = address.replace('/avatar/parameters/', '')
-        const idx = pendingChanges.findIndex(([a]) => a === address)
-
-        if (idx !== -1) {
-          pendingChanges[idx][1] = payload
-        } else {
-          pendingChanges.push([address, payload])
-        }
+        pendingChanges.set(address, payload)
       }
     })
   } catch (e) {
@@ -133,14 +127,14 @@ app.whenReady().then(async () => {
   ipcMain.handle('saveConfig', async (_event, { content, fileName }) => {
     if (!mainWindow) return { success: false }
 
-    if (pendingChanges.length) {
+    if (pendingChanges.size > 0) {
       const changedContent = await avatarConfig(currentAviId, mainWindow, pendingChanges)
       content = JSON.stringify(changedContent)
     }
 
     const savedConfig = await saveConfig(log, mainWindow, content, fileName)
 
-    pendingChanges = []
+    pendingChanges.clear()
     return savedConfig
   })
 
@@ -154,7 +148,7 @@ app.whenReady().then(async () => {
       return null
     }
 
-    pendingChanges = []
+    pendingChanges.clear()
     const avatarName: string = await getLoadDataName(dataParsedConfig)
     loadedJson = dataParsedConfig
 
@@ -167,7 +161,7 @@ app.whenReady().then(async () => {
       return { success: false }
     }
 
-    pendingChanges = []
+    pendingChanges.clear()
 
     const uploadingResult = await uploadConfigIPC(log, loadedJson, OSC_CLIENT)
     return { success: !!uploadingResult }

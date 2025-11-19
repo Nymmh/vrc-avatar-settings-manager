@@ -183,6 +183,7 @@ onMounted(() => {
     flex-flow: column;
     gap: 16px;
     justify-content: center;
+    padding-top: 16px;
     width: 100%;
   }
 
