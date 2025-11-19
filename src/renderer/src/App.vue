@@ -98,7 +98,7 @@ onMounted(() => {
               : 'main__avatar-found--failed failed'
           ]"
         >
-          Found avatar data
+          {{ avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data' }}
         </p>
         <p class="main__avatar-id">
           Avatar ID: <span class="main__avatar-id__id">{{ avatarId }}</span>
@@ -108,10 +108,6 @@ onMounted(() => {
         </p>
       </div>
       <div class="main__buttons">
-        <p class="main__save-msg">
-          If you make new changes you want to save, you must swap to another avatar, swap back, and
-          then save the configuration.
-        </p>
         <Button label="Save Config" @click="handleSave()" />
         <div v-if="showFileSaved" class="main__file-saved">
           <p
@@ -188,10 +184,6 @@ onMounted(() => {
     gap: 16px;
     justify-content: center;
     width: 100%;
-  }
-
-  &__save-msg {
-    text-align: center;
   }
 
   &__loaded-config {

@@ -1,4 +1,4 @@
-import { avatarConfigType } from '../types/avatarConfigType'
+import { avatarConfigType, pendingChangesType } from '../types/avatarConfigType'
 
 const EXCLUDED_NAMES = new Set([
   'VRCEmote',
@@ -16,7 +16,11 @@ const EXCLUDED_NAMES = new Set([
   'Smoothing/Local'
 ])
 
-export function formatConfig(aviData: string, aviCache: string): avatarConfigType {
+export function formatConfig(
+  aviData: string,
+  aviCache: string,
+  pendingChanges: pendingChangesType
+): avatarConfigType {
   const parsedConfig = JSON.parse(aviData)
   const parsedCache = JSON.parse(aviCache)
 
@@ -40,6 +44,22 @@ export function formatConfig(aviData: string, aviCache: string): avatarConfigTyp
       })
       .filter(Boolean)
   }
+
+  if (!formattedData.animationParameters || !pendingChanges.length) {
+    return formattedData
+  }
+
+  const pendingChangesMap = new Map(pendingChanges.map(([name, value]) => [name, value]))
+
+  formattedData.animationParameters.forEach((fd) => {
+    if (pendingChangesMap.has(fd.name)) {
+      let nv = pendingChangesMap.get(fd.name)
+      if (typeof nv === 'boolean') {
+        nv = nv ? 1 : 0
+      }
+      fd.value = nv
+    }
+  })
 
   return formattedData
 }
