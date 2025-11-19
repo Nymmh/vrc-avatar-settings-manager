@@ -1,4 +1,5 @@
 import { dialog } from 'electron'
+import { Logger } from 'electron-log'
 import fs from 'fs'
 
 export type saveConfigExport = {
@@ -6,7 +7,12 @@ export type saveConfigExport = {
   filePath?: string
 }
 
-export async function saveConfig(mainWindow, content, fileName): Promise<saveConfigExport> {
+export async function saveConfig(
+  log: Logger,
+  mainWindow,
+  content,
+  fileName
+): Promise<saveConfigExport> {
   const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
     title: 'Save File',
     defaultPath: `${fileName}.json`,
@@ -17,6 +23,7 @@ export async function saveConfig(mainWindow, content, fileName): Promise<saveCon
   })
 
   if (canceled || !filePath) {
+    log.info('Save configuration canceled or no file path specified')
     return { success: false }
   }
 
@@ -25,7 +32,7 @@ export async function saveConfig(mainWindow, content, fileName): Promise<saveCon
 
     return { success: true, filePath }
   } catch (e) {
-    console.log(e)
+    log.error('Error saving configuration file:', e)
     return { success: false }
   }
 }

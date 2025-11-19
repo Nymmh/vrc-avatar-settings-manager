@@ -15,11 +15,13 @@
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win"
+    "build:win": "npm run build && electron-builder --win",
+    "publish": "electron-builder --publish always"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "electron-log": "^5.4.3",
     "electron-updater": "^6.3.9",
     "node-osc": "^11.0.0",
     "oscquery": "^1.1.1"
@@ -32,7 +34,6 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "electron": "^38.1.2",
     "electron-builder": "^25.1.8",
-    "electron-log": "^5.4.3",
     "electron-vite": "^4.0.1",
     "eslint": "^9.36.0",
     "eslint-plugin-vue": "^10.4.0",

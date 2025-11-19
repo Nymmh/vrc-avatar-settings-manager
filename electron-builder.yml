@@ -2,6 +2,7 @@ appId: com.nymh.avatar-settings-copy
 productName: avatar-settings-copy
 directories:
   buildResources: build
+copyright: Copyright © 2025 ${author}
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -19,8 +20,6 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
-dmg:
-  artifactName: ${name}-${version}.${ext}
 linux:
   target:
     - AppImage

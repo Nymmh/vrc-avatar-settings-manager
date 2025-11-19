@@ -1,22 +1,29 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import { Client } from 'node-osc'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { oscServer } from '../services/server'
-import { oscClient } from '../services/client'
-import { oscListener } from '../services/listener'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import log from 'electron-log/main'
+import { update } from './update'
+import { oscClient } from '../services/oscClient'
+import { oscServer } from '../services/oscServer'
+import { oscListener } from '../services/oscListener'
 import { oscQuery } from '../services/oscQuery'
 import { avatarConfigType } from '../types/avatarConfigType'
 import { getLoadDataName } from '../services/getLoadDataName'
 import { saveConfig } from '../ipc/saveConfig'
 import { loadConfig } from '../ipc/loadConfig'
 import { uploadConfigIPC } from '../ipc/uploadConfig'
-import { update } from './update'
 import icon from '../../resources/icon.png?asset'
 
 let mainWindow: BrowserWindow | null = null
 let loadedJson: avatarConfigType | null = null
 let OSC_CLIENT: Client
+log.initialize()
+log.transports.file.fileName = 'meow.log'
+log.transports.file.format = '[{y}-{m}-{d} {h}:{i}] [{level}] {text}'
+log.transports.file.level = 'info'
+
+log.info('Meow Meow starting...')
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -27,7 +34,8 @@ function createWindow(): void {
     icon: icon,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      contextIsolation: true
     }
   })
 
@@ -47,62 +55,78 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+async function setupOSC(): Promise<void> {
+  log.info('Setting up OSC...')
+
+  try {
+    const PORT = await oscQuery(log)
+    const OSC_SERVER = await oscServer(log, PORT)
+    OSC_CLIENT = await oscClient(log)
+
+    if (!mainWindow) {
+      log.error('Main window is not initialized')
+      throw new Error('Main window is not initialized')
+    }
+
+    oscListener(log, OSC_SERVER, mainWindow)
+  } catch (e) {
+    log.error('Error setting up OSC:', e)
+    dialog.showErrorBox('OSCQuery Error', 'Failed to start OSCQuery server.')
+    app.quit()
+    throw new Error('Failed to set up OSC')
+  }
+}
+
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.nymh.avatar-settings-copy')
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
-  })
-
-  ipcMain.handle('saveConfig', async (_event, { content, fileName }) => {
-    if (mainWindow) {
-      const saveResult = await saveConfig(mainWindow, content, fileName)
-      return saveResult
-    } else return { success: false }
-  })
-
-  ipcMain.handle('loadConfig', async () => {
-    if (mainWindow) {
-      const dataParsedConfig = await loadConfig(mainWindow)
-      if (!dataParsedConfig) {
-        return null
-      }
-      const avatarName: string = await getLoadDataName(dataParsedConfig)
-      loadedJson = await dataParsedConfig
-      return { name: avatarName }
-    } else return
-  })
-
-  ipcMain.handle('uploadConfig', async () => {
-    if (loadedJson != null) {
-      const uploadingResult = await uploadConfigIPC(loadedJson, OSC_CLIENT)
-      if (uploadingResult) {
-        return { success: true }
-      } else {
-        return { success: false }
-      }
-    } else {
-      return { success: false }
-    }
   })
 
   ipcMain.handle('appVersion', () => {
     return app.getVersion()
   })
 
-  app.whenReady().then(async () => {
-    createWindow()
-    const PORT = await oscQuery()
-    const OSC_SERVER = await oscServer(PORT)
-    OSC_CLIENT = await oscClient()
-    if (mainWindow) {
-      oscListener(OSC_SERVER, mainWindow)
-    }
-    update()
+  ipcMain.handle('saveConfig', async (_event, { content, fileName }) => {
+    if (!mainWindow) return { success: false }
+
+    return await saveConfig(log, mainWindow, content, fileName)
   })
 
-  app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  ipcMain.handle('loadConfig', async () => {
+    if (!mainWindow) return
+
+    const dataParsedConfig = await loadConfig(log, mainWindow)
+
+    if (!dataParsedConfig) {
+      log.error('No configuration data')
+      return null
+    }
+
+    const avatarName: string = await getLoadDataName(dataParsedConfig)
+    loadedJson = dataParsedConfig
+
+    return { name: avatarName }
   })
+
+  ipcMain.handle('uploadConfig', async () => {
+    if (!loadedJson) {
+      log.error('No configuration loaded to upload')
+      return { success: false }
+    }
+
+    const uploadingResult = await uploadConfigIPC(log, loadedJson, OSC_CLIENT)
+    return { success: !!uploadingResult }
+  })
+
+  createWindow()
+  await setupOSC()
+  update(log)
+  log.info('App is ready')
+})
+
+app.on('activate', function () {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
 app.on('window-all-closed', () => {

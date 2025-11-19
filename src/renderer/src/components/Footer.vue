@@ -7,6 +7,7 @@ const getVersion = async (): Promise<void> => {
 }
 
 onMounted(() => {
+  console.log('window.appApi:', window.appApi)
   getVersion()
 })
 </script>

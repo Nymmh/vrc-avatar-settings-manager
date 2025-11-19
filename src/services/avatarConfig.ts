@@ -7,8 +7,10 @@ import { lookForCache } from './lookForCache'
 
 export async function avatarConfig(avatarId: string, mainWindow: BrowserWindow): Promise<void> {
   const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
-  const aviConfig = await lookForConfig(avatarId, vrcPath)
-  const aviCache = await lookForCache(avatarId, vrcPath)
+  const [aviConfig, aviCache] = await Promise.all([
+    lookForConfig(avatarId, vrcPath),
+    lookForCache(avatarId, vrcPath)
+  ])
 
   if (aviConfig && aviCache) {
     let aviConfigData = fs.readFileSync(path.join(vrcPath, 'OSC', aviConfig), 'utf-8')

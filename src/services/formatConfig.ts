@@ -1,47 +1,44 @@
-import { animationParametersType, avatarConfigType } from '../types/avatarConfigType'
+import { avatarConfigType } from '../types/avatarConfigType'
+
+const EXCLUDED_NAMES = new Set([
+  'VRCEmote',
+  'VRCFaceBlendH',
+  'Go/Locomotion',
+  'Go/Jump&Fall',
+  'Go/StandIdle',
+  'Go/CrouchIdle',
+  'Go/ProneIdle',
+  'EyeTrackingActive',
+  'LipTrackingActive',
+  'VisemesEnable',
+  'FacialExpressionsDisabled',
+  'State/TrackingActive',
+  'Smoothing/Local'
+])
 
 export function formatConfig(aviData: string, aviCache: string): avatarConfigType {
+  const parsedConfig = JSON.parse(aviData)
+  const parsedCache = JSON.parse(aviCache)
+
   const formattedData: avatarConfigType = {
-    id: '',
-    name: '',
-    animationParameters: undefined
+    id: parsedConfig.id || '',
+    name: parsedConfig.name || '',
+    animationParameters: []
   }
-  const avatarParameters: animationParametersType[] = []
 
-  const parsedConfig: avatarConfigType = JSON.parse(aviData)
-  const parsedCache: avatarConfigType = JSON.parse(aviCache)
-
-  formattedData.name = parsedConfig.name
-  formattedData.id = parsedConfig.id
-
-  if (parsedCache.animationParameters?.length && parsedConfig.parameters?.length) {
-    for (const c of parsedCache.animationParameters) {
-      if (c.name == 'VRCEmote') continue
-      else if (c.name == 'VRCFaceBlendH') continue
-      else if (c.name == 'Go/Locomotion') continue
-      else if (c.name == 'Go/Jump&Fall') continue
-      else if (c.name == 'Go/StandIdle') continue
-      else if (c.name == 'Go/CrouchIdle') continue
-      else if (c.name == 'Go/ProneIdle') continue
-      else if (c.name == 'EyeTrackingActive') continue
-      else if (c.name == 'LipTrackingActive') continue
-      else if (c.name == 'VisemesEnable') continue
-      else if (c.name == 'FacialExpressionsDisabled') continue
-      else if (c.name == 'State/TrackingActive') continue
-      else if (c.name == 'Smoothing/Local') continue
-      else if (c.value !== undefined) {
-        for (const ap of parsedConfig.parameters) {
-          if (ap.name === c.name) {
-            avatarParameters.push({
-              name: c.name,
-              value: c.value,
-              type: ap.input?.type == 'Float' ? 'f' : 'i'
-            })
-          }
+  if (Array.isArray(parsedCache.animationParameters) && Array.isArray(parsedConfig.parameters)) {
+    formattedData.animationParameters = parsedCache.animationParameters
+      .filter((c) => !EXCLUDED_NAMES.has(c.name) && c.value !== undefined)
+      .map((c) => {
+        const ap = parsedConfig.parameters.find((ap) => ap.name === c.name)
+        if (!ap) return null
+        return {
+          name: c.name,
+          value: c.value,
+          type: ap.input?.type === 'Float' ? 'f' : 'i'
         }
-      }
-    }
-    formattedData.animationParameters = avatarParameters
+      })
+      .filter(Boolean)
   }
 
   return formattedData
