@@ -11,6 +11,7 @@ import { getLoadDataName } from '../services/getLoadDataName'
 import { saveConfig } from '../ipc/saveConfig'
 import { loadConfig } from '../ipc/loadConfig'
 import { uploadConfigIPC } from '../ipc/uploadConfig'
+import { update } from './update'
 import icon from '../../resources/icon.png?asset'
 
 let mainWindow: BrowserWindow | null = null
@@ -84,6 +85,10 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('appVersion', () => {
+    return app.getVersion()
+  })
+
   app.whenReady().then(async () => {
     createWindow()
     const PORT = await oscQuery()
@@ -92,6 +97,7 @@ app.whenReady().then(() => {
     if (mainWindow) {
       oscListener(OSC_SERVER, mainWindow)
     }
+    update()
   })
 
   app.on('activate', function () {

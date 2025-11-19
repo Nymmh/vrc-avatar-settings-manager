@@ -13,6 +13,7 @@ asarUnpack:
   - resources/**
 win:
   executableName: avatar-settings-copy
+  publish: ['github']
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -31,7 +32,8 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
+  provider: github
+  owner: Nymmh
   url: https://github.com/Nymmh/vrc-avi-settings-copy
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
