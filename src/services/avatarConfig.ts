@@ -4,12 +4,12 @@ import { lookForConfig } from './lookForConfig'
 import { BrowserWindow } from 'electron'
 import { formatConfig } from './formatConfig'
 import { lookForCache } from './lookForCache'
-import { avatarConfigType, pendingChangesType } from '../types/avatarConfigType'
+import { avatarConfigType } from '../types/avatarConfigType'
 
 export async function avatarConfig(
   avatarId: string,
   mainWindow: BrowserWindow,
-  pendingChanges: pendingChangesType
+  pendingChanges: Map<string, any>
 ): Promise<void | avatarConfigType> {
   const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
   const [aviConfig, aviCache] = await Promise.all([
@@ -39,7 +39,7 @@ export async function avatarConfig(
       data: formattedDataConfig
     })
 
-    if (pendingChanges.length) {
+    if (pendingChanges.size > 0) {
       return formattedDataConfig
     }
   } else {

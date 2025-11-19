@@ -11,8 +11,6 @@ export type animationParametersType = {
   type?: string
 }
 
-export type pendingChangesType = [name?: string, value?: number][]
-
 export type avatarCacheType = {
   animationParameters: animationParametersType
 }
