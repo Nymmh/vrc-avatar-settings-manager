@@ -1,5 +1,5 @@
 import { Bundle, Client } from 'node-osc'
-import { avatarConfigType } from '../types/avatarConfigType'
+import { Logger } from 'electron-log'
 
 function chunkArray<T>(array: T[], chunkSize: number): T[][] {
   const chunks: T[][] = []
@@ -10,10 +10,12 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 }
 
 export async function uploadConfig(
-  loadedJson: avatarConfigType,
+  log: Logger,
+  loadedJson: avatarConfigInterface,
   OSC_CLIENT: Client
 ): Promise<boolean> {
   try {
+    log.info('Starting config upload...')
     if (loadedJson?.animationParameters && loadedJson?.animationParameters?.length) {
       const formattedParams = loadedJson.animationParameters
         .filter((ap) => ap.name && ap.value !== undefined)
@@ -32,12 +34,15 @@ export async function uploadConfig(
       for (const chunk of chunks) {
         await OSC_CLIENT.send(new Bundle(...chunk))
       }
+
+      log.info('Config upload completed')
       return true
     } else {
+      log.error('No properties to upload')
       return false
     }
   } catch (e) {
-    console.log(e)
+    log.error('Error during config upload:', e)
     return false
   }
 }

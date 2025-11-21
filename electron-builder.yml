@@ -1,5 +1,5 @@
 appId: com.nymh.avatar-settings-copy
-productName: avatar-settings-copy
+productName: VRC Avatar Settings Copy
 directories:
   buildResources: build
 copyright: Copyright © 2025 ${author}
@@ -10,21 +10,25 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-  - '!node_modules/*/docs/**'
-  - '!node_modules/*/example/**'
-  - '!node_modules/*/test/**'
-asarUnpack:
-  - resources/**
+# asarUnpack:
+#   - resources/**
+electronLanguages:
+  - en-US
 win:
-  executableName: avatar-settings-copy
+  executableName: ${productName}
   publish: github
+  target: nsis
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${productName} ${version} setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: false
   allowToChangeInstallationDirectory: true
   oneClick: false
+  perMachine: true
+  installerLanguages:
+    - en-US
+  deleteAppDataOnUninstall: true
 linux:
   target:
     - AppImage
@@ -33,7 +37,7 @@ linux:
   maintainer: Nymh
   category: Utility
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${productName} ${version}.${ext}
 npmRebuild: false
 asar: true
 publish:
