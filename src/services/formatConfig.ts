@@ -1,5 +1,3 @@
-import { avatarConfigType } from '../types/avatarConfigType'
-
 const EXCLUDED_NAMES = new Set([
   'VRCEmote',
   'VRCFaceBlendH',
@@ -20,11 +18,11 @@ export function formatConfig(
   aviData: string,
   aviCache: string,
   pendingChanges: Map<string, any>
-): avatarConfigType {
+): avatarConfigInterface {
   const parsedConfig = JSON.parse(aviData)
   const parsedCache = JSON.parse(aviCache)
 
-  const formattedData: avatarConfigType = {
+  const formattedData: avatarConfigInterface = {
     id: parsedConfig.id || '',
     name: parsedConfig.name || '',
     animationParameters: []

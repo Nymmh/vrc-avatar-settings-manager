@@ -1,0 +1,221 @@
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref, toValue } from 'vue'
+import { InputSelectInterface } from '../types/InputSelectInterface'
+
+const props = defineProps({
+  modelValue: {
+    type: String,
+    default: ''
+  },
+  id: {
+    type: String,
+    required: true
+  },
+  label: {
+    type: String,
+    default: ''
+  },
+  error: {
+    type: String,
+    default: ''
+  },
+  options: {
+    type: Array<InputSelectInterface>,
+    default: () => []
+  }
+})
+
+const emit = defineEmits(['update:modelValue'])
+const isOpen = ref<boolean>(false)
+const selectRef = ref<HTMLElement | null>(null)
+
+const toggleDropdown = (): boolean => (isOpen.value = !isOpen.value)
+
+const selectOption = (value: string): void => {
+  emit('update:modelValue', { id: props.id, value })
+  isOpen.value = false
+}
+
+const getLabel = (value: string, options: InputSelectInterface[]): string => {
+  const selected = options.find((o) => o.value === value)
+  return selected?.label || 'No Selection'
+}
+
+const clickOutside = (event: MouseEvent): void => {
+  if (toValue(selectRef) && !toValue(selectRef)?.contains(event.target as Node)) {
+    isOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', clickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', clickOutside)
+})
+</script>
+
+<template>
+  <div class="input-select">
+    <label v-if="label" :for="id" class="input-select__label">
+      {{ label }}
+    </label>
+    <div ref="selectRef" class="input-select__wrapper">
+      <button
+        :id="id"
+        type="button"
+        class="input-select__trigger"
+        :class="{ 'input-select__trigger--open': isOpen }"
+        @click="toggleDropdown"
+      >
+        <span class="input-select__value">
+          {{ getLabel(modelValue, options) }}
+        </span>
+        <span class="input-select__arrow" :class="{ 'input-select__arrow--open': isOpen }">
+          ▼
+        </span>
+      </button>
+      <transition name="dropdown">
+        <ul v-if="isOpen" class="input-select__dropdown">
+          <li
+            v-for="option in options"
+            :key="option.value"
+            :class="[
+              'input-select__option',
+              { 'input-select__option--selected': option.value === modelValue }
+            ]"
+            @click="selectOption(option.value)"
+          >
+            {{ option.label }}
+          </li>
+        </ul>
+      </transition>
+    </div>
+    <p v-if="error" class="input-select__error failed">{{ error }}</p>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.input-select {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  justify-content: center;
+  width: fit-content;
+
+  &__label {
+    color: var(--color--primary-a2);
+  }
+
+  &__wrapper {
+    position: relative;
+    max-width: 300px;
+    min-width: 150px;
+    width: fit-content;
+  }
+
+  &__trigger {
+    align-items: center;
+    background-color: var(--color--primary-a4);
+    border: 1px solid var(--color--primary-a4);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    padding: 8px 12px;
+    transition: all 0.1s;
+    width: 100%;
+
+    &:hover {
+      border-color: var(--color--primary-a3);
+    }
+
+    &--open {
+      border-color: var(--color--primary-a3);
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+
+  &__value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__arrow {
+    flex-shrink: 0;
+    transition: transform 0.4s ease;
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__dropdown {
+    background-color: var(--color--primary-a4);
+    border: 1px solid var(--color--primary-a3);
+    border-top: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    list-style: none;
+    margin: 0;
+    max-height: 200px;
+    max-width: 300px;
+    min-width: 150px;
+    overflow-y: auto;
+    padding: 0;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: max-content;
+    z-index: 10;
+  }
+
+  &__option {
+    cursor: pointer;
+    overflow: hidden;
+    padding: 10px 12px;
+    text-overflow: ellipsis;
+    transition: background-color 0.25s;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: var(--color--primary-a1);
+    }
+
+    &--selected {
+      background-color: var(--color--primary-a5);
+    }
+  }
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.25s ease;
+  transform-origin: top;
+}
+
+.dropdown-enter-from {
+  opacity: 0;
+  transform: scaleY(0);
+}
+
+.dropdown-enter-to {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.dropdown-leave-from {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.dropdown-leave-to {
+  opacity: 0;
+  transform: scaleY(0);
+}
+</style>

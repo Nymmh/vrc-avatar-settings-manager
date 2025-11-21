@@ -1,5 +1,9 @@
 <script lang="ts" setup>
 defineProps({
+  small: {
+    type: Boolean,
+    default: false
+  },
   label: {
     type: String,
     default: ''
@@ -8,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="button__wrapper">
+  <div :class="['button__wrapper', { 'button__wrapper--small': small }]">
     <button class="button">
       {{ label }}
     </button>
@@ -30,6 +34,15 @@ defineProps({
     padding: 6px 12px;
     transition: border-color 0.25s;
     width: fit-content;
+
+    &--small {
+      padding: 3px 8px;
+
+      .button {
+        padding: 3px 8px;
+        font-size: 0.875em;
+      }
+    }
 
     &:hover {
       border-color: var(--color--primary-a3);

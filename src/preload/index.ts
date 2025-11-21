@@ -1,8 +1,6 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
-import { avatarConfigType } from '../types/avatarConfigType'
-import { saveConfigExport } from '../ipc/saveConfig'
-import { uploadConfigType } from '../types/uploadConfigType'
-import { loadConfigType } from '../types/loadConfigType'
+import { saveConfigInterface } from '../types/saveConfigInterface'
+import { loadConfigInterface } from '../types/loadConfigInterface'
 
 const appApi = {
   appVersion: (): Promise<string> => {
@@ -21,24 +19,44 @@ const avatarApi = {
     ipcRenderer.on('foundAvatarFile', listener)
     return
   },
-  avatarConfig: (meowback: (data: { data: avatarConfigType }) => void) => {
-    const listener = (_event: IpcRendererEvent, data: { data: avatarConfigType }): void =>
-      meowback(data)
+  avatarConfig: (meowback: (data: avatarConfigInterface) => void) => {
+    const listener = (_event: IpcRendererEvent, data: avatarConfigInterface): void => meowback(data)
     ipcRenderer.on('avatarConfig', listener)
     return
   },
-  saveConfig: async (data: avatarConfigType): Promise<saveConfigExport> => {
+  saveConfig: async (
+    data: avatarConfigInterface,
+    overwrite: boolean,
+    nsfw: boolean
+  ): Promise<saveConfigInterface> => {
     const dataString: string = JSON.stringify(data)
     return ipcRenderer.invoke('saveConfig', {
       content: dataString,
-      fileName: data?.name || 'avatar config'
+      saveName: data?.name || 'avatar',
+      overwrite,
+      nsfw
     })
   },
-  loadConfig: async (): Promise<loadConfigType> => {
+  loadConfig: async (): Promise<loadConfigInterface> => {
     return ipcRenderer.invoke('loadConfig')
   },
-  uploadConfig: async (): Promise<uploadConfigType> => {
-    return ipcRenderer.invoke('uploadConfig')
+  uploadConfigAndApply: async (
+    saveName?: string,
+    saveOption?: boolean,
+    avatarName?: string
+  ): Promise<uploadConfigAndApplyTypeInterface> => {
+    return ipcRenderer.invoke('uploadConfigAndApply', saveName, saveOption, avatarName)
+  },
+  refreshAvatarFile: async (): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('refreshAvatarFile')
+  },
+  savedNames: (meowback: (data: string[]) => void) => {
+    const listener = (_event: IpcRendererEvent, data: string[]): void => meowback(data)
+    ipcRenderer.on('savedNames', listener)
+    return
+  },
+  applyConfig: async (name: string): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('applyConfig', name)
   }
 }
 

@@ -1,16 +1,21 @@
 import path from 'path'
 import fs from 'fs'
-import { lookForConfig } from './lookForConfig'
+import { lookForConfig } from '../file/lookForConfig'
 import { BrowserWindow } from 'electron'
 import { formatConfig } from './formatConfig'
-import { lookForCache } from './lookForCache'
-import { avatarConfigType } from '../types/avatarConfigType'
+import { lookForCache } from '../file/lookForCache'
 
 export async function avatarConfig(
   avatarId: string,
   mainWindow: BrowserWindow,
   pendingChanges: Map<string, any>
-): Promise<void | avatarConfigType> {
+): Promise<void | avatarConfigInterface> {
+  if (!avatarId) {
+    return mainWindow.webContents.send('foundAvatarFile', {
+      success: false
+    })
+  }
+
   const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
   const [aviConfig, aviCache] = await Promise.all([
     lookForConfig(avatarId, vrcPath),
@@ -35,9 +40,7 @@ export async function avatarConfig(
     mainWindow.webContents.send('foundAvatarFile', {
       success: true
     })
-    mainWindow.webContents.send('avatarConfig', {
-      data: formattedDataConfig
-    })
+    mainWindow.webContents.send('avatarConfig', formattedDataConfig)
 
     if (pendingChanges.size > 0) {
       return formattedDataConfig

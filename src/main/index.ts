@@ -3,28 +3,37 @@ import { Client } from 'node-osc'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import log from 'electron-log/main'
-import { oscClient } from '../services/oscClient'
-import { oscServer } from '../services/oscServer'
-import { oscQuery } from '../services/oscQuery'
-import { avatarConfigType } from '../types/avatarConfigType'
-import { getLoadDataName } from '../services/getLoadDataName'
+import { database } from './database'
+import { getNames } from '../database/getSavedNames'
 import { saveConfig } from '../ipc/saveConfig'
 import { loadConfig } from '../ipc/loadConfig'
-import { uploadConfigIPC } from '../ipc/uploadConfig'
-import icon from '../../resources/icon.png?asset'
+import { uploadConfigAndApply } from '../ipc/uploadConfigAndApply'
+import { oscClient } from '../osc/oscClient'
+import { oscServer } from '../osc/oscServer'
+import { oscQuery } from '../osc/oscQuery'
+import { getLoadDataName } from '../helpers/getLoadDataName'
 import { avatarConfig } from '../services/avatarConfig'
+import { checkDataFolder } from '../file/checkDataFolder'
+import icon from '../../resources/icon.png?asset'
+import { applyFromSaved } from '../ipc/applyFromSaved'
 
 let mainWindow: BrowserWindow | null = null
-let loadedJson: avatarConfigType | null = null
-let currentAviId: string = ''
-const pendingChanges: Map<string, any> = new Map()
+let loadedJson: avatarConfigInterface | null = null
+// let currentAviId: string = ''
+let currentAviId: string = 'avtr_b6e332b4-6425-46ab-bd64-dabc25261615' // testing
+const pendingChanges: Map<string, unknown> = new Map()
 let OSC_CLIENT: Client
+
+const dataFolder = checkDataFolder()
+
 log.initialize()
+log.transports.file.resolvePathFn = () => path.join(dataFolder.folderPath, 'meow.log')
 log.transports.file.fileName = 'meow.log'
 log.transports.file.format = '[{y}-{m}-{d} {h}:{i}] [{level}] {text}'
 log.transports.file.level = 'info'
-
 log.info('Meow Meow starting...')
+
+const db = database(log)
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -35,7 +44,7 @@ function createWindow(): void {
     icon: icon,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
-      sandbox: false,
+      sandbox: true,
       contextIsolation: true
     }
   })
@@ -70,11 +79,11 @@ async function setupOSC(): Promise<void> {
     }
 
     if (!OSC_SERVER) {
-      log.error('OSC Server is not started')
-      throw new Error('OSC Server is not started')
+      log.error('Server is not started')
+      throw new Error('Server is not started')
     }
 
-    log.info('OSC Listener ready')
+    log.info('Listener ready')
     // oscListener(log, OSC_SERVER, mainWindow)
     OSC_SERVER.on('message', (data) => {
       if (!data || data.length === 0) {
@@ -96,9 +105,11 @@ async function setupOSC(): Promise<void> {
         log.log('Received avatar change with ID: ', payload)
 
         pendingChanges.clear()
+        loadedJson = null
         mainWindow.webContents.send('avatarId', { id: payload })
         currentAviId = payload
         avatarConfig(payload, mainWindow, new Map())
+        getNames(log, db, mainWindow, currentAviId)
       } else if (address.includes('/avatar/parameters/')) {
         address = address.replace('/avatar/parameters/', '')
         pendingChanges.set(address, payload)
@@ -122,7 +133,7 @@ app.whenReady().then(async () => {
     return app.getVersion()
   })
 
-  ipcMain.handle('saveConfig', async (_event, { content, fileName }) => {
+  ipcMain.handle('saveConfig', async (_event, { content, saveName, overwrite, nsfw }) => {
     if (!mainWindow) return { success: false }
 
     if (pendingChanges.size > 0) {
@@ -130,9 +141,9 @@ app.whenReady().then(async () => {
       content = JSON.stringify(changedContent)
     }
 
-    const savedConfig = await saveConfig(log, mainWindow, content, fileName)
-
     pendingChanges.clear()
+    const savedConfig = await saveConfig(log, db, content, saveName, overwrite, nsfw, false)
+    getNames(log, db, mainWindow, currentAviId)
     return savedConfig
   })
 
@@ -142,27 +153,73 @@ app.whenReady().then(async () => {
     const dataParsedConfig = await loadConfig(log, mainWindow)
 
     if (!dataParsedConfig) {
-      log.error('No configuration data')
-      return null
+      log.error('No file data')
+      return { name: '', match: false, error: 'No file data' }
     }
 
     pendingChanges.clear()
+
+    if (!dataParsedConfig.id) {
+      return { name: '', match: false, error: 'Loaded config is missing ID' }
+    }
+
+    if (!dataParsedConfig.name) {
+      return { name: '', match: false, error: 'Loaded config is missing name' }
+    }
+
     const avatarName: string = await getLoadDataName(dataParsedConfig)
     loadedJson = dataParsedConfig
 
-    return { name: avatarName }
+    return { name: avatarName, match: dataParsedConfig.id === currentAviId, error: '' }
   })
 
-  ipcMain.handle('uploadConfig', async () => {
-    if (!loadedJson) {
-      log.error('No configuration loaded to upload')
-      return { success: false }
-    }
+  ipcMain.handle('applyConfig', async (_event, name: string) => {
+    if (!mainWindow || !currentAviId) return { success: false }
 
     pendingChanges.clear()
 
-    const uploadingResult = await uploadConfigIPC(log, loadedJson, OSC_CLIENT)
-    return { success: !!uploadingResult }
+    const res = await applyFromSaved(log, db, name, currentAviId, OSC_CLIENT, mainWindow)
+    return { success: !!res }
+  })
+
+  ipcMain.handle(
+    'uploadConfigAndApply',
+    async (_event, saveName: string | '', saveOption: boolean, avatarName: string | 'Unknown') => {
+      if (!mainWindow || !currentAviId) {
+        return { success: false }
+      }
+
+      if (!loadedJson) {
+        log.error('No configuration loaded to upload')
+        return { success: false }
+      }
+
+      pendingChanges.clear()
+
+      const uploadingResult = await uploadConfigAndApply(
+        log,
+        db,
+        loadedJson,
+        OSC_CLIENT,
+        saveName,
+        saveOption,
+        mainWindow,
+        currentAviId,
+        avatarName
+      )
+      getNames(log, db, mainWindow, currentAviId)
+      return uploadingResult
+    }
+  )
+
+  ipcMain.handle('refreshAvatarFile', async () => {
+    if (!mainWindow || !currentAviId) return { success: false }
+    pendingChanges.clear()
+    loadedJson = null
+
+    avatarConfig(currentAviId, mainWindow, new Map())
+    getNames(log, db, mainWindow, currentAviId)
+    return { success: true }
   })
 
   createWindow()
@@ -182,9 +239,9 @@ app.on('window-all-closed', () => {
 })
 
 process.on('uncaughtException', (e) => {
-  console.log('uncaughtException: ', e)
+  log.error('Uncaught Exception:', e)
 })
 
 process.on('unhandledRejection', (e) => {
-  console.error('Unhandled promise rejection:', e)
+  log.error('Unhandled Promise Rejection:', e)
 })
