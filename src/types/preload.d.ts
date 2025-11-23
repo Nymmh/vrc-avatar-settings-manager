@@ -1,5 +1,6 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import { saveConfigInterface } from './saveConfigInterface'
+import { loadConfigInterface } from './loadConfigInterface'
 
 export interface avatarIdInterface {
   id: string
@@ -19,15 +20,32 @@ export interface avatarApi {
     nsfw: boolean
   ) => saveConfigInterface
 
-  loadConfig: () => { name: string; match: boolean; error?: string }
+  loadConfig: () => loadConfigInterface
   uploadConfigAndApply: (
     saveName?: string,
     saveOption: boolean,
     avatarName: string
   ) => uploadConfigAndApplyTypeInterface
+  uploadConfig: (
+    saveName?: string,
+    nsfw: boolean,
+    avatarId?: string,
+    avatarName?: string
+  ) => uploadConfigInterface
   refreshAvatarFile: () => { success: boolean }
   savedNames: (meowback: (data: string[]) => void) => void
   applyConfig: (name: string) => { success: boolean }
+  getAllSaved: () => Promise<getAllSavedInterface[] | null>
+  updateConfig: (
+    id: number,
+    avatarId: string | 'Unknown',
+    avatarName: string | 'Unknown',
+    saveName: string,
+    nsfw: boolean
+  ) => updateConfigInterface
+  exportConfig: (id: number) => exportConfigInterface
+  replaceParams: (id: number) => replaceParamsInterface
+  deleteConfig: (id: number) => deleteConfigInterface
 }
 
 export interface appApi {

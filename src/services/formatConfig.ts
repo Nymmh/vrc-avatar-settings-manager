@@ -17,7 +17,7 @@ const EXCLUDED_NAMES = new Set([
 export function formatConfig(
   aviData: string,
   aviCache: string,
-  pendingChanges: Map<string, any>
+  pendingChanges: Map<string, unknown>
 ): avatarConfigInterface {
   const parsedConfig = JSON.parse(aviData)
   const parsedCache = JSON.parse(aviCache)
@@ -28,34 +28,37 @@ export function formatConfig(
     animationParameters: []
   }
 
-  if (Array.isArray(parsedCache.animationParameters) && Array.isArray(parsedConfig.parameters)) {
-    formattedData.animationParameters = parsedCache.animationParameters
-      .filter((c) => !EXCLUDED_NAMES.has(c.name) && c.value !== undefined)
-      .map((c) => {
-        const ap = parsedConfig.parameters.find((ap) => ap.name === c.name)
-        if (!ap) return null
-        return {
-          name: c.name,
-          value: c.value,
-          type: ap.input?.type === 'Float' ? 'f' : 'i'
-        }
-      })
-      .filter(Boolean)
-  }
-
-  if (!formattedData.animationParameters || !pendingChanges.size) {
+  if (!Array.isArray(parsedCache.animationParameters) || !Array.isArray(parsedConfig.parameters))
     return formattedData
-  }
 
-  formattedData.animationParameters.forEach((fd) => {
-    if (fd.name !== undefined && pendingChanges.has(fd.name)) {
-      let nv = pendingChanges.get(fd.name)
-      if (typeof nv === 'boolean') {
-        nv = nv ? 1 : 0
-      }
-      fd.value = nv
+  const parameterMap = new Map(
+    parsedConfig.parameters.map((pm) => [pm.name, pm.input?.type === 'Float' ? 'f' : 'i'])
+  )
+
+  const hasPendingChanges = pendingChanges.size > 0
+
+  formattedData.animationParameters = parsedCache.animationParameters.reduce((ap, c) => {
+    if (!EXCLUDED_NAMES.has(c.name) && c.value !== undefined) return ap
+
+    const type = parameterMap.get(c.name)
+
+    if (!type) return ap
+
+    let value = c.value
+
+    if (hasPendingChanges && pendingChanges.has(c.name)) {
+      const pendingValue = pendingChanges.get(c.name)
+      value = typeof pendingValue === 'boolean' ? (pendingValue ? 1 : 0) : pendingValue
     }
-  })
+
+    ap.push({
+      name: c.name,
+      value,
+      type
+    })
+
+    return ap
+  }, [] as animationParametersInterface[])
 
   return formattedData
 }

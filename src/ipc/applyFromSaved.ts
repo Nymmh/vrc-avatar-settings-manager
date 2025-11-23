@@ -14,19 +14,29 @@ export async function applyFromSaved(
   mainWindow: BrowserWindow
 ): Promise<boolean> {
   try {
-    log.info(`Applying config from saved: ${name}`)
+    log.info(`Applying config: ${name}`)
 
-    const q = db.prepare('SELECT avatarId,nsfw,parameters FROM avatars WHERE name = ?')
-    const row = (await q.get(name)) as applyFromSavedInterface | undefined
+    const q = db
+      .prepare('SELECT avatarId,nsfw,parameters FROM avatars WHERE name = ? LIMIT 1')
+      .get(name) as applyFromSavedInterface | undefined
 
-    if (!row) {
-      log.error(`No saved config found with the name: ${name}`)
+    if (!q) {
+      log.error(`Config not found: ${name}`)
+      return false
+    }
+
+    let parameters: animationParametersInterface[]
+
+    try {
+      parameters = JSON.parse(q.parameters)
+    } catch {
+      log.error('Error parsing JSON:')
       return false
     }
 
     const warningButtons = ['Apply', 'Cancel']
 
-    if (row.avatarId !== currentAvatarId) {
+    if (q.avatarId !== currentAvatarId) {
       const userResponse = await showWarning(
         warningButtons,
         0,
@@ -40,7 +50,7 @@ export async function applyFromSaved(
       }
     }
 
-    if (row.nsfw) {
+    if (q.nsfw) {
       const userResponse = await showWarning(
         warningButtons,
         0,
@@ -53,8 +63,6 @@ export async function applyFromSaved(
         return false
       }
     }
-
-    const parameters: animationParametersInterface[] = JSON.parse(row.parameters)
 
     return await applyConfig(log, parameters, OSC_CLIENT)
   } catch (e) {

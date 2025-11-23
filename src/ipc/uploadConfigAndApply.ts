@@ -2,9 +2,9 @@ import { Logger } from 'electron-log'
 import { Client } from 'node-osc'
 import { Database } from 'better-sqlite3'
 import { BrowserWindow } from 'electron'
-import { uploadConfig } from '../services/uploadConfig'
 import { saveConfig } from './saveConfig'
 import { checkIfExist } from '../database/checkIfExist'
+import { uploadConfig } from '../services/uploadConfig'
 import { showWarning } from '../services/showWarning'
 
 export async function uploadConfigAndApply(
@@ -18,58 +18,55 @@ export async function uploadConfigAndApply(
   currentAviId: string,
   avatarName: string
 ): Promise<uploadConfigAndApplyTypeInterface> {
-  const upload = await uploadConfig(log, loadedJson, OSC_CLIENT)
+  const upload = uploadConfig(log, loadedJson, OSC_CLIENT)
 
-  if (saveOption) {
-    const existing = await checkIfExist(db, saveName)
+  if (!saveOption) {
+    const uploadWait = await upload
 
-    if (existing) {
-      const userResponse = await showWarning(
-        ['Overwrite', 'Cancel'],
-        0,
-        'Overwrite Confirmation',
-        'A config with that name already exists. Do you want to overwrite it?',
-        mainWindow
-      )
+    log.info(uploadWait ? 'Upload successful' : 'Upload failed')
+    return { upload: uploadWait }
+  }
 
-      if (userResponse.response !== 0) {
-        return { upload: true, save: false, saveMessage: 'Declined overwrite' }
-      }
-    }
+  currentAviId = currentAviId?.trim()
+  avatarName = avatarName?.trim()
+  saveName = saveName?.trim()
 
-    if (!currentAviId || typeof currentAviId !== 'string' || currentAviId.trim().length === 0) {
-      return { upload, save: false, saveMessage: 'Invalid avatar ID in file' }
-    }
+  if (!currentAviId)
+    return { upload: await upload, save: false, saveMessage: 'Invalid avatar ID in file' }
+  if (!avatarName)
+    return { upload: await upload, save: false, saveMessage: 'Invalid avatar name in file' }
+  if (!saveName) return { upload: await upload, save: false, saveMessage: 'Invalid save name' }
 
-    if (!avatarName || typeof avatarName !== 'string' || avatarName.trim().length === 0) {
-      return { upload, save: false, saveMessage: 'Invalid avatar name in file' }
-    }
+  const existing = checkIfExist(db, saveName)
 
-    loadedJson.id = currentAviId
-    loadedJson.name = avatarName
-
-    const save = await saveConfig(
-      log,
-      db,
-      loadedJson,
-      saveName,
-      true,
-      loadedJson.nsfw || false,
-      true
+  if (existing) {
+    const userResponse = await showWarning(
+      ['Overwrite', 'Cancel'],
+      0,
+      'Overwrite Confirmation',
+      'A config with that name already exists. Do you want to overwrite it?',
+      mainWindow
     )
 
-    return {
-      upload,
-      save: save.success,
-      saveMessage: save.message || ''
+    if (userResponse.response !== 0) {
+      return { upload: await upload, save: false, saveMessage: 'Declined overwrite' }
     }
   }
 
-  if (upload) {
-    log.info('Upload successful')
-    return { upload: true }
-  } else {
-    log.error('Upload failed')
-    return { upload: false }
+  loadedJson.id = currentAviId
+  loadedJson.name = avatarName
+
+  const save = saveConfig(log, db, loadedJson, saveName, true, loadedJson.nsfw || false, true)
+
+  const u = await upload
+
+  log.info(
+    `Upload: ${u ? 'successful' : 'failed'}, Save: ${save.success ? 'successful' : 'failed'}`
+  )
+
+  return {
+    upload: u,
+    save: save.success,
+    saveMessage: save.message || ''
   }
 }

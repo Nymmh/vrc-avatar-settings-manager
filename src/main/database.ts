@@ -8,35 +8,38 @@ export function database(log: Logger): DBType {
   log.info('Initializing Meow Storage...')
   const dbPath = path.join(app.getPath('userData'), 'Meow Storage')
 
-  if (!fs.existsSync(dbPath)) {
-    fs.mkdirSync(dbPath)
-    log.info(`Created Meow Storage`)
-  }
+  fs.mkdirSync(dbPath, { recursive: true })
 
-  const db: DBType = new Database(path.join(dbPath, 'data.db'))
+  const db: DBType = new Database(path.join(dbPath, 'meow.db'))
 
   db.pragma('journal_mode = WAL')
 
-  let version = db.pragma('user_version', { simple: true }) as number
+  const version = db.pragma('user_version', { simple: true }) as number
 
   if (version === 0) {
-    log.info('Setting up Meow Storage version 1')
-    db.prepare(
-      `CREATE TABLE IF NOT EXISTS avatars (
+    db.transaction(() => {
+      db.prepare(
+        `CREATE TABLE IF NOT EXISTS avatars (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            avatarId TEXT,
-            name TEXT UNIQUE,
-            avatarName TEXT,
-            nsfw BOOLEAN DEFAULT 0,
-            parameters TEXT,
-            fromFile BOOLEAN DEFAULT 0
-        );`
-    ).run()
+            avatarId TEXT NOT NULL,
+            name TEXT UNIQUE NOT NULL,
+            avatarName TEXT NOT NULL,
+            nsfw INTEGER DEFAULT 0,
+            parameters TEXT DEFAULT '[]',
+            fromFile INTEGER DEFAULT 0
+        )`
+      ).run()
 
-    db.pragma('user_version = 1')
-    version = 1
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_avatars_name ON avatars (name);`).run()
+      db.pragma('user_version = 1')
+    })()
+
+    log.info('Meow Storage ver 1 setup complete')
   }
 
-  log.info(`Meow storage setup complete`)
+  db.pragma('synchronous = NORMAL')
+  db.pragma('temp_store = MEMORY')
+
+  log.info('Meow Storage initialized successfully')
   return db
 }

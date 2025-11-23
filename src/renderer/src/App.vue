@@ -1,21 +1,27 @@
 <script setup lang="ts">
 import { onMounted, ref, toRaw } from 'vue'
+import { useNotification } from '@kyvg/vue3-notification'
 import Button from './components/Button.vue'
 import Footer from './components/Footer.vue'
 import InputCheckbox from './components/InputCheckbox.vue'
 import InputSelect from './components/InputSelect.vue'
 import InputText from './components/InputText.vue'
-// import Waiting from './components/Waiting.vue'
+import LoadFile from './components/LoadFile.vue'
+import Menu from './components/Menu.vue'
+import AllSaved from './views/AllSaved.vue'
+import Waiting from './components/Waiting.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
-
 import type { avatarConfigType } from '../../types/avatarConfigType'
+import { NotificationInterface } from './types/notificationInterface'
+
+const currentView = ref<string>('Waiting')
+const { notify } = useNotification()
 
 // Avatar state
 const avatarId = ref('')
 const avatarFoundFile = ref(false)
 const showAvatarFoundFileMsg = ref(false)
 const avatarConfig = ref<avatarConfigType | null>(null)
-const avatarIdMatch = ref(true)
 
 // Save state
 const saveName = ref('')
@@ -30,15 +36,6 @@ const NSFWError = ref('')
 const configSelectValue = ref('')
 const configSelectOptions = ref<InputSelectInterface[]>([])
 const applyStatus = ref<boolean | undefined>(undefined)
-const loadedConfigName = ref('')
-const loadConfigError = ref('')
-const loadConfigSaveName = ref('')
-const loadConfigSaveOption = ref(true)
-const loadConfigSaveError = ref('')
-
-// Upload state
-const uploadStatus = ref(false)
-const showUploadStatus = ref(false)
 
 const resetVars = (): void => {
   saveMessage.value = ''
@@ -46,15 +43,23 @@ const resetVars = (): void => {
   saveError.value = ''
   saveNameError.value = ''
   NSFWError.value = ''
-  loadedConfigName.value = ''
-  uploadStatus.value = false
-  showUploadStatus.value = false
-  avatarIdMatch.value = true
   applyStatus.value = undefined
-  loadConfigError.value = ''
-  loadConfigSaveOption.value = true
-  loadConfigSaveName.value = ''
-  loadConfigSaveError.value = ''
+}
+
+const pushNotification = (data: NotificationInterface): void => {
+  notify({
+    type: data.type,
+    title: data.title,
+    text: data.text || ''
+  })
+}
+
+const handleChangeView = (view: string): void => {
+  if (!avatarId.value && view === 'Main') {
+    currentView.value = 'Waiting'
+    return
+  }
+  currentView.value = view
 }
 
 const getAvatarId = (): void => {
@@ -63,6 +68,7 @@ const getAvatarId = (): void => {
   resetVars()
 
   window.avatarApi.avatarId((data) => {
+    currentView.value = 'Main'
     avatarId.value = data.id
   })
 }
@@ -96,6 +102,13 @@ const refreshAviFile = async (): Promise<void> => {
   const res = await window.avatarApi.refreshAvatarFile()
   avatarFoundFile.value = res.success
   showAvatarFoundFileMsg.value = true
+
+  if (!res.success) {
+    pushNotification({
+      type: 'error',
+      title: 'Refresh Failed'
+    })
+  }
 }
 
 const aviConfig = (): void => {
@@ -112,11 +125,23 @@ const handleSave = async (overwrite: boolean): Promise<void> => {
 
   if (!saveName.value.trim()) {
     saveMessage.value = 'Enter a valid save name'
+
+    pushNotification({
+      type: 'error',
+      title: 'Save Failed',
+      text: 'Enter a valid save name'
+    })
     return
   }
 
   if (!avatarConfig.value) {
     saveError.value = 'No avatar config found'
+
+    pushNotification({
+      type: 'error',
+      title: 'Save Failed',
+      text: 'No avatar config found'
+    })
     return
   }
 
@@ -131,19 +156,22 @@ const handleSave = async (overwrite: boolean): Promise<void> => {
   saveMessage.value = res?.message || ''
   saveSuccess.value = res?.success || false
   saveError.value = res?.overwriteMessage || ''
-}
 
-const handleLoad = async (): Promise<void> => {
-  resetVars()
-  saveName.value = ''
-  const res = await window.avatarApi.loadConfig()
+  if (res?.message) {
+    pushNotification({
+      type: res?.success ? 'success' : 'error',
+      title: res?.success ? 'Save Successful' : 'Save Failed',
+      text: res.message
+    })
+  }
 
-  if (!res) return
-
-  loadedConfigName.value = res.name
-  loadConfigSaveName.value = res.name
-  avatarIdMatch.value = res.match
-  loadConfigError.value = res.error || ''
+  if (res?.overwriteMessage) {
+    pushNotification({
+      type: res?.success ? 'success' : 'error',
+      title: res?.success ? 'Save Successful' : 'Save Failed',
+      text: res.overwriteMessage
+    })
+  }
 }
 
 const handleApply = async (): Promise<void> => {
@@ -152,20 +180,11 @@ const handleApply = async (): Promise<void> => {
 
   const res = await window.avatarApi.applyConfig(configSelectValue.value)
   applyStatus.value = !!res?.success
-}
 
-const handleUpload = async (): Promise<void> => {
-  saveName.value = ''
-  const res = await window.avatarApi.uploadConfigAndApply(
-    loadConfigSaveName.value,
-    loadConfigSaveOption.value,
-    avatarConfig.value?.name || 'Unknown'
-  )
-
-  resetVars()
-  uploadStatus.value = res.upload
-  loadConfigSaveError.value = res.saveMessage || ''
-  showUploadStatus.value = true
+  pushNotification({
+    type: res?.success ? 'success' : 'error',
+    title: res?.success ? 'Apply Successful' : 'Apply Failed'
+  })
 }
 
 const handleInputUpdate = ({ id, value, checked }): void => {
@@ -175,12 +194,9 @@ const handleInputUpdate = ({ id, value, checked }): void => {
     NSFWValue.value = checked
   } else if (id == 'select-config') {
     configSelectValue.value = value
-  } else if (id == 'load-name-input') {
-    loadConfigSaveName.value = value
-  } else if (id == 'load-save') {
-    loadConfigSaveOption.value = checked
   }
 }
+
 onMounted(() => {
   avatarId.value = ''
   avatarFoundFile.value = false
@@ -196,8 +212,11 @@ onMounted(() => {
 
 <template>
   <div class="main">
-    <!-- <Waiting v-if="!avatarId" /> -->
-    <div class="main__content">
+    <notifications class="notification" position="bottom left" />
+    <Menu :current-view="currentView" @change-view="handleChangeView" />
+    <AllSaved v-if="currentView === 'AllSaved'" @notification="pushNotification" />
+    <Waiting v-if="!avatarId && currentView === 'Waiting'" />
+    <div v-show="currentView === 'Main'" class="main__content">
       <div :class="['main__avatar-data', { underline: avatarFoundFile }]">
         <div class="main__avatar-data-file">
           <p :class="['main__avatar-found', avatarFoundFile ? 'success' : 'failed']">
@@ -259,49 +278,7 @@ onMounted(() => {
             {{ applyStatus ? 'Config applied' : 'Failed to apply config' }}
           </p>
         </div>
-        <div class="main__load-file-wrapper">
-          <Button label="Load From File" @click="handleLoad" />
-          <p v-if="loadedConfigName" class="main__loaded-config">
-            Loaded config: <span class="main__loaded-config__file">{{ loadedConfigName }}</span>
-          </p>
-          <p v-if="!avatarIdMatch && !loadConfigError" class="main__loaded-config-match failed">
-            Config ID does not match Avatar ID
-          </p>
-          <p v-if="loadConfigError" class="failed">
-            {{ loadConfigError }}
-          </p>
-          <div v-if="loadedConfigName && !loadConfigError" class="main__load-options">
-            <InputText
-              id="load-name-input"
-              label="Save Name: "
-              :model-value="loadConfigSaveName"
-              @update:model-value="handleInputUpdate"
-            />
-            <InputCheckbox
-              id="load-save"
-              label="Save"
-              :model-value="loadConfigSaveOption"
-              @update:model-value="handleInputUpdate"
-            />
-          </div>
-          <Button
-            v-if="loadedConfigName && !loadConfigError"
-            label="Upload"
-            @click="handleUpload"
-          />
-          <p v-if="showUploadStatus" class="main__upload-status">
-            Upload Status:
-            <span :class="['main__upload-status__status', uploadStatus ? 'success' : 'failed']">
-              {{ uploadStatus ? 'Success' : 'Failed' }}
-            </span>
-          </p>
-          <p
-            v-if="loadConfigSaveError"
-            :class="['main__upload-save', loadConfigSaveError === 'Saved' ? 'success' : 'failed']"
-          >
-            {{ loadConfigSaveError }}
-          </p>
-        </div>
+        <LoadFile :avatar-config="avatarConfig" @notification="pushNotification" />
       </div>
     </div>
   </div>
@@ -356,8 +333,7 @@ onMounted(() => {
   }
 
   &__save-wrapper,
-  &__saved-wrapper,
-  &__load-file-wrapper {
+  &__saved-wrapper {
     align-items: center;
     display: flex;
     flex-direction: column;
@@ -366,17 +342,21 @@ onMounted(() => {
   }
 
   &__save,
-  &__save-exists,
-  &__load-options {
+  &__save-exists {
     align-items: center;
     display: flex;
     gap: 16px;
     justify-content: center;
   }
+}
 
-  &__loaded-config__file,
-  &__upload-status__status {
-    font-weight: bold;
+.notification {
+  .vue-notification-template {
+    font-size: 1rem;
+  }
+
+  .success {
+    color: var(--color--primary-a1);
   }
 }
 </style>

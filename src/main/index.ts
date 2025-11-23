@@ -1,26 +1,31 @@
 import path from 'path'
-import { Client } from 'node-osc'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { Client } from 'node-osc'
 import log from 'electron-log/main'
 import { database } from './database'
+import { getAllSaved } from '../database/getAllSaved'
 import { getNames } from '../database/getSavedNames'
+import { updateSavedConfig } from '../database/updateSavedConfig'
+import { replaceParams } from '../database/replaceParams'
+import { deleteConfig } from '../database/deleteConfig'
 import { saveConfig } from '../ipc/saveConfig'
 import { loadConfig } from '../ipc/loadConfig'
+import { uploadConfig } from '../ipc/uploadConfig'
 import { uploadConfigAndApply } from '../ipc/uploadConfigAndApply'
+import { applyFromSaved } from '../ipc/applyFromSaved'
 import { oscClient } from '../osc/oscClient'
 import { oscServer } from '../osc/oscServer'
 import { oscQuery } from '../osc/oscQuery'
-import { getLoadDataName } from '../helpers/getLoadDataName'
 import { avatarConfig } from '../services/avatarConfig'
 import { checkDataFolder } from '../file/checkDataFolder'
+import { exportConfig } from '../file/exportConfig'
+import { getLoadDataName } from '../helpers/getLoadDataName'
 import icon from '../../resources/icon.png?asset'
-import { applyFromSaved } from '../ipc/applyFromSaved'
 
 let mainWindow: BrowserWindow | null = null
 let loadedJson: avatarConfigInterface | null = null
-// let currentAviId: string = ''
-let currentAviId: string = 'avtr_b6e332b4-6425-46ab-bd64-dabc25261615' // testing
+let currentAviId: string = ''
 const pendingChanges: Map<string, unknown> = new Map()
 let OSC_CLIENT: Client
 
@@ -37,8 +42,8 @@ const db = database(log)
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1300,
+    height: 800,
     show: false,
     autoHideMenuBar: true,
     icon: icon,
@@ -212,6 +217,32 @@ app.whenReady().then(async () => {
     }
   )
 
+  ipcMain.handle(
+    'uploadConfig',
+    async (
+      _event,
+      saveName: string | '',
+      nsfw: boolean,
+      avatarId: string | '',
+      avatarName: string | ''
+    ) => {
+      if (!mainWindow || !loadedJson) {
+        return { success: false }
+      }
+
+      return await uploadConfig(
+        log,
+        db,
+        mainWindow,
+        saveName,
+        nsfw,
+        avatarId,
+        avatarName,
+        loadedJson
+      )
+    }
+  )
+
   ipcMain.handle('refreshAvatarFile', async () => {
     if (!mainWindow || !currentAviId) return { success: false }
     pendingChanges.clear()
@@ -220,6 +251,42 @@ app.whenReady().then(async () => {
     avatarConfig(currentAviId, mainWindow, new Map())
     getNames(log, db, mainWindow, currentAviId)
     return { success: true }
+  })
+
+  ipcMain.handle('getAllSaved', async () => {
+    return await getAllSaved(log, db)
+  })
+
+  ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName, nsfw) => {
+    if (!mainWindow) {
+      return { success: false }
+    }
+
+    return await updateSavedConfig(log, db, id, avatarId, avatarName, saveName, nsfw)
+  })
+
+  ipcMain.handle('exportConfig', async (_event, id: number) => {
+    if (!mainWindow) {
+      return { success: false }
+    }
+
+    return await exportConfig(log, db, dialog, mainWindow, id)
+  })
+
+  ipcMain.handle('replaceParams', async (_event, id: number) => {
+    if (!mainWindow || !currentAviId) {
+      return { success: false, message: 'Internal Error' }
+    }
+
+    return await replaceParams(log, db, mainWindow, id)
+  })
+
+  ipcMain.handle('deleteConfig', async (_event, id: number) => {
+    if (!mainWindow) {
+      return { success: false, message: 'Internal Error' }
+    }
+
+    return await deleteConfig(log, db, mainWindow, id)
   })
 
   createWindow()

@@ -1,20 +1,24 @@
 import path from 'path'
 import fs from 'fs'
 
-export async function lookForConfig(
-  avatarId: string,
-  vrcOscPath: string
-): Promise<string | undefined> {
-  return new Promise((res) => {
-    const folders = fs.readdirSync(path.join(vrcOscPath, 'OSC'))
+export function lookForConfig(avatarId: string, vrcOscPath: string): string | undefined {
+  try {
+    const vrcPath = path.join(vrcOscPath, 'OSC')
+    const avatarFile = `${avatarId}.json`
+    const folder = fs.readdirSync(vrcPath, { withFileTypes: true })
 
-    for (const f of folders) {
-      const files = fs.readdirSync(path.join(vrcOscPath, 'OSC', f, 'Avatars'))
-      if (files.includes(avatarId + '.json')) {
-        res(path.join(f, 'Avatars', avatarId + '.json'))
+    for (const f of folder) {
+      if (!f.isDirectory()) continue
+
+      const configPath = path.join(vrcPath, f.name, 'Avatars', avatarFile)
+
+      if (fs.existsSync(configPath)) {
+        return path.join(f.name, 'Avatars', avatarFile)
       }
     }
 
-    res(undefined)
-  })
+    return undefined
+  } catch {
+    return undefined
+  }
 }

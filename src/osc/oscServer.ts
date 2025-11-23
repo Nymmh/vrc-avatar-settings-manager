@@ -1,7 +1,7 @@
 import { Server } from 'node-osc'
 import { Logger } from 'electron-log'
 
-export async function oscServer(log: Logger, PORT: number): Promise<Server> {
+export function oscServer(log: Logger, PORT: number): Promise<Server> {
   log.info('Starting OSC Server...')
 
   return new Promise((res, rej) => {

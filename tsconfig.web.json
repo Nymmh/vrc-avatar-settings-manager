@@ -4,10 +4,10 @@
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.vue",
-    "src/renderer/src/composables/**/*.ts",
     "src/types/avatarConfigType.ts",
     "src/types/preload.d.ts",
-    "src/types/avatarConfig.d.ts"
+    "src/types/avatarConfig.d.ts",
+    "src/types/interfaces.d.ts"
   ],
   "compilerOptions": {
     "composite": true,
