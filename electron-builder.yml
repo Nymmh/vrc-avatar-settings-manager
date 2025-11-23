@@ -1,4 +1,4 @@
-appId: com.nymh.avatar-settings-Manager
+appId: com.nymh.avatar-settings-manager
 productName: VRC Avatar Settings Manager
 directories:
   buildResources: build
