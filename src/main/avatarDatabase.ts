@@ -4,7 +4,7 @@ import fs from 'fs'
 import Database, { Database as DBType } from 'better-sqlite3'
 import { Logger } from 'electron-log'
 
-export function database(log: Logger): DBType {
+export function avatarDatabase(log: Logger): DBType {
   log.info('Initializing Meow Storage...')
   const dbPath = path.join(app.getPath('userData'), 'Meow Storage')
 
