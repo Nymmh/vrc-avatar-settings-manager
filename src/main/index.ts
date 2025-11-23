@@ -3,7 +3,7 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { Client } from 'node-osc'
 import log from 'electron-log/main'
-import { database } from './database'
+import { avatarDatabase } from './avatarDatabase'
 import { getAllSaved } from '../database/getAllSaved'
 import { getNames } from '../database/getSavedNames'
 import { updateSavedConfig } from '../database/updateSavedConfig'
@@ -38,7 +38,7 @@ log.transports.file.format = '[{y}-{m}-{d} {h}:{i}] [{level}] {text}'
 log.transports.file.level = 'info'
 log.info('Meow Meow starting...')
 
-const db = database(log)
+const avatarDB = avatarDatabase(log)
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -114,7 +114,7 @@ async function setupOSC(): Promise<void> {
         mainWindow.webContents.send('avatarId', { id: payload })
         currentAviId = payload
         avatarConfig(payload, mainWindow, new Map())
-        getNames(log, db, mainWindow, currentAviId)
+        getNames(log, avatarDB, mainWindow, currentAviId)
       } else if (address.includes('/avatar/parameters/')) {
         address = address.replace('/avatar/parameters/', '')
         pendingChanges.set(address, payload)
@@ -147,8 +147,8 @@ app.whenReady().then(async () => {
     }
 
     pendingChanges.clear()
-    const savedConfig = await saveConfig(log, db, content, saveName, overwrite, nsfw, false)
-    getNames(log, db, mainWindow, currentAviId)
+    const savedConfig = await saveConfig(log, avatarDB, content, saveName, overwrite, nsfw, false)
+    getNames(log, avatarDB, mainWindow, currentAviId)
     return savedConfig
   })
 
@@ -183,7 +183,7 @@ app.whenReady().then(async () => {
 
     pendingChanges.clear()
 
-    const res = await applyFromSaved(log, db, name, currentAviId, OSC_CLIENT, mainWindow)
+    const res = await applyFromSaved(log, avatarDB, name, currentAviId, OSC_CLIENT, mainWindow)
     return { success: !!res }
   })
 
@@ -203,7 +203,7 @@ app.whenReady().then(async () => {
 
       const uploadingResult = await uploadConfigAndApply(
         log,
-        db,
+        avatarDB,
         loadedJson,
         OSC_CLIENT,
         saveName,
@@ -212,7 +212,7 @@ app.whenReady().then(async () => {
         currentAviId,
         avatarName
       )
-      getNames(log, db, mainWindow, currentAviId)
+      getNames(log, avatarDB, mainWindow, currentAviId)
       return uploadingResult
     }
   )
@@ -232,7 +232,7 @@ app.whenReady().then(async () => {
 
       return await uploadConfig(
         log,
-        db,
+        avatarDB,
         mainWindow,
         saveName,
         nsfw,
@@ -249,12 +249,12 @@ app.whenReady().then(async () => {
     loadedJson = null
 
     avatarConfig(currentAviId, mainWindow, new Map())
-    getNames(log, db, mainWindow, currentAviId)
+    getNames(log, avatarDB, mainWindow, currentAviId)
     return { success: true }
   })
 
   ipcMain.handle('getAllSaved', async () => {
-    return await getAllSaved(log, db)
+    return await getAllSaved(log, avatarDB)
   })
 
   ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName, nsfw) => {
@@ -262,7 +262,7 @@ app.whenReady().then(async () => {
       return { success: false }
     }
 
-    return await updateSavedConfig(log, db, id, avatarId, avatarName, saveName, nsfw)
+    return await updateSavedConfig(log, avatarDB, id, avatarId, avatarName, saveName, nsfw)
   })
 
   ipcMain.handle('exportConfig', async (_event, id: number) => {
@@ -270,7 +270,7 @@ app.whenReady().then(async () => {
       return { success: false }
     }
 
-    return await exportConfig(log, db, dialog, mainWindow, id)
+    return await exportConfig(log, avatarDB, dialog, mainWindow, id)
   })
 
   ipcMain.handle('replaceParams', async (_event, id: number) => {
@@ -278,7 +278,7 @@ app.whenReady().then(async () => {
       return { success: false, message: 'Internal Error' }
     }
 
-    return await replaceParams(log, db, mainWindow, id)
+    return await replaceParams(log, avatarDB, mainWindow, id)
   })
 
   ipcMain.handle('deleteConfig', async (_event, id: number) => {
@@ -286,7 +286,7 @@ app.whenReady().then(async () => {
       return { success: false, message: 'Internal Error' }
     }
 
-    return await deleteConfig(log, db, mainWindow, id)
+    return await deleteConfig(log, avatarDB, mainWindow, id)
   })
 
   createWindow()
