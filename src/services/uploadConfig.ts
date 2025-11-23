@@ -1,14 +1,6 @@
 import { Bundle, Client } from 'node-osc'
 import { Logger } from 'electron-log'
 
-function chunkArray<T>(array: T[], chunkSize: number): T[][] {
-  const chunks: T[][] = []
-  for (let i = 0; i < array.length; i += chunkSize) {
-    chunks.push(array.slice(i, i + chunkSize))
-  }
-  return chunks
-}
-
 export async function uploadConfig(
   log: Logger,
   loadedJson: avatarConfigInterface,
@@ -16,31 +8,46 @@ export async function uploadConfig(
 ): Promise<boolean> {
   try {
     log.info('Starting config upload...')
-    if (loadedJson?.animationParameters && loadedJson?.animationParameters?.length) {
-      const formattedParams = loadedJson.animationParameters
-        .filter((ap) => ap.name && ap.value !== undefined)
-        .map((ap) => ({
-          address: `/avatar/parameters/${ap.name}`,
-          args: [
-            {
-              type: ap.type,
-              value: ap.value
-            }
-          ]
-        }))
 
-      const chunks = chunkArray(formattedParams, 15)
-
-      for (const chunk of chunks) {
-        await OSC_CLIENT.send(new Bundle(...chunk))
-      }
-
-      log.info('Config upload completed')
-      return true
-    } else {
-      log.error('No properties to upload')
+    if (!loadedJson?.animationParameters?.length) {
+      log.error('No parameters found to upload')
       return false
     }
+
+    const chunks: unknown[][] = []
+    let chunk: unknown[] = []
+
+    for (let i = 0; i < loadedJson.animationParameters.length; i++) {
+      const ap = loadedJson.animationParameters[i]
+
+      if (!ap.name || ap.value === undefined) continue
+
+      chunk.push({
+        address: `/avatar/parameters/${ap.name}`,
+        args: [
+          {
+            type: ap.type,
+            value: ap.value
+          }
+        ]
+      })
+
+      if (chunk.length === 15) {
+        chunks.push(chunk)
+        chunk = []
+      }
+    }
+
+    if (chunk.length > 0) {
+      chunks.push(chunk)
+    }
+
+    for (let i = 0; i < chunks.length; i++) {
+      await OSC_CLIENT.send(new Bundle(...chunks[i]))
+    }
+
+    log.info('Config upload complete')
+    return true
   } catch (e) {
     log.error('Error during config upload:', e)
     return false

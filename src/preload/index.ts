@@ -3,26 +3,24 @@ import { saveConfigInterface } from '../types/saveConfigInterface'
 import { loadConfigInterface } from '../types/loadConfigInterface'
 
 const appApi = {
-  appVersion: (): Promise<string> => {
-    return ipcRenderer.invoke('appVersion')
-  }
+  appVersion: (): Promise<string> => ipcRenderer.invoke('appVersion')
 }
 
 const avatarApi = {
-  avatarId: (meowback: (data: { id: string }) => void) => {
-    const listener = (_event: IpcRendererEvent, data: { id: string }): void => meowback(data)
-    ipcRenderer.on('avatarId', listener)
-    return
+  avatarId: (meowback: (data: { id: string }) => void): void => {
+    ipcRenderer.on('avatarId', (_event: IpcRendererEvent, data: { id: string }): void =>
+      meowback(data)
+    )
   },
-  foundAvatarFile: (meowback: (data: { success: boolean }) => void) => {
-    const listener = (_event: IpcRendererEvent, data: { success: boolean }): void => meowback(data)
-    ipcRenderer.on('foundAvatarFile', listener)
-    return
+  foundAvatarFile: (meowback: (data: { success: boolean }) => void): void => {
+    ipcRenderer.on('foundAvatarFile', (_event: IpcRendererEvent, data: { success: boolean }) =>
+      meowback(data)
+    )
   },
-  avatarConfig: (meowback: (data: avatarConfigInterface) => void) => {
-    const listener = (_event: IpcRendererEvent, data: avatarConfigInterface): void => meowback(data)
-    ipcRenderer.on('avatarConfig', listener)
-    return
+  avatarConfig: (meowback: (data: avatarConfigInterface) => void): void => {
+    ipcRenderer.on('avatarConfig', (_event: IpcRendererEvent, data: avatarConfigInterface): void =>
+      meowback(data)
+    )
   },
   saveConfig: async (
     data: avatarConfigInterface,
@@ -37,27 +35,43 @@ const avatarApi = {
       nsfw
     })
   },
-  loadConfig: async (): Promise<loadConfigInterface> => {
-    return ipcRenderer.invoke('loadConfig')
-  },
+  loadConfig: async (): Promise<loadConfigInterface> => ipcRenderer.invoke('loadConfig'),
   uploadConfigAndApply: async (
     saveName?: string,
     saveOption?: boolean,
     avatarName?: string
-  ): Promise<uploadConfigAndApplyTypeInterface> => {
-    return ipcRenderer.invoke('uploadConfigAndApply', saveName, saveOption, avatarName)
+  ): Promise<uploadConfigAndApplyTypeInterface> =>
+    ipcRenderer.invoke('uploadConfigAndApply', saveName, saveOption, avatarName),
+  uploadConfig: async (
+    saveName?: string,
+    nsfw: boolean = false,
+    avatarId: string = '',
+    avatarName: string = ''
+  ): Promise<uploadConfigInterface> =>
+    ipcRenderer.invoke('uploadConfig', saveName, nsfw, avatarId, avatarName),
+  refreshAvatarFile: async (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('refreshAvatarFile'),
+  savedNames: (meowback: (data: string[]) => void): void => {
+    ipcRenderer.on('savedNames', (_event: IpcRendererEvent, data: string[]): void => meowback(data))
   },
-  refreshAvatarFile: async (): Promise<{ success: boolean }> => {
-    return ipcRenderer.invoke('refreshAvatarFile')
-  },
-  savedNames: (meowback: (data: string[]) => void) => {
-    const listener = (_event: IpcRendererEvent, data: string[]): void => meowback(data)
-    ipcRenderer.on('savedNames', listener)
-    return
-  },
-  applyConfig: async (name: string): Promise<{ success: boolean }> => {
-    return ipcRenderer.invoke('applyConfig', name)
-  }
+  applyConfig: async (name: string): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('applyConfig', name),
+  getAllSaved: async (): Promise<getAllSavedInterface[] | null> =>
+    ipcRenderer.invoke('getAllSaved'),
+  updateConfig: async (
+    id: number,
+    avatarId: string | 'Unknown',
+    avatarName: string | 'Unknown',
+    saveName: string,
+    nsfw: boolean
+  ): Promise<updateConfigInterface> =>
+    ipcRenderer.invoke('updateConfig', id, avatarId, avatarName, saveName, nsfw),
+  exportConfig: async (id: number): Promise<exportConfigInterface> =>
+    ipcRenderer.invoke('exportConfig', id),
+  replaceParams: async (id: number): Promise<replaceParamsInterface> =>
+    ipcRenderer.invoke('replaceParams', id),
+  deleteConfig: async (id: number): Promise<deleteConfigInterface> =>
+    ipcRenderer.invoke('deleteConfig', id)
 }
 
 if (process.contextIsolated) {

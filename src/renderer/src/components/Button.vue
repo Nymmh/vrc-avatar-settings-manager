@@ -7,12 +7,29 @@ defineProps({
   label: {
     type: String,
     default: ''
+  },
+  altColor: {
+    type: Boolean,
+    default: false
+  },
+  error: {
+    type: Boolean,
+    default: false
   }
 })
 </script>
 
 <template>
-  <div :class="['button__wrapper', { 'button__wrapper--small': small }]">
+  <div
+    :class="[
+      'button__wrapper',
+      {
+        'button__wrapper--small': small,
+        'button__wrapper--alt-color': altColor,
+        'button__wrapper--error': error
+      }
+    ]"
+  >
     <button class="button">
       {{ label }}
     </button>
@@ -42,6 +59,16 @@ defineProps({
         padding: 3px 8px;
         font-size: 0.875em;
       }
+    }
+
+    &--error {
+      background-color: var(--color--failed);
+      color: var(--color--error-a1);
+    }
+
+    &--alt-color {
+      background-color: var(--color--secondary-a1);
+      color: var(--color--primary-a1);
     }
 
     &:hover {

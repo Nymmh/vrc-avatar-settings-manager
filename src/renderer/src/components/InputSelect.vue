@@ -118,8 +118,8 @@ onUnmounted(() => {
 
   &__trigger {
     align-items: center;
-    background-color: var(--color--primary-a4);
-    border: 1px solid var(--color--primary-a4);
+    background-color: var(--color--primary-a6);
+    border: 1px solid var(--color--primary-a6);
     border-radius: 8px;
     cursor: pointer;
     display: flex;
@@ -156,7 +156,7 @@ onUnmounted(() => {
   }
 
   &__dropdown {
-    background-color: var(--color--primary-a4);
+    background-color: var(--color--primary-a6);
     border: 1px solid var(--color--primary-a3);
     border-top: none;
     border-bottom-left-radius: 8px;

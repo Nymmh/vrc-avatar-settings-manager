@@ -1,14 +1,6 @@
 import { Logger } from 'electron-log'
 import { Client, Bundle } from 'node-osc'
 
-function chunkArray<T>(array: T[], chunkSize: number): T[][] {
-  const chunks: T[][] = []
-  for (let i = 0; i < array.length; i += chunkSize) {
-    chunks.push(array.slice(i, i + chunkSize))
-  }
-  return chunks
-}
-
 export async function applyConfig(
   log: Logger,
   content: animationParametersInterface[],
@@ -16,14 +8,21 @@ export async function applyConfig(
 ): Promise<boolean> {
   try {
     log.info('Starting config upload...')
-    if (!content || !content.length) {
+
+    if (!content?.length) {
       log.error('Nothing to upload')
       return false
     }
 
-    const formattedParams = content
-      .filter((c) => c.name && c.value !== undefined)
-      .map((c) => ({
+    const chunks: unknown[][] = []
+    let chunk: unknown[] = []
+
+    for (let i = 0; i < content.length; i++) {
+      const c = content[i]
+
+      if (!c.name || c.value === undefined) continue
+
+      chunk.push({
         address: `/avatar/parameters/${c.name}`,
         args: [
           {
@@ -31,12 +30,18 @@ export async function applyConfig(
             value: c.value
           }
         ]
-      }))
+      })
 
-    const chunks = chunkArray(formattedParams, 15)
+      if (chunk.length === 15) {
+        chunks.push(chunk)
+        chunk = []
+      }
+    }
 
-    for (const chunk of chunks) {
-      await OSC_CLIENT.send(new Bundle(...chunk))
+    if (chunk.length > 0) chunks.push(chunk)
+
+    for (let i = 0; i < chunks.length; i++) {
+      await OSC_CLIENT.send(new Bundle(...chunks[i]))
     }
 
     log.info('Config upload completed')
