@@ -129,7 +129,7 @@ async function setupOSC(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('com.nymh.avatar-settings-copy')
+  electronApp.setAppUserModelId('com.nymh.avatar-settings-manager')
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })

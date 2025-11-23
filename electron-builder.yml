@@ -1,5 +1,5 @@
-appId: com.nymh.avatar-settings-copy
-productName: VRC Avatar Settings Copy
+appId: com.nymh.avatar-settings-Manager
+productName: VRC Avatar Settings Manager
 directories:
   buildResources: build
 copyright: Copyright © 2025 ${author}
@@ -42,6 +42,6 @@ npmRebuild: false
 asar: true
 publish:
   provider: generic
-  url: https://github.com/Nymmh/vrc-avi-settings-copy
+  url: https://github.com/Nymmh/vrc-avatar-settings-manager/releases/download/latest/
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

@@ -1,4 +1,4 @@
-# avi-settings-copy
+# vrc-avatar-settings-manager
 
 ## Project Setup
 
