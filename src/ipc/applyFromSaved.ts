@@ -8,20 +8,20 @@ import { showWarning } from '../services/showWarning'
 export async function applyFromSaved(
   log: Logger,
   db: Database,
-  name: string,
+  id: number,
   currentAvatarId: string,
   OSC_CLIENT: Client,
   mainWindow: BrowserWindow
 ): Promise<boolean> {
   try {
-    log.info(`Applying config: ${name}`)
+    log.info(`Applying config: ${id}`)
 
     const q = db
-      .prepare('SELECT avatarId,nsfw,parameters FROM avatars WHERE name = ? LIMIT 1')
-      .get(name) as applyFromSavedInterface | undefined
+      .prepare('SELECT avatarId,nsfw,parameters FROM avatars WHERE id = ? LIMIT 1')
+      .get(id) as applyFromSavedInterface | undefined
 
     if (!q) {
-      log.error(`Config not found: ${name}`)
+      log.error(`Config not found: ${id}`)
       return false
     }
 

@@ -1,4 +1,4 @@
 export interface InputSelectInterface {
   label: string
-  value: string
+  value: number
 }

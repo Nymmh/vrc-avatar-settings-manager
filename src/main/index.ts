@@ -22,10 +22,13 @@ import { checkDataFolder } from '../file/checkDataFolder'
 import { exportConfig } from '../file/exportConfig'
 import { getLoadDataName } from '../helpers/getLoadDataName'
 import icon from '../../resources/icon.png?asset'
+import { applyPreset } from '../database/applyPreset'
+import { updatePreset } from '../database/updatePreset'
 
 let mainWindow: BrowserWindow | null = null
 let loadedJson: avatarConfigInterface | null = null
-let currentAviId: string = ''
+// let currentAviId: string = ''
+let currentAviId = 'avtr_b6e332b4-6425-46ab-bd64-dabc25261615' // testing
 const pendingChanges: Map<string, unknown> = new Map()
 let OSC_CLIENT: Client
 
@@ -115,6 +118,28 @@ async function setupOSC(): Promise<void> {
         currentAviId = payload
         avatarConfig(payload, mainWindow, new Map())
         getNames(log, avatarDB, mainWindow, currentAviId)
+      } else if (address.includes('Nymh/ASM/Preset/')) {
+        address = address.replace('/avatar/parameters/', '')
+
+        const match = address.match(/\/(\d)+\//)
+
+        if (!match) {
+          log.error('Invalid address')
+          return
+        }
+
+        const presetId = parseInt(match[1], 10)
+
+        if (address.includes('Apply')) {
+          pendingChanges.clear()
+          applyPreset(log, avatarDB, currentAviId, presetId, OSC_CLIENT)
+        } else if (address.includes('Update')) {
+          if (!mainWindow) {
+            log.error('Main window is not initialized')
+            throw new Error('Main window is not initialized')
+          }
+          updatePreset(log, avatarDB, presetId, currentAviId, pendingChanges, mainWindow, undefined)
+        } else log.error('Got "Nymh/ASM/Preset" then hit an error')
       } else if (address.includes('/avatar/parameters/')) {
         address = address.replace('/avatar/parameters/', '')
         pendingChanges.set(address, payload)
@@ -147,7 +172,16 @@ app.whenReady().then(async () => {
     }
 
     pendingChanges.clear()
-    const savedConfig = await saveConfig(log, avatarDB, content, saveName, overwrite, nsfw, false)
+    const savedConfig = await saveConfig(
+      log,
+      avatarDB,
+      content,
+      saveName,
+      overwrite,
+      nsfw,
+      false,
+      mainWindow
+    )
     getNames(log, avatarDB, mainWindow, currentAviId)
     return savedConfig
   })
@@ -178,12 +212,12 @@ app.whenReady().then(async () => {
     return { name: avatarName, match: dataParsedConfig.id === currentAviId, error: '' }
   })
 
-  ipcMain.handle('applyConfig', async (_event, name: string) => {
+  ipcMain.handle('applyConfig', async (_event, id: number) => {
     if (!mainWindow || !currentAviId) return { success: false }
 
     pendingChanges.clear()
 
-    const res = await applyFromSaved(log, avatarDB, name, currentAviId, OSC_CLIENT, mainWindow)
+    const res = await applyFromSaved(log, avatarDB, id, currentAviId, OSC_CLIENT, mainWindow)
     return { success: !!res }
   })
 
@@ -208,9 +242,9 @@ app.whenReady().then(async () => {
         OSC_CLIENT,
         saveName,
         saveOption,
-        mainWindow,
         currentAviId,
-        avatarName
+        avatarName,
+        mainWindow
       )
       getNames(log, avatarDB, mainWindow, currentAviId)
       return uploadingResult
@@ -233,12 +267,12 @@ app.whenReady().then(async () => {
       return await uploadConfig(
         log,
         avatarDB,
-        mainWindow,
         saveName,
         nsfw,
         avatarId,
         avatarName,
-        loadedJson
+        loadedJson,
+        mainWindow
       )
     }
   )

@@ -21,26 +21,31 @@ export function avatarDatabase(log: Logger): DBType {
       db.prepare(
         `CREATE TABLE IF NOT EXISTS avatars (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uqid TEXT UNIQUE NOT NULL,
             avatarId TEXT NOT NULL,
-            name TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
             avatarName TEXT NOT NULL,
-            nsfw INTEGER DEFAULT 0,
-            parameters TEXT DEFAULT '[]',
-            fromFile INTEGER DEFAULT 0
+            nsfw INTEGER DEFAULT 0 NOT NULL,
+            parameters TEXT DEFAULT '[]' NOT NULL,
+            fromFile INTEGER DEFAULT 0 NOT NULL
         )`
       ).run()
 
       db.prepare(
         `CREATE TABLE IF NOT EXISTS presets (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
+          forUqid TEXT NOT NULL UNIQUE,
           avatarId TEXT NOT NULL,
-          name TEXT NOT NULL,
-          unityParameter TEXT NOT NULL
+          name TEXT NOT NULL DEFAULT '',
+          unityParameter INTEGER,
+          UNIQUE(avatarId, unityParameter)
         )`
       ).run()
 
       db.prepare(`CREATE INDEX IF NOT EXISTS idx_avatars_name ON avatars (name)`).run()
-      db.prepare(`CREATE INDEX IF NOT EXISTS idx_avatars_avatarId ON presets( avatarId)`).run()
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_presets_avatarId ON presets (avatarId)`).run()
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_avatars_avatarId ON avatars (avatarId)`).run()
+
       db.pragma('user_version = 1')
     })()
 

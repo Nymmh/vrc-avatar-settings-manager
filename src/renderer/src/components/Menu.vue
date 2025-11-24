@@ -27,14 +27,21 @@ defineEmits(['changeView'])
       :alt-color="true"
       @click="$emit('changeView', 'AllSaved')"
     />
+    <Button
+      v-show="currentView !== 'AllPresets'"
+      label="Presets"
+      :small="true"
+      :alt-color="true"
+      @click="$emit('changeView', 'AllPresets')"
+    />
   </div>
 </template>
 
 <style lang="scss" scoped>
 .menu {
-  align-items: center;
+  align-items: flex-end;
   display: flex;
-  flex-flow: row;
+  flex-flow: column;
   gap: 8px;
   position: absolute;
   right: 1rem;

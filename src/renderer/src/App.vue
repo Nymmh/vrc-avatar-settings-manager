@@ -8,13 +8,15 @@ import InputSelect from './components/InputSelect.vue'
 import InputText from './components/InputText.vue'
 import LoadFile from './components/LoadFile.vue'
 import Menu from './components/Menu.vue'
+import AllPresets from './views/AllPresets.vue'
 import AllSaved from './views/AllSaved.vue'
 import Waiting from './components/Waiting.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
 import type { avatarConfigType } from '../../types/avatarConfigType'
 import { NotificationInterface } from './types/notificationInterface'
+import { savedNamesType } from './types/savedNamesInterface'
 
-const currentView = ref<string>('Waiting')
+const currentView = ref<string>('Main') // Testing should be Waiting
 const { notify } = useNotification()
 
 // Avatar state
@@ -22,6 +24,7 @@ const avatarId = ref('')
 const avatarFoundFile = ref(false)
 const showAvatarFoundFileMsg = ref(false)
 const avatarConfig = ref<avatarConfigType | null>(null)
+const holdSaveName = ref(false)
 
 // Save state
 const saveName = ref('')
@@ -65,6 +68,7 @@ const handleChangeView = (view: string): void => {
 const getAvatarId = (): void => {
   avatarId.value = ''
   saveName.value = ''
+  holdSaveName.value = false
   resetVars()
 
   window.avatarApi.avatarId((data) => {
@@ -74,10 +78,10 @@ const getAvatarId = (): void => {
 }
 
 const savedConfigs = async (): Promise<void> => {
-  await window.avatarApi.savedNames((data) => {
-    configSelectOptions.value = data.map((name: string) => ({
+  await window.avatarApi.savedNames((data: savedNamesType[]) => {
+    configSelectOptions.value = data.map(({ id, name }) => ({
       label: name,
-      value: name
+      value: id
     }))
   })
 }
@@ -85,7 +89,7 @@ const savedConfigs = async (): Promise<void> => {
 const aviFileUpdate = (): void => {
   avatarFoundFile.value = false
   showAvatarFoundFileMsg.value = false
-  saveName.value = ''
+  if (!holdSaveName.value) saveName.value = ''
   resetVars()
 
   window.avatarApi.foundAvatarFile((data) => {
@@ -97,7 +101,7 @@ const aviFileUpdate = (): void => {
 const refreshAviFile = async (): Promise<void> => {
   avatarFoundFile.value = false
   showAvatarFoundFileMsg.value = false
-  saveName.value = ''
+  if (!holdSaveName.value) saveName.value = ''
 
   const res = await window.avatarApi.refreshAvatarFile()
   avatarFoundFile.value = res.success
@@ -116,7 +120,7 @@ const aviConfig = (): void => {
     resetVars()
 
     avatarConfig.value = data
-    saveName.value = avatarConfig.value?.name || ''
+    if (!holdSaveName.value) saveName.value = avatarConfig.value?.name || ''
   })
 }
 
@@ -146,11 +150,13 @@ const handleSave = async (overwrite: boolean): Promise<void> => {
   }
 
   if (!overwrite) saveError.value = ''
+  holdSaveName.value = true
 
   const res = await window.avatarApi.saveConfig(
     toRaw(avatarConfig.value),
     overwrite,
-    NSFWValue.value
+    NSFWValue.value,
+    saveName.value || ''
   )
 
   saveMessage.value = res?.message || ''
@@ -178,12 +184,36 @@ const handleApply = async (): Promise<void> => {
   resetVars()
   saveName.value = ''
 
-  const res = await window.avatarApi.applyConfig(configSelectValue.value)
+  const res = await window.avatarApi.applyConfig(Number(configSelectValue.value))
   applyStatus.value = !!res?.success
 
   pushNotification({
     type: res?.success ? 'success' : 'error',
     title: res?.success ? 'Apply Successful' : 'Apply Failed'
+  })
+}
+
+const handleSavedUpdated = async (): Promise<void> => {
+  const res = await window.avatarApi.updateConfig(
+    Number(configSelectValue.value),
+    avatarConfig.value?.id || 'Unknown',
+    avatarConfig.value?.name || 'Unknown',
+    avatarConfig.value?.name,
+    NSFWValue.value ? true : false
+  )
+  if (!res.success) {
+    pushNotification({
+      type: 'error',
+      title: 'Update Failed',
+      text: res.message
+    })
+    return
+  }
+
+  pushNotification({
+    type: 'success',
+    title: 'Update Successful',
+    text: res.message
   })
 }
 
@@ -214,8 +244,9 @@ onMounted(() => {
   <div class="main">
     <notifications class="notification" position="bottom left" />
     <Menu :current-view="currentView" @change-view="handleChangeView" />
+    <AllPresets v-if="currentView === 'AllPresets'" />
     <AllSaved v-if="currentView === 'AllSaved'" @notification="pushNotification" />
-    <Waiting v-if="!avatarId && currentView === 'Waiting'" />
+    <!-- <Waiting v-if="!avatarId && currentView === 'Waiting'" /> -->
     <div v-show="currentView === 'Main'" class="main__content">
       <div :class="['main__avatar-data', { underline: avatarFoundFile }]">
         <div class="main__avatar-data-file">
@@ -270,7 +301,11 @@ onMounted(() => {
               @update:model-value="handleInputUpdate"
             />
           </div>
-          <Button v-if="configSelectValue" label="Apply" @click="handleApply" />
+          <div v-if="configSelectValue" class="main__apply-buttons">
+            <Button label="Apply" @click="handleApply" />
+            <Button label="Update" @click="handleSavedUpdated" />
+          </div>
+
           <p
             v-if="applyStatus !== undefined"
             :class="['main__saved-message', applyStatus ? 'success' : 'failed']"
@@ -342,7 +377,8 @@ onMounted(() => {
   }
 
   &__save,
-  &__save-exists {
+  &__save-exists,
+  &__apply-buttons {
     align-items: center;
     display: flex;
     gap: 16px;

@@ -116,6 +116,8 @@ const handleUpload = async (): Promise<void> => {
     title: res.upload ? 'Upload Successful' : 'Upload Failed',
     text: res.saveMessage || ''
   })
+
+  if (res.upload) emit('uploaded')
 }
 
 const handleInputUpdate = ({ id, value, checked }): void => {
@@ -136,7 +138,7 @@ onMounted(() => {
   resetVars()
 })
 
-const emit = defineEmits(['notification'])
+const emit = defineEmits(['notification', 'uploaded'])
 </script>
 
 <template>

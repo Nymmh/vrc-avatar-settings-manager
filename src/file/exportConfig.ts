@@ -18,7 +18,7 @@ export async function exportConfig(
 
     const q = db
       .prepare(
-        'SELECT avatarId, name, avatarName, nsfw, parameters FROM avatars WHERE id = ? LIMIT 1'
+        'SELECT uqid, avatarId, name, avatarName, nsfw, parameters FROM avatars WHERE id = ? LIMIT 1'
       )
       .get(id) as avatarDBInterface | undefined
 
@@ -49,6 +49,7 @@ export async function exportConfig(
 
     const exportData = {
       id: q.avatarId || 'Unknown',
+      uqid: q.uqid || '',
       name: q.name || new Date().toISOString(),
       avatarName: q.avatarName || 'Unknown',
       nsfw: !!q.nsfw,

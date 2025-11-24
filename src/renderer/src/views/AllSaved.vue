@@ -18,8 +18,8 @@ const getSaves = async (): Promise<void> => {
   allSaves.value = await window.avatarApi.getAllSaved()
 }
 
-const handleApply = async (idx: number, saveName: string): Promise<void> => {
-  const res = await window.avatarApi.applyConfig(saveName)
+const handleApply = async (idx: number, id: number): Promise<void> => {
+  const res = await window.avatarApi.applyConfig(id)
 
   let type = 'success'
   let title = 'Apply Successful'
@@ -156,6 +156,8 @@ const emit = defineEmits(['loadFromFile', 'notification'])
       :show-id-mismatch="false"
       :direct-upload="true"
       :show-nsfw-option="true"
+      @uploaded="getSaves"
+      @notification="$emit('notification', $event)"
     />
     <div class="all-saved__table-wrapper">
       <table v-if="allSaves && allSaves.length" class="all-saved__table">
@@ -208,7 +210,7 @@ const emit = defineEmits(['loadFromFile', 'notification'])
                 label="Apply"
                 :small="true"
                 :error="failedUpdates.some((fu) => fu.id === a.id && fu.action === 'apply')"
-                @click="handleApply(idx, a.name)"
+                @click="handleApply(idx, a.id)"
               />
               <Button
                 label="Export"
@@ -294,6 +296,10 @@ const emit = defineEmits(['loadFromFile', 'notification'])
     display: flex;
     flex-flow: row wrap;
     gap: 8px;
+  }
+
+  &__empty {
+    text-align: center;
   }
 }
 </style>
