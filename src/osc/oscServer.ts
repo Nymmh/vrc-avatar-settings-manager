@@ -4,10 +4,13 @@ import { Logger } from 'electron-log'
 export function oscServer(log: Logger, PORT: number): Promise<Server> {
   log.info('Starting OSC Server...')
 
-  return new Promise((res, rej) => {
-    const OSC_SERVER = new Server(PORT, '0.0.0.0')
+  if (process.argv[2]?.startsWith('port=')) {
+    PORT = parseInt(process.argv[2].slice(5), 10)
+    log.info(`Using custom port from command line argument: ${PORT}`)
+  }
 
-    OSC_SERVER.on('listening', () => {
+  return new Promise((res, rej) => {
+    const OSC_SERVER = new Server(PORT, '0.0.0.0', () => {
       log.info(`Server listening on port: ${PORT}`)
       res(OSC_SERVER)
     })

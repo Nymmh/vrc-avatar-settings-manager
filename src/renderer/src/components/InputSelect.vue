@@ -31,13 +31,13 @@ const selectRef = ref<HTMLElement | null>(null)
 
 const toggleDropdown = (): boolean => (isOpen.value = !isOpen.value)
 
-const selectOption = (value: string): void => {
-  emit('update:modelValue', { id: props.id, value })
+const selectOption = (value: string | number): void => {
+  emit('update:modelValue', { id: props.id, value: String(value) })
   isOpen.value = false
 }
 
 const getLabel = (value: string, options: InputSelectInterface[]): string => {
-  const selected = options.find((o) => o.value === value)
+  const selected = options.find((o) => String(o.value) === value)
   return selected?.label || 'No Selection'
 }
 
@@ -83,7 +83,7 @@ onUnmounted(() => {
             :key="option.value"
             :class="[
               'input-select__option',
-              { 'input-select__option--selected': option.value === modelValue }
+              { 'input-select__option--selected': String(option.value) === modelValue }
             ]"
             @click="selectOption(option.value)"
           >
@@ -171,7 +171,7 @@ onUnmounted(() => {
     position: absolute;
     top: 100%;
     left: 0;
-    width: max-content;
+    width: 100%;
     z-index: 10;
   }
 

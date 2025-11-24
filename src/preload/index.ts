@@ -25,12 +25,13 @@ const avatarApi = {
   saveConfig: async (
     data: avatarConfigInterface,
     overwrite: boolean,
-    nsfw: boolean
+    nsfw: boolean,
+    saveName?: string
   ): Promise<saveConfigInterface> => {
     const dataString: string = JSON.stringify(data)
     return ipcRenderer.invoke('saveConfig', {
       content: dataString,
-      saveName: data?.name || 'avatar',
+      saveName: saveName?.trim() ? saveName : data?.name || 'Unknown',
       overwrite,
       nsfw
     })
@@ -51,11 +52,20 @@ const avatarApi = {
     ipcRenderer.invoke('uploadConfig', saveName, nsfw, avatarId, avatarName),
   refreshAvatarFile: async (): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('refreshAvatarFile'),
-  savedNames: (meowback: (data: string[]) => void): void => {
-    ipcRenderer.on('savedNames', (_event: IpcRendererEvent, data: string[]): void => meowback(data))
+  savedNames: (meowback: (data: savedNamesInterface[]) => void): void => {
+    ipcRenderer.on(
+      'savedNames',
+      (
+        _event: IpcRendererEvent,
+        data: {
+          name: string
+          id: number
+        }[]
+      ): void => meowback(data)
+    )
   },
-  applyConfig: async (name: string): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('applyConfig', name),
+  applyConfig: async (id: number): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('applyConfig', id),
   getAllSaved: async (): Promise<getAllSavedInterface[] | null> =>
     ipcRenderer.invoke('getAllSaved'),
   updateConfig: async (
@@ -63,7 +73,7 @@ const avatarApi = {
     avatarId: string | 'Unknown',
     avatarName: string | 'Unknown',
     saveName: string,
-    nsfw: boolean
+    nsfw: boolean | undefined
   ): Promise<updateConfigInterface> =>
     ipcRenderer.invoke('updateConfig', id, avatarId, avatarName, saveName, nsfw),
   exportConfig: async (id: number): Promise<exportConfigInterface> =>

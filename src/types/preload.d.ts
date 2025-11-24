@@ -17,7 +17,8 @@ export interface avatarApi {
   saveConfig: (
     data: avatarConfigInterface,
     overwrite: boolean,
-    nsfw: boolean
+    nsfw: boolean,
+    saveName?: string
   ) => saveConfigInterface
 
   loadConfig: () => loadConfigInterface
@@ -33,15 +34,15 @@ export interface avatarApi {
     avatarName?: string
   ) => uploadConfigInterface
   refreshAvatarFile: () => { success: boolean }
-  savedNames: (meowback: (data: string[]) => void) => void
-  applyConfig: (name: string) => { success: boolean }
+  savedNames: (meowback: (data: savedNamesInterface[]) => void) => void
+  applyConfig: (id: number) => { success: boolean }
   getAllSaved: () => Promise<getAllSavedInterface[] | null>
   updateConfig: (
     id: number,
     avatarId: string | 'Unknown',
     avatarName: string | 'Unknown',
-    saveName: string,
-    nsfw: boolean
+    saveName: string | undefined,
+    nsfw: boolean | undefined
   ) => updateConfigInterface
   exportConfig: (id: number) => exportConfigInterface
   replaceParams: (id: number) => replaceParamsInterface

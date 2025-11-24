@@ -9,10 +9,10 @@ export function getNames(
   avatarId: string
 ): void {
   try {
-    const names = db
-      .prepare('SELECT name FROM avatars WHERE avatarId = ?')
-      .pluck()
-      .all(avatarId) as string[]
+    const names = db.prepare('SELECT id,name FROM avatars WHERE avatarId = ?').all(avatarId) as {
+      id: number
+      name: string
+    }[]
 
     mainWindow.webContents.send('savedNames', names)
   } catch (e) {

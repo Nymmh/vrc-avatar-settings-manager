@@ -14,7 +14,7 @@ export function checkDataFolder(): {
   if (cachedPaths) return cachedPaths
 
   const docPath = app.getPath('documents')
-  const folderPath = path.join(docPath, 'VRCAvatarSettingsCopy')
+  const folderPath = path.join(docPath, 'VRCAvatarSettingsManager')
   const avatarData = path.join(folderPath, 'exports')
 
   fs.mkdirSync(avatarData, { recursive: true })

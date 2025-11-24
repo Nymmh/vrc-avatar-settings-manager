@@ -1,5 +1,6 @@
 interface avatarConfig {
   id?: string
+  uqid?: string
   name?: string
   nsfw?: boolean
   animationParameters?: animationParameters[]
@@ -27,6 +28,7 @@ interface animationParameters {
 interface avatarDB {
   id: number
   avatarId: string
+  uqid: string
   name: string
   avatarName: string
   nsfw: number
@@ -84,6 +86,16 @@ interface deleteConfigType {
   message?: string
 }
 
+interface saveUpdateType {
+  success: boolean
+  message?: string
+}
+
+interface savedNamesType {
+  id: number
+  name: string
+}
+
 declare global {
   interface avatarConfigInterface extends avatarConfig {}
   interface avatarConfigParamsInterface extends avatarConfigParams {}
@@ -98,6 +110,8 @@ declare global {
   interface uploadConfigAndApplyTypeInterface extends uploadConfigAndApplyType {}
   interface replaceParamsInterface extends replaceParamsType {}
   interface deleteConfigInterface extends deleteConfigType {}
+  interface saveUpdateInterface extends saveUpdateType {}
+  interface savedNamesInterface extends savedNamesType {}
 }
 
 export {}
