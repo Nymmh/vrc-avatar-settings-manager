@@ -319,7 +319,7 @@ onMounted(() => {
       </div>
     </div>
   </div>
-  <Footer />
+  <Footer @notification="pushNotification" />
 </template>
 
 <style lang="scss">

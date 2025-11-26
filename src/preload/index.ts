@@ -120,7 +120,11 @@ const avatarApi = {
   exportAvatar: async (avatarId: string): Promise<exportAvatarInterface> =>
     ipcRenderer.invoke('exportAvatar', avatarId),
   updateAvatarData: async (avatarId: string, name: string): Promise<updateAvatarDataInterface> =>
-    ipcRenderer.invoke('updateAvatarData', avatarId, name)
+    ipcRenderer.invoke('updateAvatarData', avatarId, name),
+  exportAllConfigs: async (): Promise<exportAllConfigsInterface> =>
+    ipcRenderer.invoke('exportAllConfigs'),
+  importAllConfigs: async (): Promise<importAllConfigsInterface> =>
+    ipcRenderer.invoke('importAllConfigs')
 }
 
 if (process.contextIsolated) {

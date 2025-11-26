@@ -178,6 +178,16 @@ interface updateAvatarData {
   message?: string
 }
 
+interface exportAllConfig {
+  success: boolean
+  message?: string
+}
+
+interface importAllConfigs {
+  success: boolean
+  message?: string
+}
+
 declare global {
   interface avatarConfigInterface extends avatarConfig {}
   interface avatarConfigParamsInterface extends avatarConfigParams {}
@@ -207,6 +217,8 @@ declare global {
   interface exportAvatarInterface extends exportAvatarType {}
   interface avatarStorageDBInterface extends avatarStorageDB {}
   interface updateAvatarDataInterface extends updateAvatarData {}
+  interface exportAllConfigsInterface extends exportAllConfig {}
+  interface importAllConfigsInterface extends importAllConfigs {}
 }
 
 export {}

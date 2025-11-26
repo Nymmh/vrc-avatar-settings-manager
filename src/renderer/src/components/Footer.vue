@@ -1,25 +1,68 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
+import Button from './Button.vue'
+
 const version = ref<string>('')
 
 const getVersion = async (): Promise<void> => {
   version.value = await window.appApi.appVersion()
 }
 
+const handleExport = async (): Promise<void> => {
+  const res = await window.avatarApi.exportAllConfigs()
+
+  let type = 'success'
+  let title = 'Export Successful'
+
+  if (!res.success) {
+    type = 'error'
+    title = 'Export Failed'
+  }
+
+  emit('notification', {
+    type,
+    title,
+    text: res.message
+  })
+}
+
+const handleImport = async (): Promise<void> => {
+  const res = await window.avatarApi.importAllConfigs()
+
+  let type = 'success'
+  let title = 'Import Successful'
+
+  if (!res.success) {
+    type = 'error'
+    title = 'Import Failed'
+  }
+
+  emit('notification', {
+    type,
+    title,
+    text: res.message
+  })
+}
+
 onMounted(() => {
   getVersion()
 })
+
+const emit = defineEmits(['notification'])
 </script>
 <template>
   <div class="footer">
     <p>Ver: {{ version }}</p>
     <a href="https://jinxxy.com/Nymh" target="_blank" rel="noopener noreferrer">Nymh</a>
     <a href="https://discord.gg/rcCCkbDsY3" target="_blank" rel="noopener noreferrer">Discord</a>
+    <Button label="Export All" :small="true" @click="handleExport" />
+    <Button label="Import All" :small="true" @click="handleImport" />
   </div>
 </template>
 
 <style lang="scss" scoped>
 .footer {
+  align-items: center;
   display: flex;
   flex-flow: row nowrap;
   gap: 16px;
