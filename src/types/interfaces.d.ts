@@ -1,65 +1,73 @@
-interface avatarConfig {
+interface avatarDB {
   type?: string
-  id?: string
-  avatarId?: string
+  id?: number
   uqid?: string
+  avatarId?: string
   name?: string
-  nsfw?: boolean
-  animationParameters?: animationParameters[]
-  parameters?: avatarConfigParams[]
+  avatarName?: string
+  nsfw?: number
+  parameters?: string
+  valuedParams?: valuedParams[] | string
   fromFile?: number
   isPreset?: number
-  presets?: presetDBInterface
+  presets?: avatarPresets
 }
 
-interface loadAvatarConfigFile {
-  type: string
-  avatarId: string
-  name: string
-  configs: avatarConfig[]
-}
-
-interface avatarConfigParams {
-  name?: string
-  input?: {
-    address?: string
-    type?: string
-  }
-  output?: {
-    address?: string
-    type?: string
-  }
-}
-
-interface animationParameters {
+interface valuedParams {
   name?: string
   value?: number | boolean
   type?: string
 }
 
-interface avatarDB {
-  id: number
-  avatarId: string
-  uqid: string
-  name: string
-  avatarName: string
-  nsfw: number
-  parameters: string
-  fromFile: number
-  isPreset: number
-  presets?: presetDBInterface
+interface avatarPresets {
+  id?: number
+  forUqid?: string
+  avatarId?: string
+  name?: string
+  unityParameter?: number
+}
+
+interface exportAllConfig {
+  type?: string
+  avatarId?: string
+  name?: string
+  configs?: avatarDB[]
 }
 
 interface avatarStorageDB {
+  avatarId?: string
+  name?: string
+}
+
+interface exportAllConfigsPromise {
+  success: boolean
+  message?: string
+}
+
+interface importAllConfigsPromise {
+  success: boolean
+  message?: string
+}
+
+interface uploadConfigAndApplyType {
+  upload: boolean
+  save?: boolean
+  saveMessage?: string
+}
+
+interface uploadConfigType {
+  upload: boolean
+  saveMessage?: string
+}
+
+interface savedNamesType {
   id: number
-  avatarId: string
   name: string
 }
 
-interface applyFromSaved {
-  avatarId: string
-  nsfw: number
-  parameters: string
+interface updateConfig {
+  success: boolean
+  message?: string
 }
 
 interface exportConfig {
@@ -67,26 +75,12 @@ interface exportConfig {
   message?: string
 }
 
-interface getAllSaved {
-  id: number
-  uqid: string
-  avatarId: string
-  name: string
-  avatarName: string
-  nsfw: number
-  fromFile: number
-  isPreset: number
+interface replaceParams {
+  success: boolean
+  message?: string
 }
 
-interface getAllPresets {
-  id: number
-  forUqid: string
-  avatarId: string
-  name: string
-  unityParameter: number
-}
-
-interface updateConfig {
+interface deleteConfig {
   success: boolean
   message?: string
 }
@@ -101,42 +95,6 @@ interface deletePreset {
   message?: string
 }
 
-interface updateParams {
-  success: boolean
-  message?: string
-}
-
-interface uploadConfigType {
-  upload: boolean
-  saveMessage?: string
-}
-
-interface uploadConfigAndApplyType {
-  upload: boolean
-  save?: boolean
-  saveMessage?: string
-}
-
-interface replaceParamsType {
-  success: boolean
-  message?: string
-}
-
-interface deleteConfigType {
-  success: boolean
-  message?: string
-}
-
-interface saveUpdateType {
-  success: boolean
-  message?: string
-}
-
-interface savedNamesType {
-  id: number
-  name: string
-}
-
 interface createPreset {
   success: boolean
   message?: string
@@ -145,13 +103,6 @@ interface createPreset {
 interface uploadAvatarConfig {
   success: boolean
   message?: string
-}
-
-interface presetDB {
-  forUqid: string
-  avatarId: string
-  name: string
-  unityParameter: number
 }
 
 interface loadAvatarConfig {
@@ -178,47 +129,37 @@ interface updateAvatarData {
   message?: string
 }
 
-interface exportAllConfig {
-  success: boolean
-  message?: string
-}
-
-interface importAllConfigs {
-  success: boolean
-  message?: string
+interface applyFromSaved {
+  avatarId: string
+  nsfw: number
+  parameters: string
 }
 
 declare global {
-  interface avatarConfigInterface extends avatarConfig {}
-  interface avatarConfigParamsInterface extends avatarConfigParams {}
-  interface animationParametersInterface extends animationParameters {}
+  interface exportAllConfigsInterface extends exportAllConfig {}
   interface avatarDBInterface extends avatarDB {}
-  interface applyFromSavedInterface extends applyFromSaved {}
-  interface exportConfigInterface extends exportConfig {}
-  interface getAllSavedInterface extends getAllSaved {}
-  interface updateConfigInterface extends updateConfig {}
-  interface updateParamsInterface extends updateParams {}
-  interface uploadConfigInterface extends uploadConfigType {}
+  interface avatarStorageDBInterface extends avatarStorageDB {}
+  interface exportAllConfigsPromiseInterface extends exportAllConfigsPromise {}
+  interface avatarPresetsInterface extends avatarPresets {}
+  interface importAllConfigsInterface extends importAllConfigsPromise {}
   interface uploadConfigAndApplyTypeInterface extends uploadConfigAndApplyType {}
-  interface replaceParamsInterface extends replaceParamsType {}
-  interface deleteConfigInterface extends deleteConfigType {}
-  interface saveUpdateInterface extends saveUpdateType {}
+  interface uploadConfigInterface extends uploadConfigType {}
   interface savedNamesInterface extends savedNamesType {}
-  interface getAllPresetsInterface extends getAllPresets {}
+  interface updateConfigInterface extends updateConfig {}
+  interface exportConfigInterface extends exportConfig {}
+  interface replaceParamsInterface extends replaceParams {}
+  interface deleteConfigInterface extends deleteConfig {}
   interface updatePresetInterface extends updatePreset {}
   interface deletePresetInterface extends deletePreset {}
   interface createPresetInterface extends createPreset {}
-  interface presetDBInterface extends presetDB {}
   interface uploadAvatarConfigInterface extends uploadAvatarConfig {}
   interface loadAvatarConfigInterface extends loadAvatarConfig {}
-  interface loadAvatarConfigFileInterface extends loadAvatarConfigFile {}
   interface getAllAvatarsInterface extends getAllAvatars {}
   interface deleteAvatarInterface extends deleteAvatarType {}
   interface exportAvatarInterface extends exportAvatarType {}
-  interface avatarStorageDBInterface extends avatarStorageDB {}
   interface updateAvatarDataInterface extends updateAvatarData {}
-  interface exportAllConfigsInterface extends exportAllConfig {}
-  interface importAllConfigsInterface extends importAllConfigs {}
+  interface valuedParamsInterface extends valuedParams {}
+  interface applyFromSavedInterface extends applyFromSaved {}
 }
 
 export {}

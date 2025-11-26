@@ -25,7 +25,7 @@ export async function applyFromSaved(
       return false
     }
 
-    let parameters: animationParametersInterface[]
+    let parameters: valuedParamsInterface[]
 
     try {
       parameters = JSON.parse(q.parameters)

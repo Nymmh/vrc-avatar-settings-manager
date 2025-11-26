@@ -50,7 +50,7 @@ export async function exportAvatar(
     for (const av of a) {
       const p = db
         .prepare('SELECT avatarId, name, unityParameter FROM presets WHERE forUqid = ? LIMIT 1')
-        .get(av.uqid) as presetDBInterface | undefined
+        .get(av.uqid) as avatarPresetsInterface | undefined
 
       av.presets = {
         forUqid: av.uqid,

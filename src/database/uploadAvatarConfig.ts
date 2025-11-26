@@ -1,13 +1,11 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
-import { BrowserWindow } from 'electron'
 import { uploadAvatar } from './uploadAvatar'
 
 export async function uploadAvatarConfig(
   log: Logger,
   db: Database,
-  mainWindow: BrowserWindow,
-  loadedJson: loadAvatarConfigFileInterface
+  loadedJson: exportAllConfigsInterface
 ): Promise<uploadAvatarConfigInterface> {
   if (loadedJson && loadedJson.type !== 'avatar') {
     return {
@@ -16,5 +14,5 @@ export async function uploadAvatarConfig(
     }
   }
 
-  return await uploadAvatar(log, db, mainWindow, loadedJson)
+  return await uploadAvatar(log, db, loadedJson)
 }

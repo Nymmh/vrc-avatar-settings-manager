@@ -1,1 +1,1 @@
-export type avatarConfigType = avatarConfigInterface
+export type avatarConfigType = avatarDBInterface

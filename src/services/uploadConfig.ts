@@ -3,13 +3,13 @@ import { Logger } from 'electron-log'
 
 export async function uploadConfig(
   log: Logger,
-  loadedJson: avatarConfigInterface,
+  loadedJson: avatarDBInterface,
   OSC_CLIENT: Client
 ): Promise<boolean> {
   try {
     log.info('Starting config upload...')
 
-    if (!loadedJson?.animationParameters?.length) {
+    if (!loadedJson?.valuedParams?.length) {
       log.error('No parameters found to upload')
       return false
     }
@@ -17,8 +17,8 @@ export async function uploadConfig(
     const chunks: unknown[][] = []
     let chunk: unknown[] = []
 
-    for (let i = 0; i < loadedJson.animationParameters.length; i++) {
-      const ap = loadedJson.animationParameters[i]
+    for (let i = 0; i < loadedJson.valuedParams.length; i++) {
+      const ap = loadedJson.valuedParams[i]
 
       if (!ap.name || ap.value === undefined) continue
 

@@ -1,10 +1,8 @@
-import { BrowserWindow } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 
 export async function createPresetFromApp(
   log: Logger,
-  mainWindow: BrowserWindow,
   db: Database,
   id: number
 ): Promise<createPresetInterface> {

@@ -31,7 +31,7 @@ export async function importAllConfigs(
     }
 
     const data = await fs.readFileSync(filePaths[0], 'utf-8')
-    const parsedData = JSON.parse(data) as loadAvatarConfigFileInterface[]
+    const parsedData = JSON.parse(data) as exportAllConfigsInterface[]
 
     for (const avatar of parsedData) {
       const existing = db
@@ -48,29 +48,38 @@ export async function importAllConfigs(
         avatar.name
       )
 
-      db.prepare(
-        `INSERT INTO avatars (uqid, avatarId, name, avatarName, nsfw, parameters, fromFile, isPreset) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        avatar.configs.uqid,
-        avatar.configs.avatarId,
-        avatar.configs.name,
-        avatar.configs.avatarName,
-        avatar.configs.nsfw ? 1 : 0,
-        avatar.configs.parameters,
-        avatar.configs.fromFile ? 1 : 0,
-        avatar.configs.isPreset ? 1 : 0
-      )
+      if (!avatar.configs) continue
 
-      if (avatar.configs.isPreset === 1 && avatar.configs.presets) {
+      for (const c of avatar.configs) {
         db.prepare(
-          `INSERT INTO presets (forUqid, avatarId, name, unityParameter) VALUES (?, ?, ?, ?)`
+          `INSERT INTO avatars (uqid, avatarId, name, avatarName, nsfw, parameters, fromFile, isPreset) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
-          avatar.configs.presets.forUqid,
-          avatar.configs.presets.avatarId,
-          avatar.configs.presets.name,
-          avatar.configs.presets.unityParameter || null
+          c.uqid,
+          c.avatarId,
+          c.name,
+          c.avatarName,
+          c.nsfw ? 1 : 0,
+          c.parameters,
+          c.fromFile ? 1 : 0,
+          c.isPreset ? 1 : 0
         )
+
+        if (c.isPreset === 1 && c.presets) {
+          db.prepare(
+            `INSERT INTO presets (forUqid, avatarId, name, unityParameter) VALUES (?, ?, ?, ?)`
+          ).run(
+            c.presets.forUqid,
+            c.presets.avatarId,
+            c.presets.name,
+            c.presets.unityParameter || null
+          )
+        }
       }
+    }
+
+    return {
+      success: true,
+      message: 'Import completed successfully'
     }
   } catch (e) {
     log.error('Import All Configs Error: ', e)

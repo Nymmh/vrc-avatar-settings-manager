@@ -19,17 +19,17 @@ export function formatConfig(
   aviData: string,
   aviCache: string,
   pendingChanges: Map<string, unknown>
-): avatarConfigInterface {
+): avatarDBInterface {
   const parsedConfig = JSON.parse(aviData)
   const parsedCache = JSON.parse(aviCache)
 
-  const formattedData: avatarConfigInterface = {
+  const formattedData: avatarDBInterface = {
     id: parsedConfig.id || '',
     name: parsedConfig.name || '',
-    animationParameters: []
+    valuedParams: []
   }
 
-  if (!Array.isArray(parsedCache.animationParameters) || !Array.isArray(parsedConfig.parameters))
+  if (!Array.isArray(parsedCache.valuedParams) || !Array.isArray(parsedConfig.parameters))
     return formattedData
 
   const parameterMap = new Map(
@@ -38,7 +38,7 @@ export function formatConfig(
 
   const hasPendingChanges = pendingChanges.size > 0
 
-  formattedData.animationParameters = parsedCache.animationParameters.reduce((ap, c) => {
+  formattedData.valuedParams = parsedCache.valuedParams.reduce((ap, c) => {
     if (
       EXCLUDED_NAMES.has(c.name) ||
       c.value === undefined ||
@@ -65,7 +65,7 @@ export function formatConfig(
     })
 
     return ap
-  }, [] as animationParametersInterface[])
+  }, [] as valuedParamsInterface[])
 
   return formattedData
 }

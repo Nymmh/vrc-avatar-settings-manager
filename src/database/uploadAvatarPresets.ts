@@ -4,7 +4,7 @@ import { BrowserWindow } from 'electron'
 
 export async function uploadAvatarPresets(
   db: Database,
-  avatarConfig: avatarConfigInterface,
+  avatarConfig: avatarDBInterface,
   mainWindow: BrowserWindow,
   uqid: string,
   update: boolean

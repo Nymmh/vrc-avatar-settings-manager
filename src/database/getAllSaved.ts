@@ -5,18 +5,18 @@ export function getAllSaved(
   log: Logger,
   db: Database,
   uqid?: string | undefined
-): getAllSavedInterface[] | null {
+): avatarDBInterface[] | null {
   try {
     if (uqid) {
       const q = db.prepare(
         'SELECT id,uqid,avatarId,name,avatarName,nsfw,fromFile,isPreset FROM avatars WHERE uqid = ? LIMIT 1'
       )
-      return q.all(uqid) as getAllSavedInterface[]
+      return q.all(uqid) as avatarDBInterface[]
     } else {
       const q = db.prepare(
         'SELECT id,uqid,avatarId,name,avatarName,nsfw,fromFile,isPreset FROM avatars'
       )
-      return q.all() as getAllSavedInterface[]
+      return q.all() as avatarDBInterface[]
     }
   } catch (e) {
     log.error('Error getting all saved configs:', e)
