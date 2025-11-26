@@ -4,12 +4,11 @@ import { checkIfExistById } from './checkIfExistById'
 import { avatarConfig } from '../services/avatarConfig'
 import { BrowserWindow } from 'electron'
 
-export function updateSavedConfig(
+export function updateSavedConfigData(
   log: Logger,
   db: Database,
   id: number,
   avatarId: string,
-  avatarName: string,
   saveName: string,
   nsfw: boolean | undefined,
   mainWindow: BrowserWindow,
@@ -26,7 +25,6 @@ export function updateSavedConfig(
     }
 
     avatarId = avatarId.trim() || 'Unknown'
-    avatarName = avatarName.trim() || 'Unknown'
 
     const currentConfig = db
       .prepare(
@@ -36,6 +34,47 @@ export function updateSavedConfig(
       )
       .get(id) as { name: string; avatarId: string; uqid: string } | undefined
 
+    if (
+      currentConfig &&
+      (currentConfig.name.trim() !== saveName || currentConfig.avatarId.trim() !== avatarId)
+    ) {
+      let updateName = saveName
+      let counter = 1
+
+      while (true) {
+        const dup = db
+          .prepare(
+            `
+          SELECT id FROM avatars WHERE name = ? AND avatarId = ? AND id != ?
+        `
+          )
+          .get(updateName, avatarId, id)
+
+        if (!dup) break
+
+        updateName = `${saveName} (${counter})`
+        counter++
+      }
+
+      saveName = updateName
+    }
+
+    if (nsfw !== undefined) {
+      const nsfwConvert = nsfw ? 1 : 0
+      db.prepare('UPDATE avatars SET avatarId = ?, name = ?, nsfw = ? WHERE id = ?').run(
+        avatarId,
+        saveName,
+        nsfwConvert,
+        id
+      )
+    } else {
+      db.prepare('UPDATE avatars SET avatarId = ?, name = ? WHERE id = ?').run(
+        avatarId,
+        saveName,
+        id
+      )
+    }
+
     const avatarConfigResult = avatarConfig(avatarId, mainWindow, pendingChanges)
 
     if (!avatarConfigResult) {
@@ -43,19 +82,11 @@ export function updateSavedConfig(
       return { success: false, message: 'Failed to get avatar config' }
     }
 
-    const config = avatarConfigResult.animationParameters
-
     db.prepare(
       `
       UPDATE presets SET avatarId = ? WHERE forUqid = ?
       `
     ).run(avatarId, currentConfig?.uqid)
-
-    db.prepare(
-      `
-      UPDATE avatars SET parameters = ? WHERE id = ?
-    `
-    ).run(JSON.stringify(config), id)
 
     return {
       success: true,

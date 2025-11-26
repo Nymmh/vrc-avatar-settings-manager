@@ -17,6 +17,13 @@ export async function uploadConfigAndApply(
   avatarName: string,
   mainWindow: BrowserWindow
 ): Promise<uploadConfigAndApplyTypeInterface> {
+  if (loadedJson.type && loadedJson.type !== 'config') {
+    return {
+      upload: false,
+      saveMessage: 'Uploaded data is not a valid avatar config'
+    }
+  }
+
   let nsfwResponse = 0
   let upload: unknown
 

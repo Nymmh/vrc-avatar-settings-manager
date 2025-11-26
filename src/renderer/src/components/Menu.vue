@@ -34,6 +34,13 @@ defineEmits(['changeView'])
       :alt-color="true"
       @click="$emit('changeView', 'AllPresets')"
     />
+    <Button
+      v-show="currentView !== 'AllAvatars'"
+      label="Avatars"
+      :small="true"
+      :alt-color="true"
+      @click="$emit('changeView', 'AllAvatars')"
+    />
   </div>
 </template>
 

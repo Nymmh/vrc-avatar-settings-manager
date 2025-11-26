@@ -2,13 +2,17 @@ import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
 import { applyConfig } from '../services/applyConfig'
+import { showWarning } from '../services/showWarning'
+import { BrowserWindow } from 'electron'
 
 export async function applyPreset(
   log: Logger,
+  mainWindow: BrowserWindow,
   db: Database,
   avatarId: string,
   presetId: number,
-  OSC_CLIENT: Client
+  OSC_CLIENT: Client,
+  nsfwCheck: boolean = false
 ): Promise<boolean> {
   try {
     const preset = db
@@ -19,7 +23,7 @@ export async function applyPreset(
       LIMIT 1
     `
       )
-      .get(avatarId, `/Preset/${presetId}/Apply`) as { forUqid: string } | undefined
+      .get(avatarId, presetId) as { forUqid: string } | undefined
 
     if (!preset) {
       log.error('No preset found')
@@ -29,16 +33,28 @@ export async function applyPreset(
     const avatarData = db
       .prepare(
         `
-      SELECT parameters FROM avatars
+      SELECT parameters, nsfw FROM avatars
       WHERE uqid = ?
       LIMIT 1
     `
       )
-      .get(preset.forUqid) as { parameters: string } | undefined
+      .get(preset.forUqid) as { parameters: string; nsfw: boolean } | undefined
 
     if (!avatarData) {
       log.error('No avatar config found')
       return false
+    }
+
+    if (nsfwCheck && avatarData.nsfw) {
+      const userResponse = await showWarning(
+        ['Yes', 'No'],
+        0,
+        'Avatar ID Mismatch',
+        `The avatar ID's do not match. Uploading this configuration may lead to unexpected results. Do you want to proceed?`,
+        mainWindow
+      )
+
+      if (userResponse.response !== 0) return false
     }
 
     const parameters = JSON.parse(avatarData.parameters)

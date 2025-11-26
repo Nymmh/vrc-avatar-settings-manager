@@ -4,26 +4,16 @@ import { checkIfPresetExists } from './checkifPresetExists'
 import { createPreset } from './createPreset'
 import { BrowserWindow } from 'electron'
 
-export function updatePreset(
+export async function updatePreset(
   log: Logger,
   db: Database,
   presetId: number,
   avatarId: string,
   pendingChanges: Map<string, unknown>,
-  mainWindow: BrowserWindow,
-  name?: string | undefined
-): void {
+  mainWindow: BrowserWindow
+): Promise<void> {
   try {
-    const exists = checkIfPresetExists(db, avatarId, presetId)
-
-    if (!exists) {
-      createPreset(log, db, avatarId, presetId, pendingChanges, mainWindow, undefined)
-    } else {
-      db.prepare(
-        `UPDATE presets
-         SET name = ?, unityParameter = ?`
-      ).run(name ?? 'Preset ' + presetId, presetId)
-    }
+    await createPreset(log, db, avatarId, presetId, pendingChanges, mainWindow)
   } catch (e) {
     log.error('Error updating preset:', e)
   }

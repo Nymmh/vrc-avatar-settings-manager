@@ -1,10 +1,22 @@
 interface avatarConfig {
+  type?: string
   id?: string
+  avatarId?: string
   uqid?: string
   name?: string
   nsfw?: boolean
   animationParameters?: animationParameters[]
   parameters?: avatarConfigParams[]
+  fromFile?: number
+  isPreset?: number
+  presets?: presetDBInterface
+}
+
+interface loadAvatarConfigFile {
+  type: string
+  avatarId: string
+  name: string
+  configs: avatarConfig[]
 }
 
 interface avatarConfigParams {
@@ -33,6 +45,15 @@ interface avatarDB {
   avatarName: string
   nsfw: number
   parameters: string
+  fromFile: number
+  isPreset: number
+  presets?: presetDBInterface
+}
+
+interface avatarStorageDB {
+  id: number
+  avatarId: string
+  name: string
 }
 
 interface applyFromSaved {
@@ -48,14 +69,34 @@ interface exportConfig {
 
 interface getAllSaved {
   id: number
+  uqid: string
   avatarId: string
   name: string
   avatarName: string
   nsfw: number
   fromFile: number
+  isPreset: number
+}
+
+interface getAllPresets {
+  id: number
+  forUqid: string
+  avatarId: string
+  name: string
+  unityParameter: number
 }
 
 interface updateConfig {
+  success: boolean
+  message?: string
+}
+
+interface updatePreset {
+  success: boolean
+  message?: string
+}
+
+interface deletePreset {
   success: boolean
   message?: string
 }
@@ -96,6 +137,47 @@ interface savedNamesType {
   name: string
 }
 
+interface createPreset {
+  success: boolean
+  message?: string
+}
+
+interface uploadAvatarConfig {
+  success: boolean
+  message?: string
+}
+
+interface presetDB {
+  forUqid: string
+  avatarId: string
+  name: string
+  unityParameter: number
+}
+
+interface loadAvatarConfig {
+  name: string
+}
+
+interface getAllAvatars {
+  avatarId: string
+  name: string
+}
+
+interface deleteAvatarType {
+  success: boolean
+  message?: string
+}
+
+interface exportAvatarType {
+  success: boolean
+  message?: string
+}
+
+interface updateAvatarData {
+  success: boolean
+  message?: string
+}
+
 declare global {
   interface avatarConfigInterface extends avatarConfig {}
   interface avatarConfigParamsInterface extends avatarConfigParams {}
@@ -112,6 +194,19 @@ declare global {
   interface deleteConfigInterface extends deleteConfigType {}
   interface saveUpdateInterface extends saveUpdateType {}
   interface savedNamesInterface extends savedNamesType {}
+  interface getAllPresetsInterface extends getAllPresets {}
+  interface updatePresetInterface extends updatePreset {}
+  interface deletePresetInterface extends deletePreset {}
+  interface createPresetInterface extends createPreset {}
+  interface presetDBInterface extends presetDB {}
+  interface uploadAvatarConfigInterface extends uploadAvatarConfig {}
+  interface loadAvatarConfigInterface extends loadAvatarConfig {}
+  interface loadAvatarConfigFileInterface extends loadAvatarConfigFile {}
+  interface getAllAvatarsInterface extends getAllAvatars {}
+  interface deleteAvatarInterface extends deleteAvatarType {}
+  interface exportAvatarInterface extends exportAvatarType {}
+  interface avatarStorageDBInterface extends avatarStorageDB {}
+  interface updateAvatarDataInterface extends updateAvatarData {}
 }
 
 export {}
