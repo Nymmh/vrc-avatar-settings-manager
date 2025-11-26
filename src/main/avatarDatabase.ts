@@ -27,7 +27,8 @@ export function avatarDatabase(log: Logger): DBType {
             avatarName TEXT NOT NULL,
             nsfw INTEGER DEFAULT 0 NOT NULL,
             parameters TEXT DEFAULT '[]' NOT NULL,
-            fromFile INTEGER DEFAULT 0 NOT NULL
+            fromFile INTEGER DEFAULT 0 NOT NULL,
+            isPreset INTEGER DEFAULT 0 NOT NULL
         )`
       ).run()
 
@@ -38,7 +39,15 @@ export function avatarDatabase(log: Logger): DBType {
           avatarId TEXT NOT NULL,
           name TEXT NOT NULL DEFAULT '',
           unityParameter INTEGER,
-          UNIQUE(avatarId, unityParameter)
+          UNIQUE(forUqid, unityParameter)
+        )`
+      ).run()
+
+      db.prepare(
+        `CREATE TABLE IF NOT EXISTS avatarStorage(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        avatarId TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL
         )`
       ).run()
 

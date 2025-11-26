@@ -4,6 +4,7 @@ import Database from 'better-sqlite3'
 import path from 'path'
 import fs from 'fs'
 import { checkDataFolder } from './checkDataFolder'
+import { showWarning } from '../services/showWarning'
 
 export async function exportConfig(
   log: Logger,
@@ -18,17 +19,17 @@ export async function exportConfig(
 
     const q = db
       .prepare(
-        'SELECT uqid, avatarId, name, avatarName, nsfw, parameters FROM avatars WHERE id = ? LIMIT 1'
+        'SELECT uqid, avatarId, name, avatarName, nsfw, parameters, isPreset FROM avatars WHERE id = ? LIMIT 1'
       )
       .get(id) as avatarDBInterface | undefined
 
     if (!q) return { success: false, message: 'No config found' }
 
-    const { avatarData } = checkDataFolder()
+    const { avatarConfigData } = checkDataFolder()
 
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Config',
-      defaultPath: `${path.join(avatarData, q.name || '')}.json`,
+      defaultPath: `${path.join(avatarConfigData, q.name || '')}.json`,
       filters: [
         { name: 'JSON', extensions: ['json'] },
         { name: 'All Files', extensions: ['*'] }
@@ -40,7 +41,36 @@ export async function exportConfig(
       return { success: false, message: 'Export configuration canceled or no file path specified' }
     }
 
-    let parsed: unknown[] = []
+    let savePresets = 0
+
+    if (q.isPreset) {
+      const userResponse = await showWarning(
+        ['Yes', 'No'],
+        0,
+        'Marked As Preset',
+        `This config is marked as a preset, would you like to export them too?`,
+        mainWindow
+      )
+
+      if (userResponse.response === 0) savePresets = 1
+    }
+
+    let parsed: string[] = []
+    const presets: Partial<presetDBInterface> = {}
+
+    if (savePresets) {
+      const p = db
+        .prepare('SELECT avatarId, name, unityParameter FROM presets WHERE forUqid = ? LIMIT 1')
+        .get(q.uqid) as presetDBInterface | undefined
+
+      if (p) {
+        presets.forUqid = q.uqid
+        presets.avatarId = p.avatarId
+        presets.name = p.name
+        presets.unityParameter = p.unityParameter
+      }
+    }
+
     try {
       parsed = JSON.parse(q.parameters) || []
     } catch {
@@ -48,12 +78,15 @@ export async function exportConfig(
     }
 
     const exportData = {
+      type: 'config',
       id: q.avatarId || 'Unknown',
       uqid: q.uqid || '',
       name: q.name || new Date().toISOString(),
       avatarName: q.avatarName || 'Unknown',
       nsfw: !!q.nsfw,
-      animationParameters: parsed
+      animationParameters: parsed,
+      isPreset: !!q.isPreset,
+      presets: presets
     }
 
     await fs.promises.writeFile(filePath, JSON.stringify(exportData), 'utf-8')

@@ -13,8 +13,8 @@ export async function deleteConfig(
   try {
     if (!id || id <= 0) return { success: false, message: 'Invalid ID' }
 
-    const q = db.prepare('SELECT name FROM avatars WHERE id = ? LIMIT 1').get(id) as
-      | { name: string }
+    const q = db.prepare('SELECT name, uqid FROM avatars WHERE id = ? LIMIT 1').get(id) as
+      | { name: string; uqid: string }
       | undefined
 
     if (!q) return { success: false, message: 'No saved config found with that ID' }
@@ -32,6 +32,8 @@ export async function deleteConfig(
     const deleteResult = db.prepare('DELETE FROM avatars WHERE id = ?').run(id)
 
     if (deleteResult.changes === 0) return { success: false, message: 'Failed to delete config' }
+
+    db.prepare('DELETE FROM presets WHERE forUqid = ?').run(q.uqid)
 
     return { success: true, message: 'Configuration deleted successfully' }
   } catch (e) {

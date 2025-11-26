@@ -25,11 +25,12 @@ export async function createPreset(
     }
 
     const aviData = await avatarConfig(avatarId, mainWindow, pendingChanges)
+    console.log(pendingChanges)
 
     db.prepare(
       `
-      INSERT INTO avatars (uqid, avatarId, name, avatarName, parameters)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO avatars (uqid, avatarId, name, avatarName, parameters, isPreset)
+      VALUES (?, ?, ?, ?, ?, 1)
       ON CONFLICT(uqid) DO UPDATE SET
         parameters = excluded.parameters,
         avatarName = excluded.avatarName,
@@ -41,7 +42,7 @@ export async function createPreset(
     ).run(
       uqid,
       avatarId,
-      name || aviData?.name + ' Preset ' + presetId,
+      name === undefined ? aviData?.name + ' Preset ' + presetId : name,
       aviData?.name || '',
       JSON.stringify(aviData?.animationParameters || [])
     )
@@ -52,7 +53,12 @@ export async function createPreset(
         INSERT INTO presets (forUqid, avatarId, name, unityParameter)
         VALUES (?, ?, ?, ?)
       `
-      ).run(uqid, avatarId, name || aviData?.name + ' Preset ' + presetId, presetId)
+      ).run(
+        uqid,
+        avatarId,
+        name === undefined ? aviData?.name + ' Preset ' + presetId : name,
+        presetId
+      )
     }
 
     log.info('Preset created/updated successfully')

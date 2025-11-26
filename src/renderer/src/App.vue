@@ -15,8 +15,9 @@ import { InputSelectInterface } from './types/InputSelectInterface'
 import type { avatarConfigType } from '../../types/avatarConfigType'
 import { NotificationInterface } from './types/notificationInterface'
 import { savedNamesType } from './types/savedNamesInterface'
+import AllAvatars from './views/AllAvatars.vue'
 
-const currentView = ref<string>('Main') // Testing should be Waiting
+const currentView = ref<string>('Waiting')
 const { notify } = useNotification()
 
 // Avatar state
@@ -244,9 +245,10 @@ onMounted(() => {
   <div class="main">
     <notifications class="notification" position="bottom left" />
     <Menu :current-view="currentView" @change-view="handleChangeView" />
-    <AllPresets v-if="currentView === 'AllPresets'" />
+    <AllPresets v-if="currentView === 'AllPresets'" @notification="pushNotification" />
     <AllSaved v-if="currentView === 'AllSaved'" @notification="pushNotification" />
-    <!-- <Waiting v-if="!avatarId && currentView === 'Waiting'" /> -->
+    <AllAvatars v-if="currentView === 'AllAvatars'" @notification="pushNotification" />
+    <Waiting v-if="!avatarId && currentView === 'Waiting'" />
     <div v-show="currentView === 'Main'" class="main__content">
       <div :class="['main__avatar-data', { underline: avatarFoundFile }]">
         <div class="main__avatar-data-file">

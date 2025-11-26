@@ -44,9 +44,28 @@ export interface avatarApi {
     saveName: string | undefined,
     nsfw: boolean | undefined
   ) => updateConfigInterface
+  updateConfigData: (
+    id: number,
+    avatarId: string | 'Unknown',
+    saveName: string | undefined,
+    nsfw: boolean | undefined
+  ) => updateConfigInterface
   exportConfig: (id: number) => exportConfigInterface
   replaceParams: (id: number) => replaceParamsInterface
   deleteConfig: (id: number) => deleteConfigInterface
+  getAllPresets: () => Promise<getAllPresetsInterface[] | null>
+  applyPresetFromApp: (avatarId: string, unityParameter: number) => { success: boolean }
+  updatePresetFromApp: (id: number, saveName: string, parameter: number) => updatePresetInterface
+  deletePresetFromApp: (id: number) => deletePresetInterface
+  createPresetFromApp: (id: number) => createPresetInterface
+  getSavedByUqid: (uqid: string) => Promise<getAllSavedInterface[] | null>
+  getPresetsByUqid: (uqid: string) => Promise<getAllPresetsInterface[] | null>
+  uploadAvatarConfig: () => Promise<uploadAvatarConfigInterface>
+  loadAvatarConfig: () => Promise<loadAvatarConfigInterface>
+  getAllAvatars: () => Promise<getAllAvatarsInterface[]>
+  deleteAvatar: (avatarId: string) => Promise<deleteAvatarInterface>
+  exportAvatar: (avatarId: string) => Promise<exportAvatarInterface>
+  updateAvatarData: (avatarId: string, name: string) => Promise<updateAvatarDataInterface>
 }
 
 export interface appApi {

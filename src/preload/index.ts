@@ -76,12 +76,51 @@ const avatarApi = {
     nsfw: boolean | undefined
   ): Promise<updateConfigInterface> =>
     ipcRenderer.invoke('updateConfig', id, avatarId, avatarName, saveName, nsfw),
+  updateConfigData: async (
+    id: number,
+    avatarId: string | 'Unknown',
+    saveName: string,
+    nsfw: boolean | undefined
+  ): Promise<updateConfigInterface> =>
+    ipcRenderer.invoke('updateConfig', id, avatarId, saveName, nsfw),
   exportConfig: async (id: number): Promise<exportConfigInterface> =>
     ipcRenderer.invoke('exportConfig', id),
   replaceParams: async (id: number): Promise<replaceParamsInterface> =>
     ipcRenderer.invoke('replaceParams', id),
   deleteConfig: async (id: number): Promise<deleteConfigInterface> =>
-    ipcRenderer.invoke('deleteConfig', id)
+    ipcRenderer.invoke('deleteConfig', id),
+  getAllPresets: async (): Promise<getAllPresetsInterface[] | null> =>
+    ipcRenderer.invoke('getAllPresets'),
+  applyPresetFromApp: async (
+    avatarId: string,
+    unityParameter: number
+  ): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('applyPresetFromApp', avatarId, unityParameter),
+  updatePresetFromApp: async (
+    id: number,
+    saveName: string,
+    parameter: number
+  ): Promise<updatePresetInterface> =>
+    ipcRenderer.invoke('updatePresetFromApp', id, saveName, parameter),
+  deletePresetFromApp: async (id: number): Promise<deletePresetInterface> =>
+    ipcRenderer.invoke('deletePresetFromApp', id),
+  createPresetFromApp: async (id: number): Promise<createPresetInterface> =>
+    ipcRenderer.invoke('createPresetFromApp', id),
+  getSavedByUqid: async (uqid: string): Promise<getAllSavedInterface[] | null> =>
+    ipcRenderer.invoke('getSavedByUqid', uqid),
+  getPresetsByUqid: async (uqid: string): Promise<getAllPresetsInterface[] | null> =>
+    ipcRenderer.invoke('getPresetsByUqid', uqid),
+  uploadAvatarConfig: async (): Promise<uploadAvatarConfigInterface> =>
+    ipcRenderer.invoke('uploadAvatarConfig'),
+  loadAvatarConfig: async (): Promise<loadAvatarConfigInterface> =>
+    ipcRenderer.invoke('loadAvatarConfig'),
+  getAllAvatars: async (): Promise<getAllAvatarsInterface[]> => ipcRenderer.invoke('getAllAvatars'),
+  deleteAvatar: async (avatarId: string): Promise<deleteAvatarInterface> =>
+    ipcRenderer.invoke('deleteAvatar', avatarId),
+  exportAvatar: async (avatarId: string): Promise<exportAvatarInterface> =>
+    ipcRenderer.invoke('exportAvatar', avatarId),
+  updateAvatarData: async (avatarId: string, name: string): Promise<updateAvatarDataInterface> =>
+    ipcRenderer.invoke('updateAvatarData', avatarId, name)
 }
 
 if (process.contextIsolated) {

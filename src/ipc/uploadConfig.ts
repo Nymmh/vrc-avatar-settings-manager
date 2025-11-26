@@ -13,6 +13,13 @@ export async function uploadConfig(
   config: avatarConfigInterface,
   mainWindow: BrowserWindow
 ): Promise<uploadConfigInterface> {
+  if (config.type && config.type !== 'config') {
+    return {
+      upload: false,
+      saveMessage: 'Uploaded data is not a valid avatar config'
+    }
+  }
+
   const normalizedSaveName = saveName.trim() || config?.name?.trim() || 'Unknown'
 
   config.id = avatarId?.trim() || config.id?.trim() || 'Unknown'

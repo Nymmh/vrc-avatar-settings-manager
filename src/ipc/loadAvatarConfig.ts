@@ -3,15 +3,15 @@ import { Logger } from 'electron-log'
 import fs from 'fs'
 import { checkDataFolder } from '../file/checkDataFolder'
 
-export async function loadConfig(
+export async function loadAvatarConfig(
   log: Logger,
   mainWindow: BrowserWindow
-): Promise<avatarConfigInterface | null> {
+): Promise<loadAvatarConfigFileInterface | null> {
   const dataFolder = checkDataFolder()
 
   const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
     title: 'Select an Avatar JSON',
-    defaultPath: dataFolder.avatarConfigData,
+    defaultPath: dataFolder.avatarData,
     filters: [
       {
         name: 'JSON Files',
@@ -28,7 +28,7 @@ export async function loadConfig(
 
   try {
     const data = await fs.readFileSync(filePaths[0], 'utf-8')
-    return JSON.parse(data) as avatarConfigInterface
+    return JSON.parse(data) as loadAvatarConfigFileInterface
   } catch (e) {
     log.error('Failed to load configuration file', e)
     return null

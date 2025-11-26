@@ -44,10 +44,10 @@ export async function applyConfig(
       await OSC_CLIENT.send(new Bundle(...chunks[i]))
     }
 
-    log.info('Config upload completed')
+    log.info('Config apply completed')
     return true
   } catch (e) {
-    log.error('Error during config upload:', e)
+    log.error('Error during config apply:', e)
     return false
   }
 }

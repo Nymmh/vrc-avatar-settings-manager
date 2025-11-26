@@ -39,9 +39,7 @@ export function avatarConfig(
   })
   mainWindow.webContents.send('avatarConfig', formattedDataConfig)
 
-  if (pendingChanges.size > 0) {
-    return formattedDataConfig
-  }
+  return formattedDataConfig
 }
 
 function cleanJson(data: string): string {

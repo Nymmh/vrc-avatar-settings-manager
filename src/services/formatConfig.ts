@@ -1,6 +1,7 @@
 const EXCLUDED_NAMES = new Set([
   'VRCEmote',
   'VRCFaceBlendH',
+  'VRCFaceBlendV',
   'Go/Locomotion',
   'Go/Jump&Fall',
   'Go/StandIdle',
@@ -38,7 +39,13 @@ export function formatConfig(
   const hasPendingChanges = pendingChanges.size > 0
 
   formattedData.animationParameters = parsedCache.animationParameters.reduce((ap, c) => {
-    if (!EXCLUDED_NAMES.has(c.name) && c.value !== undefined) return ap
+    if (
+      EXCLUDED_NAMES.has(c.name) ||
+      c.value === undefined ||
+      /VF\d+_(Sync|TC_current|Customization)/.test(c.name) ||
+      /^VF\d+_/.test(c.name)
+    )
+      return ap
 
     const type = parameterMap.get(c.name)
 
