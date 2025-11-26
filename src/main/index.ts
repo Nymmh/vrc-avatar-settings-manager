@@ -35,6 +35,8 @@ import { getAvatars } from '../database/getAvatars'
 import { deleteAvatar } from '../database/deleteAvatar'
 import { exportAvatar } from '../file/exportAvatar'
 import { updateAvatarData } from '../database/updateAvatarData'
+import { exportAllConfigs } from '../file/exportAllConfigs'
+import { importAllConfigs } from '../file/importAllConfigs'
 
 let mainWindow: BrowserWindow | null = null
 let loadedJson: avatarConfigInterface | null = null
@@ -426,6 +428,18 @@ app.whenReady().then(async () => {
     if (!mainWindow) return { success: false }
 
     return await updateAvatarData(log, avatarDB, mainWindow, avatarId, name)
+  })
+
+  ipcMain.handle('exportAllConfigs', async () => {
+    if (!mainWindow) return { success: false }
+
+    return await exportAllConfigs(log, avatarDB, mainWindow, dialog)
+  })
+
+  ipcMain.handle('importAllConfigs', async () => {
+    if (!mainWindow) return { success: false }
+
+    return await importAllConfigs(log, avatarDB, mainWindow, dialog)
   })
 
   createWindow()

@@ -66,6 +66,8 @@ export interface avatarApi {
   deleteAvatar: (avatarId: string) => Promise<deleteAvatarInterface>
   exportAvatar: (avatarId: string) => Promise<exportAvatarInterface>
   updateAvatarData: (avatarId: string, name: string) => Promise<updateAvatarDataInterface>
+  exportAllConfigs: () => Promise<exportAllConfigsInterface>
+  importAllConfigs: () => Promise<importAllConfigsInterface>
 }
 
 export interface appApi {
