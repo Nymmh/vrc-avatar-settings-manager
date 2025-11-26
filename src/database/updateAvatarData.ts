@@ -1,11 +1,9 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
-import { BrowserWindow } from 'electron'
 
 export async function updateAvatarData(
   log: Logger,
   db: Database,
-  mainWindow: BrowserWindow,
   avatarId: string,
   avatarName: string
 ): Promise<updateAvatarDataInterface> {

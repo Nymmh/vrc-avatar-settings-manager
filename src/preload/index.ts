@@ -17,13 +17,13 @@ const avatarApi = {
       meowback(data)
     )
   },
-  avatarConfig: (meowback: (data: avatarConfigInterface) => void): void => {
-    ipcRenderer.on('avatarConfig', (_event: IpcRendererEvent, data: avatarConfigInterface): void =>
+  avatarConfig: (meowback: (data: avatarDBInterface) => void): void => {
+    ipcRenderer.on('avatarConfig', (_event: IpcRendererEvent, data: avatarDBInterface): void =>
       meowback(data)
     )
   },
   saveConfig: async (
-    data: avatarConfigInterface,
+    data: avatarDBInterface,
     overwrite: boolean,
     nsfw: boolean,
     saveName?: string
@@ -66,16 +66,14 @@ const avatarApi = {
   },
   applyConfig: async (id: number): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('applyConfig', id),
-  getAllSaved: async (): Promise<getAllSavedInterface[] | null> =>
-    ipcRenderer.invoke('getAllSaved'),
+  getAllSaved: async (): Promise<avatarDBInterface[] | null> => ipcRenderer.invoke('getAllSaved'),
   updateConfig: async (
     id: number,
     avatarId: string | 'Unknown',
     avatarName: string | 'Unknown',
-    saveName: string,
-    nsfw: boolean | undefined
+    saveName: string
   ): Promise<updateConfigInterface> =>
-    ipcRenderer.invoke('updateConfig', id, avatarId, avatarName, saveName, nsfw),
+    ipcRenderer.invoke('updateConfig', id, avatarId, avatarName, saveName),
   updateConfigData: async (
     id: number,
     avatarId: string | 'Unknown',
@@ -89,7 +87,7 @@ const avatarApi = {
     ipcRenderer.invoke('replaceParams', id),
   deleteConfig: async (id: number): Promise<deleteConfigInterface> =>
     ipcRenderer.invoke('deleteConfig', id),
-  getAllPresets: async (): Promise<getAllPresetsInterface[] | null> =>
+  getAllPresets: async (): Promise<avatarPresetsInterface[] | null> =>
     ipcRenderer.invoke('getAllPresets'),
   applyPresetFromApp: async (
     avatarId: string,
@@ -106,9 +104,9 @@ const avatarApi = {
     ipcRenderer.invoke('deletePresetFromApp', id),
   createPresetFromApp: async (id: number): Promise<createPresetInterface> =>
     ipcRenderer.invoke('createPresetFromApp', id),
-  getSavedByUqid: async (uqid: string): Promise<getAllSavedInterface[] | null> =>
+  getSavedByUqid: async (uqid: string): Promise<avatarDBInterface[] | null> =>
     ipcRenderer.invoke('getSavedByUqid', uqid),
-  getPresetsByUqid: async (uqid: string): Promise<getAllPresetsInterface[] | null> =>
+  getPresetsByUqid: async (uqid: string): Promise<avatarPresetsInterface[] | null> =>
     ipcRenderer.invoke('getPresetsByUqid', uqid),
   uploadAvatarConfig: async (): Promise<uploadAvatarConfigInterface> =>
     ipcRenderer.invoke('uploadAvatarConfig'),

@@ -155,7 +155,6 @@ const handleSave = async (overwrite: boolean): Promise<void> => {
 
   const res = await window.avatarApi.saveConfig(
     toRaw(avatarConfig.value),
-    overwrite,
     NSFWValue.value,
     saveName.value || ''
   )
@@ -197,10 +196,9 @@ const handleApply = async (): Promise<void> => {
 const handleSavedUpdated = async (): Promise<void> => {
   const res = await window.avatarApi.updateConfig(
     Number(configSelectValue.value),
-    avatarConfig.value?.id || 'Unknown',
-    avatarConfig.value?.name || 'Unknown',
-    avatarConfig.value?.name,
-    NSFWValue.value ? true : false
+    avatarConfig.value?.avatarId || 'Unknown',
+    avatarConfig.value?.avatarName || 'Unknown',
+    avatarConfig.value?.name
   )
   if (!res.success) {
     pushNotification({

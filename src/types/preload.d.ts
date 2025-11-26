@@ -14,12 +14,7 @@ export interface avatarApi {
   avatarId: (meowback: (data: avatarIdInterface) => void) => void
   foundAvatarFile: (meowback: (data: foundAvatarFileInterface) => void) => void
   avatarConfig: (meowback: (data: avatarConfigInterface) => void) => void
-  saveConfig: (
-    data: avatarConfigInterface,
-    overwrite: boolean,
-    nsfw: boolean,
-    saveName?: string
-  ) => saveConfigInterface
+  saveConfig: (data: avatarConfigInterface, nsfw: boolean, saveName?: string) => saveConfigInterface
 
   loadConfig: () => loadConfigInterface
   uploadConfigAndApply: (
@@ -41,8 +36,7 @@ export interface avatarApi {
     id: number,
     avatarId: string | 'Unknown',
     avatarName: string | 'Unknown',
-    saveName: string | undefined,
-    nsfw: boolean | undefined
+    saveName: string | undefined
   ) => updateConfigInterface
   updateConfigData: (
     id: number,
@@ -66,7 +60,7 @@ export interface avatarApi {
   deleteAvatar: (avatarId: string) => Promise<deleteAvatarInterface>
   exportAvatar: (avatarId: string) => Promise<exportAvatarInterface>
   updateAvatarData: (avatarId: string, name: string) => Promise<updateAvatarDataInterface>
-  exportAllConfigs: () => Promise<exportAllConfigsInterface>
+  exportAllConfigs: () => Promise<exportAllConfigsPromiseInterface>
   importAllConfigs: () => Promise<importAllConfigsInterface>
 }
 

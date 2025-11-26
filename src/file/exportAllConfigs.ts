@@ -10,11 +10,11 @@ export async function exportAllConfigs(
   db: Database,
   mainWindow: BrowserWindow,
   dialog: Dialog
-): Promise<exportAllConfigsInterface> {
+): Promise<exportAllConfigsPromiseInterface> {
   try {
-    const saveExport: loadAvatarConfigFileInterface[] = []
-
-    const a = db.prepare(`SELECT avatarId, name FROM avatars`).all() as avatarDBInterface[]
+    const a = db
+      .prepare(`SELECT avatarId, name FROM avatarStorage`)
+      .all() as exportAllConfigsInterface[]
 
     if (a.length === 0) {
       return { success: false, message: 'No avatars found to export.' }
@@ -43,18 +43,20 @@ export async function exportAllConfigs(
         )
         .all(aa.avatarId) as avatarDBInterface[]
 
-      for (const qq of q) {
-        aa.configs = qq
+      aa.configs = []
 
+      for (const qq of q) {
         if (qq.isPreset === 1) {
           const p = db
             .prepare(
               `SELECT forUqid, avatarId, name, unityParameter FROM presets WHERE forUqid = ?`
             )
-            .get(qq.uqid) as presetDBInterface
+            .get(qq.uqid) as avatarPresetsInterface
 
           qq.presets = p
         }
+
+        aa.configs.push(qq)
       }
     }
 

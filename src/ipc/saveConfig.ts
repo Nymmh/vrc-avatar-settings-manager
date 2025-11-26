@@ -11,9 +11,8 @@ import { uploadAvatarPresets } from '../database/uploadAvatarPresets'
 export async function saveConfig(
   log: Logger,
   db: Database,
-  content: avatarConfigInterface | string,
+  content: avatarDBInterface | string,
   saveName: string,
-  overwrite: boolean,
   nsfw: boolean,
   fromFile: boolean,
   mainWindow: BrowserWindow
@@ -24,20 +23,23 @@ export async function saveConfig(
       return { success: false, message: 'Invalid config name' }
     }
 
-    const parsedContent: avatarConfigInterface =
+    const parsedContent: avatarDBInterface =
       typeof content === 'string' ? JSON.parse(content) : content
 
-    if (!parsedContent || !parsedContent.id || !Array.isArray(parsedContent.animationParameters))
+    if (!parsedContent || !parsedContent.avatarId)
       return { success: false, message: 'Invalid config' }
 
     const nsfwValue = nsfw ? 1 : 0
     const fromFileValue = fromFile ? 1 : 0
-    const parametersJson = JSON.stringify(parsedContent.animationParameters)
-    const uqid = generateUqid(parsedContent?.id || 'unknown')
+    const parametersJson =
+      (typeof parsedContent.valuedParams === 'string'
+        ? parsedContent.valuedParams
+        : JSON.stringify(parsedContent.valuedParams)) || '[]'
+    const uqid = generateUqid(parsedContent?.avatarId || 'unknown')
     let uploadedPresets = false
 
-    if (!fromFile && parsedContent.id.trim()) {
-      const existing = checkIfExistByNameAndAvatarId(db, saveName, parsedContent.id)
+    if (!fromFile && parsedContent.avatarId.trim()) {
+      const existing = checkIfExistByNameAndAvatarId(db, saveName, parsedContent.avatarId)
 
       if (existing) {
         const userResponse = await showWarning(
@@ -110,7 +112,7 @@ export async function saveConfig(
     let uploadName = saveName
     let counter = 1
 
-    while (checkIfExistByNameAndAvatarId(db, uploadName, parsedContent.id)) {
+    while (checkIfExistByNameAndAvatarId(db, uploadName, parsedContent.avatarId)) {
       uploadName = `${saveName} (${counter})`
       counter++
     }
@@ -143,7 +145,7 @@ export async function saveConfig(
     `
     ).run(
       parsedContent?.uqid || uqid,
-      parsedContent.id,
+      parsedContent.avatarId,
       saveName,
       parsedContent.name,
       nsfwValue,
@@ -157,7 +159,7 @@ export async function saveConfig(
       INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?)
       ON CONFLICT(avatarId) DO NOTHING
       `
-    ).run(parsedContent.id, parsedContent.name)
+    ).run(parsedContent.avatarId, parsedContent.name)
 
     return { success: true, message: 'Saved' }
   } catch (e) {

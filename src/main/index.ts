@@ -39,8 +39,8 @@ import { exportAllConfigs } from '../file/exportAllConfigs'
 import { importAllConfigs } from '../file/importAllConfigs'
 
 let mainWindow: BrowserWindow | null = null
-let loadedJson: avatarConfigInterface | null = null
-let loadedAvatarJson: loadAvatarConfigFileInterface | null = null
+let loadedJson: avatarDBInterface | null = null
+let loadedAvatarJson: exportAllConfigsInterface | null = null
 let currentAviId: string = ''
 const pendingChanges: Map<string, unknown> = new Map()
 let OSC_CLIENT: Client
@@ -181,22 +181,13 @@ app.whenReady().then(async () => {
     return app.getVersion()
   })
 
-  ipcMain.handle('saveConfig', async (_event, { content, saveName, overwrite, nsfw }) => {
+  ipcMain.handle('saveConfig', async (_event, { content, saveName, nsfw }) => {
     if (!mainWindow) return { success: false }
 
     content = await avatarConfig(currentAviId, mainWindow, pendingChanges)
     content = JSON.stringify(content)
 
-    const savedConfig = await saveConfig(
-      log,
-      avatarDB,
-      content,
-      saveName,
-      overwrite,
-      nsfw,
-      false,
-      mainWindow
-    )
+    const savedConfig = await saveConfig(log, avatarDB, content, saveName, nsfw, false, mainWindow)
     getNames(log, avatarDB, mainWindow, currentAviId)
     return savedConfig
   })
@@ -211,7 +202,7 @@ app.whenReady().then(async () => {
       return { name: '', match: false, error: 'No file data' }
     }
 
-    if (!dataParsedConfig.id) {
+    if (!dataParsedConfig.avatarId) {
       return { name: '', match: false, error: 'Loaded config is missing ID' }
     }
 
@@ -222,7 +213,7 @@ app.whenReady().then(async () => {
     const avatarName: string = await getLoadDataName(dataParsedConfig)
     loadedJson = dataParsedConfig
 
-    return { name: avatarName, match: dataParsedConfig.id === currentAviId, error: '' }
+    return { name: avatarName, match: dataParsedConfig.avatarId === currentAviId, error: '' }
   })
 
   ipcMain.handle('loadAvatarConfig', async () => {
@@ -310,7 +301,7 @@ app.whenReady().then(async () => {
     return await getAllPresets(log, avatarDB)
   })
 
-  ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName, nsfw) => {
+  ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName) => {
     if (!mainWindow) return { success: false }
 
     return await updateSavedConfig(
@@ -320,7 +311,6 @@ app.whenReady().then(async () => {
       avatarId,
       avatarName,
       saveName,
-      nsfw,
       mainWindow,
       pendingChanges
     )
@@ -370,7 +360,7 @@ app.whenReady().then(async () => {
     async (_event, id: number, saveName: string, parameter: number) => {
       if (!mainWindow) return { success: false }
 
-      return await updatePresetData(log, mainWindow, avatarDB, id, saveName, parameter)
+      return await updatePresetData(log, avatarDB, id, saveName, parameter)
     }
   )
 
@@ -383,7 +373,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('createPresetFromApp', async (_event, id: number) => {
     if (!mainWindow) return { success: false }
 
-    return await createPresetFromApp(log, mainWindow, avatarDB, id)
+    return await createPresetFromApp(log, avatarDB, id)
   })
 
   ipcMain.handle('getSavedByUqid', async (_event, uqid: string) => {
@@ -403,13 +393,11 @@ app.whenReady().then(async () => {
       return { upload: false }
     }
 
-    return await uploadAvatarConfig(log, avatarDB, mainWindow, loadedAvatarJson)
+    return await uploadAvatarConfig(log, avatarDB, loadedAvatarJson)
   })
 
   ipcMain.handle('getAllAvatars', async () => {
-    if (!mainWindow) return []
-
-    return await getAvatars(log, avatarDB, mainWindow)
+    return await getAvatars(log, avatarDB)
   })
 
   ipcMain.handle('deleteAvatar', async (_event, avatarId: string) => {
@@ -427,7 +415,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('updateAvatarData', async (_event, avatarId: string, name: string) => {
     if (!mainWindow) return { success: false }
 
-    return await updateAvatarData(log, avatarDB, mainWindow, avatarId, name)
+    return await updateAvatarData(log, avatarDB, avatarId, name)
   })
 
   ipcMain.handle('exportAllConfigs', async () => {

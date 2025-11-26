@@ -1,6 +1,5 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
-import { checkIfPresetExists } from './checkifPresetExists'
 import { createPreset } from './createPreset'
 import { BrowserWindow } from 'electron'
 

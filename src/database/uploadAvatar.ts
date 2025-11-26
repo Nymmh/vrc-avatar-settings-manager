@@ -1,15 +1,13 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
-import { BrowserWindow } from 'electron'
 
 export async function uploadAvatar(
   log: Logger,
   db: Database,
-  mainWindow: BrowserWindow,
-  loadedJson: loadAvatarConfigFileInterface
+  loadedJson: exportAllConfigsInterface
 ): Promise<uploadAvatarConfigInterface> {
   try {
-    const parsedContent: avatarConfigInterface[] =
+    const parsedContent: avatarDBInterface[] =
       typeof loadedJson.configs === 'string' ? JSON.parse(loadedJson.configs) : loadedJson.configs
 
     db.prepare(
@@ -27,7 +25,7 @@ export async function uploadAvatar(
         a.name,
         loadedJson.name,
         a.nsfw ? 1 : 0,
-        JSON.stringify(a.parameters),
+        a.parameters,
         1,
         a.isPreset ? 1 : 0
       )

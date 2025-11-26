@@ -56,12 +56,12 @@ export async function exportConfig(
     }
 
     let parsed: string[] = []
-    const presets: Partial<presetDBInterface> = {}
+    const presets: Partial<avatarPresetsInterface> = {}
 
     if (savePresets) {
       const p = db
         .prepare('SELECT avatarId, name, unityParameter FROM presets WHERE forUqid = ? LIMIT 1')
-        .get(q.uqid) as presetDBInterface | undefined
+        .get(q.uqid) as avatarPresetsInterface | undefined
 
       if (p) {
         presets.forUqid = q.uqid
@@ -72,19 +72,19 @@ export async function exportConfig(
     }
 
     try {
-      parsed = JSON.parse(q.parameters) || []
+      parsed = JSON.parse(q.parameters || '[]') || []
     } catch {
       log.warn('Invalid JSON')
     }
 
     const exportData = {
       type: 'config',
-      id: q.avatarId || 'Unknown',
+      avatarId: q.avatarId || 'Unknown',
       uqid: q.uqid || '',
       name: q.name || new Date().toISOString(),
       avatarName: q.avatarName || 'Unknown',
       nsfw: !!q.nsfw,
-      animationParameters: parsed,
+      valuedParams: parsed,
       isPreset: !!q.isPreset,
       presets: presets
     }

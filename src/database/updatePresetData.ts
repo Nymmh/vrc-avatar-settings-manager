@@ -1,10 +1,8 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
-import { BrowserWindow } from 'electron'
 
 export function updatePresetData(
   log: Logger,
-  mainWindow: BrowserWindow,
   db: Database,
   id: number,
   saveName: string,

@@ -9,7 +9,7 @@ import { showWarning } from '../services/showWarning'
 export async function uploadConfigAndApply(
   log: Logger,
   db: Database,
-  loadedJson: avatarConfigInterface,
+  loadedJson: avatarDBInterface,
   OSC_CLIENT: Client,
   saveName: string,
   saveOption: boolean,
@@ -71,7 +71,7 @@ export async function uploadConfigAndApply(
   if (!saveName)
     return { upload: (await upload) as boolean, save: false, saveMessage: 'Invalid save name' }
 
-  loadedJson.id = currentAviId
+  loadedJson.avatarId = currentAviId
   loadedJson.name = avatarName
 
   const save = await saveConfig(
@@ -80,8 +80,7 @@ export async function uploadConfigAndApply(
     loadedJson,
     saveName,
     true,
-    loadedJson.nsfw || false,
-    true,
+    Boolean(loadedJson.nsfw),
     mainWindow
   )
 

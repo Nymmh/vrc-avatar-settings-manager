@@ -25,7 +25,7 @@ export async function replaceParams(
 
     if (!q) return { success: false, message: 'No saved config found with that ID' }
 
-    if (parsedConfig?.id?.trim() && parsedConfig.id.trim() !== q.avatarId) {
+    if (parsedConfig?.avatarId?.trim() && parsedConfig.avatarId.trim() !== q.avatarId) {
       const userResponse = await showWarning(
         ['Yes', 'No'],
         0,
@@ -38,7 +38,7 @@ export async function replaceParams(
     }
 
     db.prepare('UPDATE avatars SET parameters = ?, fromFile = 1 WHERE id = ?').run(
-      JSON.stringify(parsedConfig.animationParameters) || '[]',
+      JSON.stringify(parsedConfig.valuedParams) || '[]',
       id
     )
 

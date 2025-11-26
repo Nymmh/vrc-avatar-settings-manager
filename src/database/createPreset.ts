@@ -2,7 +2,7 @@ import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { avatarConfig } from '../services/avatarConfig'
 import { BrowserWindow } from 'electron'
-import { checkIfPresetExists } from './checkifPresetExists'
+import { checkIfPresetExists } from './checkIfPresetExists'
 import { generateUqid } from '../helpers/generateUqid'
 
 export async function createPreset(
@@ -44,7 +44,7 @@ export async function createPreset(
       avatarId,
       name === undefined ? aviData?.name + ' Preset ' + presetId : name,
       aviData?.name || '',
-      JSON.stringify(aviData?.animationParameters || [])
+      JSON.stringify(aviData?.valuedParams || [])
     )
 
     if (!existing) {

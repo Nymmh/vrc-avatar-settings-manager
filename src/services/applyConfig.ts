@@ -3,7 +3,7 @@ import { Client, Bundle } from 'node-osc'
 
 export async function applyConfig(
   log: Logger,
-  content: animationParametersInterface[],
+  content: valuedParamsInterface[],
   OSC_CLIENT: Client
 ): Promise<boolean> {
   try {

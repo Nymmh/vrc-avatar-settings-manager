@@ -1,3 +1,3 @@
-export function getLoadDataName(data: avatarConfigInterface): string {
+export function getLoadDataName(data: avatarDBInterface): string {
   return data?.name || ''
 }

@@ -13,7 +13,7 @@ export function avatarConfig(
   avatarId: string,
   mainWindow: BrowserWindow,
   pendingChanges: Map<string, unknown>
-): avatarConfigInterface | void {
+): avatarDBInterface | void {
   if (!avatarId)
     return mainWindow.webContents.send('foundAvatarFile', {
       success: false
