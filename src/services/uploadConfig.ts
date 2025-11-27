@@ -20,7 +20,7 @@ export async function uploadConfig(
     for (let i = 0; i < loadedJson.valuedParams.length; i++) {
       const ap = loadedJson.valuedParams[i]
 
-      if (!ap.name || ap.value === undefined) continue
+      if (typeof ap === 'string' || !ap.name || ap.value === undefined) continue
 
       chunk.push({
         address: `/avatar/parameters/${ap.name}`,

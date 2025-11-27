@@ -1,5 +1,6 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
+import { syncAvatarNames } from './syncAvatarNames'
 
 export async function updateAvatarData(
   log: Logger,
@@ -18,6 +19,8 @@ export async function updateAvatarData(
     if (result.changes === 0) {
       return { success: false, message: 'No avatar found with the provided ID' }
     }
+
+    syncAvatarNames(log, db, avatarId)
 
     return { success: true }
   } catch (e) {
