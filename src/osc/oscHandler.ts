@@ -1,0 +1,91 @@
+import { BrowserWindow } from 'electron'
+import { Logger } from 'electron-log'
+import Database from 'better-sqlite3'
+import { Client } from 'node-osc'
+import { avatarConfig } from '../services/avatarConfig'
+import { getNames } from '../database/getSavedNames'
+import { applyPreset } from '../database/applyPreset'
+import { updatePreset } from '../database/updatePreset'
+import { ASMStorage } from '../main/ASMStorage'
+
+export class OSCHandler {
+  constructor(
+    private log: Logger,
+    private mainWindow: BrowserWindow,
+    private avatarDB: Database,
+    private oscClient: Client,
+    private storage: ASMStorage
+  ) {}
+
+  async handleMessage(data: unknown[]): Promise<void> {
+    if (!data || data.length === 0) {
+      this.log.warn('Received malformed OSC message')
+      return
+    }
+
+    const [address, payload] = data as [string, unknown]
+
+    if (/VF\d+_(Sync|TC_current|Customization)/.test(address)) return
+
+    if (address === '/avatar/change') {
+      await this.handleAvatarChange(payload as string)
+    } else if (address.includes('Nymh/ASM/Preset/')) {
+      await this.handlePresets(address)
+    } else if (address.includes('/avatar/parameters/')) {
+      this.handleParamChange(address, payload)
+    }
+  }
+
+  private async handleAvatarChange(avatarId: string): Promise<void> {
+    this.log.info('Received avatar change')
+
+    this.storage.clearPendingChanges()
+    this.storage.clearLoadedJson()
+    this.storage.setCurrentAvatarId(avatarId)
+    this.mainWindow.webContents.send('avatarId', { id: avatarId })
+
+    await avatarConfig(avatarId, this.mainWindow, new Map())
+    getNames(this.log, this.avatarDB, this.mainWindow, avatarId)
+  }
+
+  private async handlePresets(address: string): Promise<void> {
+    const cleanAddress = address.replace('/avatar/parameters/', '')
+    const match = cleanAddress.match(/\/(\d+)\//)
+
+    if (!match) {
+      this.log.warn('Invalid preset address format: ', address)
+      return
+    }
+
+    const presetId = parseInt(match[1], 10)
+
+    if (address.includes('Apply')) {
+      await applyPreset(
+        this.log,
+        this.mainWindow,
+        this.avatarDB,
+        this.storage.getCurrentAvatarId(),
+        presetId,
+        this.oscClient,
+        false
+      )
+    } else if (address.includes('Update')) {
+      await updatePreset(
+        this.log,
+        this.avatarDB,
+        presetId,
+        this.storage.getCurrentAvatarId(),
+        this.storage.getPendingChanges(),
+        this.mainWindow
+      )
+
+      await avatarConfig(this.storage.getCurrentAvatarId(), this.mainWindow, new Map())
+      getNames(this.log, this.avatarDB, this.mainWindow, this.storage.getCurrentAvatarId())
+    } else this.log.warn('Unknown preset address: ', address)
+  }
+
+  private handleParamChange(address: string, payload: unknown): void {
+    const cleanAddress = address.replace('/avatar/parameters/', '')
+    this.storage.setPendingChanges(cleanAddress, payload)
+  }
+}

@@ -1,51 +1,24 @@
 import path from 'path'
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { Client, Server } from 'node-osc'
 import log from 'electron-log/main'
 import { avatarDatabase } from './avatarDatabase'
-import { getAllSaved } from '../database/getAllSaved'
-import { getNames } from '../database/getSavedNames'
-import { updateSavedConfig } from '../database/updateSavedConfig'
-import { replaceParams } from '../database/replaceParams'
-import { deleteConfig } from '../database/deleteConfig'
-import { saveConfig } from '../ipc/saveConfig'
-import { loadConfig } from '../ipc/loadConfig'
-import { uploadConfig } from '../ipc/uploadConfig'
-import { uploadConfigAndApply } from '../ipc/uploadConfigAndApply'
-import { applyFromSaved } from '../ipc/applyFromSaved'
+import icon from '../../resources/icon.png?asset'
+import { syncAllAvatarNames } from '../database/syncAllAvatarNames'
+import { checkDataFolder } from '../file/checkDataFolder'
 import { oscClient } from '../osc/oscClient'
 import { oscServer } from '../osc/oscServer'
 import { oscQuery } from '../osc/oscQuery'
-import { avatarConfig } from '../services/avatarConfig'
-import { checkDataFolder } from '../file/checkDataFolder'
-import { exportConfig } from '../file/exportConfig'
-import { getLoadDataName } from '../helpers/getLoadDataName'
-import icon from '../../resources/icon.png?asset'
-import { applyPreset } from '../database/applyPreset'
-import { updatePreset } from '../database/updatePreset'
-import { getAllPresets } from '../database/getAllPresets'
-import { updatePresetData } from '../database/updatePresetData'
-import { deletePreset } from '../database/deletePreset'
-import { createPresetFromApp } from '../database/createPresetFromApp'
-import { updateSavedConfigData } from '../database/updateSavedData'
-import { uploadAvatarConfig } from '../database/uploadAvatarConfig'
-import { loadAvatarConfig } from '../ipc/loadAvatarConfig'
-import { getAvatars } from '../database/getAvatars'
-import { deleteAvatar } from '../database/deleteAvatar'
-import { exportAvatar } from '../file/exportAvatar'
-import { updateAvatarData } from '../database/updateAvatarData'
-import { exportAllConfigs } from '../file/exportAllConfigs'
-import { importAllConfigs } from '../file/importAllConfigs'
-import { syncAllAvatarNames } from '../database/syncAllAvatarNames'
+import { OSCHandler } from '../osc/oscHandler'
+import { ASMStorage } from './ASMStorage'
+import { ipcHandlers } from '../ipc/handlers/ipcHandler'
 
 let mainWindow: BrowserWindow | null = null
-let loadedJson: avatarDBInterface | null = null
-let loadedAvatarJson: exportAllConfigsInterface | null = null
-let currentAviId: string = ''
-const pendingChanges: Map<string, unknown> = new Map()
-let OSC_CLIENT: Client
-let OSC_SERVER: Server
+let OSC_CLIENT: Client | null = null
+let OSC_SERVER: Server | null = null
+let oscHandler: OSCHandler | null = null
+let asmStorage: ASMStorage | null = null
 
 const dataFolder = checkDataFolder()
 
@@ -93,83 +66,22 @@ async function setupOSC(): Promise<void> {
 
   try {
     const PORT = await oscQuery(log)
-    const OSC_SERVER = await oscServer(log, PORT)
+    OSC_SERVER = await oscServer(log, PORT)
     OSC_CLIENT = await oscClient(log)
 
-    if (!mainWindow) {
-      log.error('Main window is not initialized')
-      throw new Error('Main window is not initialized')
+    if (!mainWindow || !asmStorage || !OSC_CLIENT) {
+      log.error('Required dependencies not initialized')
+      throw new Error('Required dependencies not initialized')
     }
 
-    if (!OSC_SERVER) {
-      log.error('Server is not started')
-      throw new Error('Server is not started')
-    }
+    oscHandler = new OSCHandler(log, mainWindow, avatarDB, OSC_CLIENT, asmStorage)
 
-    log.info('Listener ready')
-    // oscListener(log, OSC_SERVER, mainWindow)
-    OSC_SERVER.on('message', async (data) => {
-      if (!data || data.length === 0) {
-        log.warn('Received malformed OSC message:', data)
-        return
-      }
+    OSC_SERVER.on('message', (data) => oscHandler!.handleMessage(data))
 
-      let [address, payload] = data
-
-      if (/VF\d+_(Sync|TC_current|Customization)/.test(address)) {
-        return
-      }
-
-      if (address === '/avatar/change') {
-        if (!mainWindow) {
-          log.error('Main window is not initialized')
-          throw new Error('Main window is not initialized')
-        }
-        log.log('Received avatar change with ID: ', payload)
-
-        pendingChanges.clear()
-        loadedJson = null
-        mainWindow.webContents.send('avatarId', { id: payload })
-        currentAviId = payload
-        avatarConfig(payload, mainWindow, new Map())
-        getNames(log, avatarDB, mainWindow, currentAviId)
-      } else if (address.includes('Nymh/ASM/Preset/')) {
-        address = address.replace('/avatar/parameters/', '')
-
-        const match = address.match(/\/(\d)+\//)
-
-        if (!match) {
-          log.error('Invalid address')
-          return
-        }
-
-        const presetId = parseInt(match[1], 10)
-
-        if (address.includes('Apply')) {
-          if (!mainWindow) {
-            log.error('Main window is not initialized')
-            throw new Error('Main window is not initialized')
-          }
-          applyPreset(log, mainWindow, avatarDB, currentAviId, presetId, OSC_CLIENT, false)
-        } else if (address.includes('Update')) {
-          if (!mainWindow) {
-            log.error('Main window is not initialized')
-            throw new Error('Main window is not initialized')
-          }
-          await updatePreset(log, avatarDB, presetId, currentAviId, pendingChanges, mainWindow)
-          avatarConfig(currentAviId, mainWindow, new Map())
-          getNames(log, avatarDB, mainWindow, currentAviId)
-        } else log.error('Got "Nymh/ASM/Preset" then hit an error')
-      } else if (address.includes('/avatar/parameters/')) {
-        address = address.replace('/avatar/parameters/', '')
-        pendingChanges.set(address, payload)
-      }
-    })
+    log.info('OSC setup complete')
   } catch (e) {
-    log.error('Error setting up OSC:', e)
-    dialog.showErrorBox('OSCQuery Error', 'Failed to start OSCQuery server.')
+    log.error('Error setting up OSC: ', e)
     app.quit()
-    throw new Error('Failed to set up OSC')
   }
 }
 
@@ -179,259 +91,14 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  ipcMain.handle('appVersion', () => {
-    return app.getVersion()
-  })
+  asmStorage = new ASMStorage()
 
-  ipcMain.handle('saveConfig', async (_event, { content, saveName, nsfw }) => {
-    if (!mainWindow) return { success: false }
-
-    content = await avatarConfig(currentAviId, mainWindow, pendingChanges)
-
-    const savedConfig = await saveConfig(log, avatarDB, content, saveName, nsfw, false, mainWindow)
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return savedConfig
-  })
-
-  ipcMain.handle('loadConfig', async () => {
-    if (!mainWindow) return
-
-    const dataParsedConfig = await loadConfig(log, mainWindow)
-
-    if (!dataParsedConfig) {
-      log.error('No file data')
-      return { name: '', match: false, error: 'No file data' }
-    }
-
-    if (!dataParsedConfig.avatarId) {
-      return { name: '', match: false, error: 'Loaded config is missing ID' }
-    }
-
-    if (!dataParsedConfig.name) {
-      return { name: '', match: false, error: 'Loaded config is missing name' }
-    }
-
-    const avatarName: string = await getLoadDataName(dataParsedConfig)
-    loadedJson = dataParsedConfig
-
-    return { name: avatarName, match: dataParsedConfig.avatarId === currentAviId, error: '' }
-  })
-
-  ipcMain.handle('loadAvatarConfig', async () => {
-    if (!mainWindow) return
-
-    loadedAvatarJson = await loadAvatarConfig(log, mainWindow)
-    return loadedAvatarJson
-  })
-
-  ipcMain.handle('applyConfig', async (_event, id: number) => {
-    if (!mainWindow || !currentAviId) return { success: false }
-
-    const res = await applyFromSaved(log, avatarDB, id, currentAviId, OSC_CLIENT, mainWindow)
-    return { success: !!res }
-  })
-
-  ipcMain.handle(
-    'uploadConfigAndApply',
-    async (_event, saveName: string | '', saveOption: boolean, avatarName: string | 'Unknown') => {
-      if (!mainWindow || !currentAviId) {
-        return { success: false }
-      }
-
-      if (!loadedJson) {
-        log.error('No configuration loaded to upload')
-        return { success: false }
-      }
-
-      const uploadingResult = await uploadConfigAndApply(
-        log,
-        avatarDB,
-        loadedJson,
-        OSC_CLIENT,
-        saveName,
-        saveOption,
-        currentAviId,
-        avatarName,
-        mainWindow
-      )
-      getNames(log, avatarDB, mainWindow, currentAviId)
-      return uploadingResult
-    }
-  )
-
-  ipcMain.handle(
-    'uploadConfig',
-    async (_event, saveName: string | '', nsfw: boolean, avatarId: string | '') => {
-      if (!mainWindow || !loadedJson) {
-        return { success: false }
-      }
-
-      const res = await uploadConfig(
-        log,
-        avatarDB,
-        saveName,
-        nsfw,
-        avatarId,
-        loadedJson,
-        mainWindow
-      )
-      getNames(log, avatarDB, mainWindow, currentAviId)
-      return res
-    }
-  )
-
-  ipcMain.handle('refreshAvatarFile', async () => {
-    if (!mainWindow || !currentAviId) return { success: false }
-    loadedJson = null
-
-    avatarConfig(currentAviId, mainWindow, new Map())
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return { success: true }
-  })
-
-  ipcMain.handle('getAllSaved', async () => {
-    return await getAllSaved(log, avatarDB)
-  })
-
-  ipcMain.handle('getAllPresets', async () => {
-    return await getAllPresets(log, avatarDB)
-  })
-
-  ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName) => {
-    if (!mainWindow) return { success: false }
-
-    const res = await updateSavedConfig(
-      log,
-      avatarDB,
-      id,
-      avatarId,
-      avatarName,
-      saveName,
-      mainWindow,
-      pendingChanges
-    )
-
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return res
-  })
-
-  ipcMain.handle('updateConfigData', async (_event, id, avatarId, saveName, nsfw) => {
-    if (!mainWindow) return { success: false }
-
-    const res = await updateSavedConfigData(log, avatarDB, id, avatarId, saveName, nsfw)
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return res
-  })
-
-  ipcMain.handle('exportConfig', async (_event, id: number) => {
-    if (!mainWindow) return { success: false }
-
-    return await exportConfig(log, avatarDB, dialog, mainWindow, id)
-  })
-
-  ipcMain.handle('replaceParams', async (_event, id: number) => {
-    if (!mainWindow || !currentAviId) return { success: false, message: 'Internal Error' }
-
-    return await replaceParams(log, avatarDB, mainWindow, id)
-  })
-
-  ipcMain.handle('deleteConfig', async (_event, id: number) => {
-    if (!mainWindow) return { success: false, message: 'Internal Error' }
-
-    const del = await deleteConfig(log, avatarDB, mainWindow, id)
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return del
-  })
-
-  ipcMain.handle('applyPresetFromApp', async (_event, avatarId: string, unityParameter: number) => {
-    if (!mainWindow) return { success: false }
-
-    return await applyPreset(log, mainWindow, avatarDB, avatarId, unityParameter, OSC_CLIENT, true)
-  })
-
-  ipcMain.handle(
-    'updatePresetFromApp',
-    async (_event, id: number, saveName: string, parameter: number) => {
-      if (!mainWindow) return { success: false }
-
-      return await updatePresetData(log, avatarDB, id, saveName, parameter)
-    }
-  )
-
-  ipcMain.handle('deletePresetFromApp', async (_event, id: number) => {
-    if (!mainWindow) return { success: false }
-
-    const del = await deletePreset(log, mainWindow, avatarDB, id)
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return del
-  })
-
-  ipcMain.handle('createPresetFromApp', async (_event, id: number) => {
-    if (!mainWindow) return { success: false }
-
-    return await createPresetFromApp(log, avatarDB, id)
-  })
-
-  ipcMain.handle('getSavedByUqid', async (_event, uqid: string) => {
-    return await getAllSaved(log, avatarDB, uqid)
-  })
-
-  ipcMain.handle('getPresetsByUqid', async (_event, uqid: string) => {
-    return await getAllPresets(log, avatarDB, uqid)
-  })
-
-  ipcMain.handle('uploadAvatarConfig', async () => {
-    if (!mainWindow) {
-      return { upload: false }
-    }
-
-    if (!loadedAvatarJson) {
-      return { upload: false }
-    }
-
-    const res = await uploadAvatarConfig(log, avatarDB, loadedAvatarJson)
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return res
-  })
-
-  ipcMain.handle('getAllAvatars', async () => {
-    return await getAvatars(log, avatarDB)
-  })
-
-  ipcMain.handle('deleteAvatar', async (_event, avatarId: string) => {
-    if (!mainWindow) return { success: false }
-
-    const del = await deleteAvatar(log, avatarDB, mainWindow, avatarId)
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return del
-  })
-
-  ipcMain.handle('exportAvatar', async (_event, avatarId: string) => {
-    if (!mainWindow) return { success: false }
-
-    return await exportAvatar(log, avatarDB, dialog, mainWindow, avatarId)
-  })
-
-  ipcMain.handle('updateAvatarData', async (_event, avatarId: string, name: string) => {
-    if (!mainWindow) return { success: false }
-
-    const res = await updateAvatarData(log, avatarDB, avatarId, name)
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return res
-  })
-
-  ipcMain.handle('exportAllConfigs', async () => {
-    if (!mainWindow) return { success: false }
-
-    return await exportAllConfigs(log, avatarDB, mainWindow, dialog)
-  })
-
-  ipcMain.handle('importAllConfigs', async () => {
-    if (!mainWindow) return { success: false }
-
-    const res = await importAllConfigs(log, avatarDB, mainWindow, dialog)
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return res
+  ipcHandlers({
+    log,
+    avatarDB,
+    storage: asmStorage,
+    getMainWindow: () => mainWindow,
+    getOSCClient: () => OSC_CLIENT
   })
 
   createWindow()
@@ -447,9 +114,7 @@ app.on('activate', function () {
 
 app.on('will-quit', () => {
   log.info('Meow Meow is shutting down...')
-  pendingChanges.clear()
-  loadedJson = null
-  loadedAvatarJson = null
+  asmStorage?.cleanState()
   avatarDB.close()
   OSC_CLIENT.close()
   OSC_SERVER.close()
