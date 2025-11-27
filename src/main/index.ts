@@ -37,6 +37,8 @@ import { exportAvatar } from '../file/exportAvatar'
 import { updateAvatarData } from '../database/updateAvatarData'
 import { exportAllConfigs } from '../file/exportAllConfigs'
 import { importAllConfigs } from '../file/importAllConfigs'
+import { syncAvatarNames } from '../database/syncAvatarNames'
+import { syncAllAvatarNames } from '../database/syncAllAvatarNames'
 
 let mainWindow: BrowserWindow | null = null
 let loadedJson: avatarDBInterface | null = null
@@ -433,6 +435,7 @@ app.whenReady().then(async () => {
   })
 
   createWindow()
+  syncAllAvatarNames(log, avatarDB)
   await setupOSC()
   // update(log)
   log.info('App is ready')

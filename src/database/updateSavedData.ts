@@ -1,8 +1,6 @@
 import Database from 'better-sqlite3'
 import { Logger } from 'electron-log'
 import { checkIfExistById } from './checkIfExistById'
-import { avatarConfig } from '../services/avatarConfig'
-import { BrowserWindow } from 'electron'
 
 export function updateSavedConfigData(
   log: Logger,
