@@ -57,16 +57,10 @@ export async function saveConfig(
         db.prepare(
           `
         UPDATE avatars
-        set avatarName = ?, nsfw = ?, parameters = ?, fromFile = 0
+        SET nsfw = ?, parameters = ?, fromFile = 0
         WHERE name = ? AND avatarId = ?
       `
-        ).run(
-          parsedContent?.name || 'Unknown',
-          nsfwValue,
-          parametersJson,
-          saveName,
-          parsedContent.id
-        )
+        ).run(nsfwValue, parametersJson, saveName, parsedContent.avatarId)
 
         return { success: true, message: 'Saved' }
       }
@@ -86,27 +80,38 @@ export async function saveConfig(
           let presetSave = parsedContent.isPreset
 
           if (parsedContent.isPreset && parsedContent?.presets?.avatarId) {
-            presetSave = await uploadAvatarPresets(db, parsedContent, mainWindow, uqid, true)
+            presetSave = await uploadAvatarPresets(
+              db,
+              parsedContent,
+              mainWindow,
+              parsedContent.uqid,
+              true
+            )
             uploadedPresets = true
           }
 
           db.prepare(
             `
         UPDATE avatars
-        SET avatarName = ?, nsfw = ?, parameters = ?, fromFile = 1, isPreset = ?
+        SET name = ?, nsfw = ?, parameters = ?, fromFile = 1, isPreset = ?
         WHERE uqid = ?
       `
           ).run(
-            parsedContent?.name?.trim() || 'Unknown',
-            nsfwValue,
+            saveName?.trim() || parsedContent?.name?.trim() || 'Unknown',
+            parsedContent.nsfw ? 1 : 0,
             parametersJson,
             presetSave ? 1 : 0,
             parsedContent.uqid
           )
-        } else if (userResponse.response === 1) {
-          parsedContent.uqid = undefined
+
+          return { success: true, message: 'Saved' }
+        } else {
+          parsedContent.uqid = uqid
         }
       }
+    } else {
+      log.error('Error saving config')
+      return { success: false, message: 'Internal error' }
     }
 
     let uploadName = saveName
@@ -122,6 +127,7 @@ export async function saveConfig(
     let presetSave = parsedContent.isPreset
 
     if (parsedContent.isPreset && parsedContent?.presets?.avatarId && !uploadedPresets) {
+      parsedContent.presets.avatarId = parsedContent.avatarId
       presetSave = await uploadAvatarPresets(
         db,
         parsedContent,
@@ -131,6 +137,20 @@ export async function saveConfig(
       )
     }
 
+    const avatarName = db
+      .prepare('SELECT name FROM avatarStorage WHERE avatarId = ? LIMIT 1')
+      .get(parsedContent.avatarId) as
+      | {
+          name: string
+        }
+      | undefined
+
+    if (avatarName?.name) {
+      parsedContent.avatarName = avatarName.name
+    } else {
+      parsedContent.avatarName = parsedContent?.name
+    }
+
     db.prepare(
       `
       INSERT INTO avatars (uqid, avatarId, name, avatarName, nsfw, parameters, fromFile, isPreset)
@@ -138,6 +158,7 @@ export async function saveConfig(
       ON CONFLICT(uqid) DO UPDATE SET
         avatarId = excluded.avatarId,
         avatarName = excluded.avatarName,
+        name = excluded.name,
         nsfw = excluded.nsfw,
         parameters = excluded.parameters,
         fromFile = excluded.fromFile,
@@ -147,7 +168,7 @@ export async function saveConfig(
       parsedContent?.uqid || uqid,
       parsedContent.avatarId,
       saveName,
-      parsedContent.name,
+      parsedContent.avatarName?.trim() || parsedContent?.name?.trim() || 'Unknown',
       nsfwValue,
       parametersJson,
       fromFileValue,
@@ -159,7 +180,10 @@ export async function saveConfig(
       INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?)
       ON CONFLICT(avatarId) DO NOTHING
       `
-    ).run(parsedContent.avatarId, parsedContent.name)
+    ).run(
+      parsedContent.avatarId,
+      parsedContent.avatarName?.trim() || parsedContent?.name?.trim() || 'Unknown'
+    )
 
     return { success: true, message: 'Saved' }
   } catch (e) {

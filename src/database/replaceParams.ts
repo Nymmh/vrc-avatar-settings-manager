@@ -37,6 +37,18 @@ export async function replaceParams(
       if (userResponse.response !== 0) return { success: false, message: 'Cancelled' }
     }
 
+    if (parsedConfig.nsfw) {
+      const userResponse = await showWarning(
+        ['Yes', 'No'],
+        0,
+        'NSFW Warning',
+        `The uploaded configuration is marked as NSFW. Are you sure you want to proceed?`,
+        mainWindow
+      )
+
+      if (userResponse.response !== 0) return { success: false, message: 'Cancelled' }
+    }
+
     db.prepare('UPDATE avatars SET parameters = ?, fromFile = 1 WHERE id = ?').run(
       JSON.stringify(parsedConfig.valuedParams) || '[]',
       id

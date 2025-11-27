@@ -25,16 +25,18 @@ export async function createPresetFromApp(
     let presetNumber = 1
 
     const allPresetForAvatar = db
-      .prepare('SELECT * FROM presets WHERE avatarId = ?')
-      .all(avatarData.avatarId)
+      .prepare('SELECT unityParameter FROM presets WHERE avatarId = ? ORDER BY unityParameter ASC')
+      .all(avatarData.avatarId) as Array<{ unityParameter: number }>
 
     if (allPresetForAvatar && allPresetForAvatar.length) {
-      presetNumber = allPresetForAvatar.length + 1
+      const existingNumbers = new Set<number>(allPresetForAvatar.map((p) => p.unityParameter))
+
+      while (existingNumbers.has(presetNumber)) {
+        presetNumber++
+      }
     }
 
-    if (!saveName.includes(' Preset ')) {
-      saveName += ' Preset ' + presetNumber
-    }
+    saveName += ' Preset ' + presetNumber
 
     db.prepare(
       `

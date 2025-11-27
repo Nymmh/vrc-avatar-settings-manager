@@ -2,6 +2,7 @@ import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { saveConfig } from './saveConfig'
 import { BrowserWindow } from 'electron'
+import { showWarning } from '../services/showWarning'
 
 export async function uploadConfig(
   log: Logger,
@@ -9,7 +10,6 @@ export async function uploadConfig(
   saveName: string | '',
   nsfw: boolean,
   avatarId: string | '',
-  avatarName: string | '',
   config: avatarDBInterface,
   mainWindow: BrowserWindow
 ): Promise<uploadConfigInterface> {
@@ -23,11 +23,27 @@ export async function uploadConfig(
   const normalizedSaveName = saveName.trim() || config?.name?.trim() || 'Unknown'
 
   config.avatarId = avatarId?.trim() || config.avatarId?.trim() || 'Unknown'
-  config.name = avatarName?.trim() || config.name?.trim() || 'Unknown'
 
-  if (nsfw) config.nsfw = 1
+  if (config?.nsfw && !nsfw) {
+    const userResponse = await showWarning(
+      ['Yes', 'No'],
+      0,
+      'NSFW Warning',
+      `This config is marked as NSFW, are you sure you want to save it?`,
+      mainWindow
+    )
 
-  const save = await saveConfig(log, db, config, normalizedSaveName, true, nsfw, mainWindow)
+    if (userResponse.response !== 0) {
+      return {
+        upload: false,
+        saveMessage: 'Upload cancelled by user'
+      }
+    }
+
+    nsfw = true
+  } else if (nsfw) config.nsfw = 1
+
+  const save = await saveConfig(log, db, config, normalizedSaveName, nsfw, true, mainWindow)
 
   if (save.success) log.info('Upload successful')
 

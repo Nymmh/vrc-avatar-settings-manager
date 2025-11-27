@@ -15,19 +15,13 @@ export interface avatarApi {
   foundAvatarFile: (meowback: (data: foundAvatarFileInterface) => void) => void
   avatarConfig: (meowback: (data: avatarConfigInterface) => void) => void
   saveConfig: (data: avatarConfigInterface, nsfw: boolean, saveName?: string) => saveConfigInterface
-
   loadConfig: () => loadConfigInterface
   uploadConfigAndApply: (
     saveName?: string,
     saveOption: boolean,
     avatarName: string
   ) => uploadConfigAndApplyTypeInterface
-  uploadConfig: (
-    saveName?: string,
-    nsfw: boolean,
-    avatarId?: string,
-    avatarName?: string
-  ) => uploadConfigInterface
+  uploadConfig: (saveName?: string, nsfw: boolean, avatarId?: string) => uploadConfigInterface
   refreshAvatarFile: () => { success: boolean }
   savedNames: (meowback: (data: savedNamesInterface[]) => void) => void
   applyConfig: (id: number) => { success: boolean }

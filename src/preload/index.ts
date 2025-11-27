@@ -24,7 +24,6 @@ const avatarApi = {
   },
   saveConfig: async (
     data: avatarDBInterface,
-    overwrite: boolean,
     nsfw: boolean,
     saveName?: string
   ): Promise<saveConfigInterface> => {
@@ -32,7 +31,6 @@ const avatarApi = {
     return ipcRenderer.invoke('saveConfig', {
       content: dataString,
       saveName: saveName?.trim() ? saveName : data?.name || 'Unknown',
-      overwrite,
       nsfw
     })
   },
@@ -46,10 +44,8 @@ const avatarApi = {
   uploadConfig: async (
     saveName?: string,
     nsfw: boolean = false,
-    avatarId: string = '',
-    avatarName: string = ''
-  ): Promise<uploadConfigInterface> =>
-    ipcRenderer.invoke('uploadConfig', saveName, nsfw, avatarId, avatarName),
+    avatarId: string = ''
+  ): Promise<uploadConfigInterface> => ipcRenderer.invoke('uploadConfig', saveName, nsfw, avatarId),
   refreshAvatarFile: async (): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('refreshAvatarFile'),
   savedNames: (meowback: (data: savedNamesInterface[]) => void): void => {
@@ -80,7 +76,7 @@ const avatarApi = {
     saveName: string,
     nsfw: boolean | undefined
   ): Promise<updateConfigInterface> =>
-    ipcRenderer.invoke('updateConfig', id, avatarId, saveName, nsfw),
+    ipcRenderer.invoke('updateConfigData', id, avatarId, saveName, nsfw),
   exportConfig: async (id: number): Promise<exportConfigInterface> =>
     ipcRenderer.invoke('exportConfig', id),
   replaceParams: async (id: number): Promise<replaceParamsInterface> =>
