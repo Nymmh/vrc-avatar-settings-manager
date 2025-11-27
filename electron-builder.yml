@@ -1,4 +1,4 @@
-appId: com.nymh.avatar-settings-manager
+appId: com.nymh.avatarsettingsmanager
 productName: VRC Avatar Settings Manager
 directories:
   buildResources: build
@@ -10,12 +10,24 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-# asarUnpack:
-#   - resources/**
+  - '!**/*.map'
+  - '!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}'
+  - '!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}'
+  - '!**/node_modules/*.d.ts'
+  - '!**/node_modules/.bin'
+  - '!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}'
+  - '!.editorconfig'
+  - '!**/._*'
+  - '!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}'
+  - '!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}'
+  - '!**/{appveyor.yml,.travis.yml,circle.yml}'
+  - '!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}'
+asarUnpack:
+  - '**/node_modules/better-sqlite3/build/**/*'
 electronLanguages:
   - en-US
 win:
-  executableName: ${productName}
+  executableName: VRC Avatar Settings Manager
   publish: github
   target: nsis
 nsis:
@@ -40,6 +52,10 @@ appImage:
   artifactName: ${productName} ${version}.${ext}
 npmRebuild: false
 asar: true
+compression: maximum
+removePackageScripts: true
+nodeGypRebuild: false
+buildDependenciesFromSource: false
 publish:
   provider: generic
   url: https://github.com/Nymmh/vrc-avatar-settings-manager/releases/download/latest/
