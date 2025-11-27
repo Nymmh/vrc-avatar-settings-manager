@@ -9,7 +9,7 @@ export async function oscQuery(log: Logger): Promise<number> {
   const service = new OSCQueryServer({
     oscPort,
     httpPort: oscPort,
-    serviceName: 'Nymh-avi-settings-copy'
+    serviceName: 'Nymh-avatar-settings-manager'
   })
 
   service.addMethod('/avatar/change', {
