@@ -76,8 +76,6 @@ const handleExport = async (idx: number, id: number): Promise<void> => {
 }
 
 const handleUpdate = async (idx: number): Promise<void> => {
-  console.log(allSaves.value![idx].name)
-  console.log('here')
   const res = await window.avatarApi.updateConfigData(
     allSaves.value![idx].id,
     allSaves.value![idx].avatarId || 'Unknown',

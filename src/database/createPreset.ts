@@ -25,7 +25,6 @@ export async function createPreset(
     }
 
     const aviData = await avatarConfig(avatarId, mainWindow, pendingChanges)
-    console.log(pendingChanges)
 
     db.prepare(
       `
