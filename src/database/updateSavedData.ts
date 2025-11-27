@@ -10,9 +10,7 @@ export function updateSavedConfigData(
   id: number,
   avatarId: string,
   saveName: string,
-  nsfw: boolean | undefined,
-  mainWindow: BrowserWindow,
-  pendingChanges: Map<string, unknown>
+  nsfw: boolean | undefined
 ): updateConfigInterface {
   try {
     saveName = saveName.trim()
@@ -73,13 +71,6 @@ export function updateSavedConfigData(
         saveName,
         id
       )
-    }
-
-    const avatarConfigResult = avatarConfig(avatarId, mainWindow, pendingChanges)
-
-    if (!avatarConfigResult) {
-      log.error('Failed to get avatar config')
-      return { success: false, message: 'Failed to get avatar config' }
     }
 
     db.prepare(

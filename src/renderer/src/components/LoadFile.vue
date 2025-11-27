@@ -40,7 +40,6 @@ const uploadStatus = ref(false)
 const showUploadStatus = ref(false)
 const NSFWValue = ref(false)
 const DirectUploadId = ref('')
-const DirectUploadName = ref('')
 const loadConfigSaveNameError = ref('')
 
 const resetVars = (): void => {
@@ -54,7 +53,6 @@ const resetVars = (): void => {
   loadConfigSaveError.value = ''
   NSFWValue.value = false
   DirectUploadId.value = ''
-  DirectUploadName.value = ''
   loadConfigSaveNameError.value = ''
 }
 
@@ -95,8 +93,7 @@ const handleUpload = async (): Promise<void> => {
     res = await window.avatarApi.uploadConfig(
       loadConfigSaveName.value,
       NSFWValue.value,
-      DirectUploadId.value || '',
-      DirectUploadName.value || ''
+      DirectUploadId.value || ''
     )
   } else {
     res = await window.avatarApi.uploadConfigAndApply(
@@ -129,8 +126,6 @@ const handleInputUpdate = ({ id, value, checked }): void => {
     NSFWValue.value = checked
   } else if (id == 'direct-upload-id') {
     DirectUploadId.value = value
-  } else if (id == 'direct-upload-name') {
-    DirectUploadName.value = value
   }
 }
 
@@ -165,12 +160,6 @@ const emit = defineEmits(['notification', 'uploaded'])
         label="Avatar ID: "
         placeholder="Avatar ID"
         :model-value="DirectUploadId"
-        @update:model-value="handleInputUpdate"
-      />
-      <InputText
-        id="direct-upload-name"
-        label="Avatar Name: "
-        :model-value="DirectUploadName"
         @update:model-value="handleInputUpdate"
       />
     </div>

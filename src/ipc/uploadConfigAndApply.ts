@@ -24,6 +24,25 @@ export async function uploadConfigAndApply(
     }
   }
 
+  currentAviId = currentAviId?.trim()
+
+  if (currentAviId !== loadedJson.avatarId) {
+    const userResponse = await showWarning(
+      ['Yes', 'No'],
+      0,
+      'Confirm',
+      `The avatar ID in the uploaded config does not match the current avatar. Do you want to proceed?`,
+      mainWindow
+    )
+
+    if (userResponse.response !== 0) {
+      return {
+        upload: false,
+        saveMessage: 'Upload cancelled by user'
+      }
+    }
+  }
+
   let nsfwResponse = 0
   let upload: unknown
 
@@ -31,7 +50,7 @@ export async function uploadConfigAndApply(
     const userResponse = await showWarning(
       ['Yes', 'No'],
       0,
-      'Confirm Delete',
+      'NSFW Warning',
       `This config is marked as NSFW, are you sure you want to apply it?`,
       mainWindow
     )
@@ -52,7 +71,6 @@ export async function uploadConfigAndApply(
     return { upload: uploadWait }
   }
 
-  currentAviId = currentAviId?.trim()
   avatarName = avatarName?.trim()
   saveName = saveName?.trim()
 
@@ -79,8 +97,8 @@ export async function uploadConfigAndApply(
     db,
     loadedJson,
     saveName,
+    loadedJson?.nsfw ? true : false,
     true,
-    Boolean(loadedJson.nsfw),
     mainWindow
   )
 

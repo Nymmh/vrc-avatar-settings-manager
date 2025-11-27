@@ -185,7 +185,6 @@ app.whenReady().then(async () => {
     if (!mainWindow) return { success: false }
 
     content = await avatarConfig(currentAviId, mainWindow, pendingChanges)
-    content = JSON.stringify(content)
 
     const savedConfig = await saveConfig(log, avatarDB, content, saveName, nsfw, false, mainWindow)
     getNames(log, avatarDB, mainWindow, currentAviId)
@@ -260,27 +259,22 @@ app.whenReady().then(async () => {
 
   ipcMain.handle(
     'uploadConfig',
-    async (
-      _event,
-      saveName: string | '',
-      nsfw: boolean,
-      avatarId: string | '',
-      avatarName: string | ''
-    ) => {
+    async (_event, saveName: string | '', nsfw: boolean, avatarId: string | '') => {
       if (!mainWindow || !loadedJson) {
         return { success: false }
       }
 
-      return await uploadConfig(
+      const res = await uploadConfig(
         log,
         avatarDB,
         saveName,
         nsfw,
         avatarId,
-        avatarName,
         loadedJson,
         mainWindow
       )
+      getNames(log, avatarDB, mainWindow, currentAviId)
+      return res
     }
   )
 
@@ -304,7 +298,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName) => {
     if (!mainWindow) return { success: false }
 
-    return await updateSavedConfig(
+    const res = await updateSavedConfig(
       log,
       avatarDB,
       id,
@@ -314,21 +308,17 @@ app.whenReady().then(async () => {
       mainWindow,
       pendingChanges
     )
+
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    return res
   })
 
   ipcMain.handle('updateConfigData', async (_event, id, avatarId, saveName, nsfw) => {
     if (!mainWindow) return { success: false }
 
-    return await updateSavedConfigData(
-      log,
-      avatarDB,
-      id,
-      avatarId,
-      saveName,
-      nsfw,
-      mainWindow,
-      pendingChanges
-    )
+    const res = await updateSavedConfigData(log, avatarDB, id, avatarId, saveName, nsfw)
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    return res
   })
 
   ipcMain.handle('exportConfig', async (_event, id: number) => {
@@ -346,7 +336,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('deleteConfig', async (_event, id: number) => {
     if (!mainWindow) return { success: false, message: 'Internal Error' }
 
-    return await deleteConfig(log, avatarDB, mainWindow, id)
+    const del = await deleteConfig(log, avatarDB, mainWindow, id)
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    return del
   })
 
   ipcMain.handle('applyPresetFromApp', async (_event, avatarId: string, unityParameter: number) => {
@@ -367,7 +359,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('deletePresetFromApp', async (_event, id: number) => {
     if (!mainWindow) return { success: false }
 
-    return await deletePreset(log, mainWindow, avatarDB, id)
+    const del = await deletePreset(log, mainWindow, avatarDB, id)
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    return del
   })
 
   ipcMain.handle('createPresetFromApp', async (_event, id: number) => {
@@ -393,7 +387,9 @@ app.whenReady().then(async () => {
       return { upload: false }
     }
 
-    return await uploadAvatarConfig(log, avatarDB, loadedAvatarJson)
+    const res = await uploadAvatarConfig(log, avatarDB, loadedAvatarJson)
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    return res
   })
 
   ipcMain.handle('getAllAvatars', async () => {
@@ -403,7 +399,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('deleteAvatar', async (_event, avatarId: string) => {
     if (!mainWindow) return { success: false }
 
-    return await deleteAvatar(log, avatarDB, mainWindow, avatarId)
+    const del = await deleteAvatar(log, avatarDB, mainWindow, avatarId)
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    return del
   })
 
   ipcMain.handle('exportAvatar', async (_event, avatarId: string) => {
@@ -415,7 +413,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('updateAvatarData', async (_event, avatarId: string, name: string) => {
     if (!mainWindow) return { success: false }
 
-    return await updateAvatarData(log, avatarDB, avatarId, name)
+    const res = await updateAvatarData(log, avatarDB, avatarId, name)
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    return res
   })
 
   ipcMain.handle('exportAllConfigs', async () => {
@@ -427,7 +427,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('importAllConfigs', async () => {
     if (!mainWindow) return { success: false }
 
-    return await importAllConfigs(log, avatarDB, mainWindow, dialog)
+    const res = await importAllConfigs(log, avatarDB, mainWindow, dialog)
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    return res
   })
 
   createWindow()
