@@ -1,7 +1,7 @@
 import path from 'path'
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { Client } from 'node-osc'
+import { Client, Server } from 'node-osc'
 import log from 'electron-log/main'
 import { avatarDatabase } from './avatarDatabase'
 import { getAllSaved } from '../database/getAllSaved'
@@ -37,7 +37,6 @@ import { exportAvatar } from '../file/exportAvatar'
 import { updateAvatarData } from '../database/updateAvatarData'
 import { exportAllConfigs } from '../file/exportAllConfigs'
 import { importAllConfigs } from '../file/importAllConfigs'
-import { syncAvatarNames } from '../database/syncAvatarNames'
 import { syncAllAvatarNames } from '../database/syncAllAvatarNames'
 
 let mainWindow: BrowserWindow | null = null
@@ -46,6 +45,7 @@ let loadedAvatarJson: exportAllConfigsInterface | null = null
 let currentAviId: string = ''
 const pendingChanges: Map<string, unknown> = new Map()
 let OSC_CLIENT: Client
+let OSC_SERVER: Server
 
 const dataFolder = checkDataFolder()
 
@@ -174,7 +174,7 @@ async function setupOSC(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('com.nymh.avatar-settings-manager')
+  electronApp.setAppUserModelId('com.nymh.avatarsettingsmanager')
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
@@ -443,6 +443,21 @@ app.whenReady().then(async () => {
 
 app.on('activate', function () {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
+})
+
+app.on('will-quit', () => {
+  log.info('Meow Meow is shutting down...')
+  pendingChanges.clear()
+  loadedJson = null
+  loadedAvatarJson = null
+  avatarDB.close()
+  OSC_CLIENT.close()
+  OSC_SERVER.close()
+})
+
+app.on('before-quit', () => {
+  ipcMain.removeAllListeners()
+  mainWindow = null
 })
 
 app.on('window-all-closed', () => {
