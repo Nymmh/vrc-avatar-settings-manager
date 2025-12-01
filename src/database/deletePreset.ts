@@ -35,34 +35,11 @@ export async function deletePreset(
 
     if (userResponse.response !== 0) return { success: false, message: 'Delete cancelled' }
 
-    const avatarCheck = checkIfExist(db, existing.forUqid)
-    let deleteAvatar = 0
-
-    if (avatarCheck) {
-      const avatarResponse = await showWarning(
-        ['Yes', 'No'],
-        0,
-        'Confirm Delete',
-        `A saved avatar config is linked to this preset, would you like to delete it as well? This action cannot be undone.`,
-        mainWindow
-      )
-      deleteAvatar = avatarResponse.response
-    }
-
-    if (deleteAvatar === 1) {
-      db.prepare(
-        `UPDATE avatars
+    db.prepare(
+      `UPDATE avatars
             SET isPreset = 0
             WHERE uqid = ?`
-      ).run(existing.forUqid)
-    } else {
-      db.prepare(
-        `
-            DELETE FROM avatars
-            WHERE uqid = ?
-        `
-      ).run(existing.forUqid)
-    }
+    ).run(existing.forUqid)
 
     db.prepare('DELETE FROM presets WHERE id = ?').run(id)
 

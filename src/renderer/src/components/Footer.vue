@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import Button from './Button.vue'
+import { appStorage } from '../composables/appStorage'
+
+const appStore = appStorage()
 
 const version = ref<string>('')
 
@@ -36,6 +39,8 @@ const handleImport = async (): Promise<void> => {
     type = 'error'
     title = 'Import Failed'
   }
+
+  appStore.value.dataTableRefresh = true
 
   emit('notification', {
     type,

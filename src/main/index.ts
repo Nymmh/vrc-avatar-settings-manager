@@ -116,8 +116,8 @@ app.on('will-quit', () => {
   log.info('Meow Meow is shutting down...')
   asmStorage?.cleanState()
   avatarDB.close()
-  OSC_CLIENT.close()
-  OSC_SERVER.close()
+  OSC_CLIENT.close(OSC_CLIENT)
+  OSC_SERVER.close(OSC_SERVER)
 })
 
 app.on('before-quit', () => {

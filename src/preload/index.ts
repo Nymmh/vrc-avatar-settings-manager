@@ -118,7 +118,12 @@ const avatarApi = {
   exportAllConfigs: async (): Promise<exportAllConfigsInterface> =>
     ipcRenderer.invoke('exportAllConfigs'),
   importAllConfigs: async (): Promise<importAllConfigsInterface> =>
-    ipcRenderer.invoke('importAllConfigs')
+    ipcRenderer.invoke('importAllConfigs'),
+  getConfigById: async (avatarId: string): Promise<avatarDBInterface[] | null> =>
+    ipcRenderer.invoke('getConfigById', avatarId),
+  dataTableRefresh: (meowback: () => void): void => {
+    ipcRenderer.on('dataTableRefresh', (): void => meowback())
+  }
 }
 
 if (process.contextIsolated) {

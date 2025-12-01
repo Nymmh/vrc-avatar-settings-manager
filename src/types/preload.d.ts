@@ -56,6 +56,8 @@ export interface avatarApi {
   updateAvatarData: (avatarId: string, name: string) => Promise<updateAvatarDataInterface>
   exportAllConfigs: () => Promise<exportAllConfigsPromiseInterface>
   importAllConfigs: () => Promise<importAllConfigsInterface>
+  getConfigById: (avatarId: string) => Promise<avatarDBInterface[] | null>
+  dataTableRefresh: (meowback: () => void) => void
 }
 
 export interface appApi {

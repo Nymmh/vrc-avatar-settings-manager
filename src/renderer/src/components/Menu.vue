@@ -1,58 +1,53 @@
 <script lang="ts" setup>
+import { handleChangeView } from '@renderer/composables/changeView'
 import Button from './Button.vue'
 
 defineProps({
   currentView: {
     type: String,
-    default: 'Main'
+    default: 'Waiting'
   }
 })
-
-defineEmits(['changeView'])
 </script>
 
 <template>
-  <div class="menu">
-    <Button
-      v-show="currentView !== 'Main' && currentView !== 'Waiting'"
-      label="Home"
-      :small="true"
-      :alt-color="true"
-      @click="$emit('changeView', 'Main')"
-    />
-    <Button
-      v-show="currentView !== 'AllSaved'"
-      label="All Saved"
-      :small="true"
-      :alt-color="true"
-      @click="$emit('changeView', 'AllSaved')"
-    />
-    <Button
-      v-show="currentView !== 'AllPresets'"
-      label="Presets"
-      :small="true"
-      :alt-color="true"
-      @click="$emit('changeView', 'AllPresets')"
-    />
-    <Button
-      v-show="currentView !== 'AllAvatars'"
-      label="Avatars"
-      :small="true"
-      :alt-color="true"
-      @click="$emit('changeView', 'AllAvatars')"
-    />
+  <div class="menu underline">
+    <nav class="menu__nav">
+      <Button
+        v-show="currentView !== 'Main' && currentView !== 'Waiting'"
+        label="Home"
+        :small="true"
+        :alt-color="true"
+        @click="handleChangeView('Main')"
+      />
+      <Button
+        v-show="currentView !== 'AllData'"
+        label="All Data"
+        :small="true"
+        :alt-color="true"
+        @click="handleChangeView('AllData')"
+      />
+    </nav>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .menu {
-  align-items: flex-end;
-  display: flex;
-  flex-flow: column;
-  gap: 8px;
-  position: absolute;
-  right: 1rem;
-  top: 1rem;
+  background: var(--color--primary-a1);
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  width: 100%;
   z-index: 100;
+
+  &__nav {
+    align-items: center;
+    display: flex;
+    flex-flow: row wrap;
+    gap: 16px;
+    justify-content: center;
+    margin: 0;
+    width: 100%;
+  }
 }
 </style>

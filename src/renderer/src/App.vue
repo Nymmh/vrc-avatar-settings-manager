@@ -8,21 +8,18 @@ import InputSelect from './components/InputSelect.vue'
 import InputText from './components/InputText.vue'
 import LoadFile from './components/LoadFile.vue'
 import Menu from './components/Menu.vue'
-import AllPresets from './views/AllPresets.vue'
-import AllSaved from './views/AllSaved.vue'
 import Waiting from './components/Waiting.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
 import type { avatarConfigType } from '../../types/avatarConfigType'
 import { NotificationInterface } from './types/notificationInterface'
 import { savedNamesType } from './types/savedNamesInterface'
-import AllAvatars from './views/AllAvatars.vue'
+import { appStorage } from './composables/appStorage'
+import AllData from './views/AllData.vue'
 
-const currentView = ref<string>('Waiting')
+const appStore = appStorage()
 const { notify } = useNotification()
 
 // Avatar state
-const avatarId = ref('')
-const avatarFoundFile = ref(false)
 const showAvatarFoundFileMsg = ref(false)
 const avatarConfig = ref<avatarConfigType | null>(null)
 const holdSaveName = ref(false)
@@ -58,23 +55,16 @@ const pushNotification = (data: NotificationInterface): void => {
   })
 }
 
-const handleChangeView = (view: string): void => {
-  if (!avatarId.value && view === 'Main') {
-    currentView.value = 'Waiting'
-    return
-  }
-  currentView.value = view
-}
-
 const getAvatarId = (): void => {
-  avatarId.value = ''
-  saveName.value = ''
-  holdSaveName.value = false
-  resetVars()
-
   window.avatarApi.avatarId((data) => {
-    currentView.value = 'Main'
-    avatarId.value = data.id
+    appStore.value.avatarId = ''
+    saveName.value = ''
+    holdSaveName.value = false
+    resetVars()
+    if (appStore.value.currentView === 'Waiting' && data.id) {
+      appStore.value.currentView = 'Main'
+    }
+    appStore.value.avatarId = data.id
   })
 }
 
@@ -88,24 +78,24 @@ const savedConfigs = async (): Promise<void> => {
 }
 
 const aviFileUpdate = (): void => {
-  avatarFoundFile.value = false
+  appStore.value.avatarFoundFile = false
   showAvatarFoundFileMsg.value = false
   if (!holdSaveName.value) saveName.value = ''
   resetVars()
 
   window.avatarApi.foundAvatarFile((data) => {
-    avatarFoundFile.value = data.success
+    appStore.value.avatarFoundFile = data.success
     showAvatarFoundFileMsg.value = true
   })
 }
 
 const refreshAviFile = async (): Promise<void> => {
-  avatarFoundFile.value = false
+  appStore.value.avatarFoundFile = false
   showAvatarFoundFileMsg.value = false
   if (!holdSaveName.value) saveName.value = ''
 
   const res = await window.avatarApi.refreshAvatarFile()
-  avatarFoundFile.value = res.success
+  appStore.value.avatarFoundFile = res.success
   showAvatarFoundFileMsg.value = true
 
   if (!res.success) {
@@ -227,8 +217,8 @@ const handleInputUpdate = ({ id, value, checked }): void => {
 }
 
 onMounted(() => {
-  avatarId.value = ''
-  avatarFoundFile.value = false
+  appStore.value.avatarId = ''
+  appStore.value.avatarFoundFile = false
   showAvatarFoundFileMsg.value = false
   saveName.value = ''
   resetVars()
@@ -240,29 +230,32 @@ onMounted(() => {
 </script>
 
 <template>
+  <notifications class="notification" position="bottom left" />
+  <Menu :current-view="appStore.currentView" />
   <div class="main">
-    <notifications class="notification" position="bottom left" />
-    <Menu :current-view="currentView" @change-view="handleChangeView" />
-    <AllPresets v-if="currentView === 'AllPresets'" @notification="pushNotification" />
-    <AllSaved v-if="currentView === 'AllSaved'" @notification="pushNotification" />
-    <AllAvatars v-if="currentView === 'AllAvatars'" @notification="pushNotification" />
-    <Waiting v-if="!avatarId && currentView === 'Waiting'" />
-    <div v-show="currentView === 'Main'" class="main__content">
-      <div :class="['main__avatar-data', { underline: avatarFoundFile }]">
+    <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
+    <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
+    <div v-show="appStore.currentView === 'Main'" class="main__content">
+      <div :class="['main__avatar-data', { underline: appStore.avatarFoundFile }]">
         <div class="main__avatar-data-file">
-          <p :class="['main__avatar-found', avatarFoundFile ? 'success' : 'failed']">
-            {{ avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data' }}
+          <p :class="['main__avatar-found', appStore.avatarFoundFile ? 'success' : 'failed']">
+            {{ appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data' }}
           </p>
-          <Button v-if="!avatarFoundFile" :small="true" label="Refresh" @click="refreshAviFile" />
+          <Button
+            v-if="!appStore.avatarFoundFile"
+            :small="true"
+            label="Refresh"
+            @click="refreshAviFile"
+          />
         </div>
-        <p v-if="avatarFoundFile" class="main__avatar-id">
-          Avatar ID: <span class="main__avatar-id__id">{{ avatarId }}</span>
+        <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
+          Avatar ID: <span class="main__avatar-id__id">{{ appStore.avatarId }}</span>
         </p>
         <p v-if="avatarConfig?.name" class="main__avatar-name">
           Name: <span class="main__avatar-name__name">{{ avatarConfig?.name }}</span>
         </p>
       </div>
-      <div v-if="avatarFoundFile" class="main__buttons">
+      <div v-if="appStore.avatarFoundFile" class="main__buttons">
         <div class="main__save-wrapper underline">
           <div class="main__save">
             <InputText
@@ -330,6 +323,7 @@ onMounted(() => {
   gap: 16px;
   height: 94%;
   justify-content: center;
+  overflow: hidden;
 
   &__content {
     width: 100%;
