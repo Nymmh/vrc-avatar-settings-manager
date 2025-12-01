@@ -28,11 +28,20 @@ export async function createPreset(
 
     db.prepare(
       `
-      INSERT INTO avatars (uqid, avatarId, name, avatarName, parameters, isPreset)
-      VALUES (?, ?, ?, ?, ?, 1)
+      INSERT INTO avatarStorage (avatarId, name)
+      VALUES (?, ?)
+      ON CONFLICT(avatarId) DO NOTHING
+    `
+    ).run(avatarId, aviData?.name || 'Unknown')
+
+    db.prepare(
+      `
+      INSERT INTO avatars (uqid, avatarId, name, avatarName, parameters, fromFile, isPreset)
+      VALUES (?, ?, ?, ?, ?, 0, 1)
       ON CONFLICT(uqid) DO UPDATE SET
         parameters = excluded.parameters,
         avatarName = excluded.avatarName,
+        fromFile = 0,
         name = CASE 
           WHEN excluded.name != '' THEN excluded.name
           ELSE name
@@ -59,6 +68,8 @@ export async function createPreset(
         presetId
       )
     }
+
+    mainWindow.webContents.send('dataTableRefresh')
 
     log.info('Preset created/updated successfully')
   } catch (e) {

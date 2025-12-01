@@ -209,4 +209,14 @@ export function configHandlers(context: ConfigHandlerContext): void {
     getNames(log, avatarDB, mainWindow, currentAviId)
     return del
   })
+
+  ipcMain.handle('getConfigById', async (_event, avatarId: string) => {
+    const mainWindow = getMainWindow()
+    if (!mainWindow) return null
+
+    const q = avatarDB.prepare('SELECT * FROM avatars WHERE avatarId = ?')
+    const config = q.all(avatarId)
+
+    return config || null
+  })
 }

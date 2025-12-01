@@ -35,6 +35,7 @@
     "@kyvg/vue3-notification": "^3.4.2",
     "@types/node": "^22.18.6",
     "@vitejs/plugin-vue": "^6.0.1",
+    "@vueuse/core": "^14.1.0",
     "electron": "^38.1.2",
     "electron-builder": "^25.1.8",
     "electron-vite": "^4.0.1",
