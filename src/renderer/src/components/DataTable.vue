@@ -641,10 +641,10 @@ const emit = defineEmits(['notification'])
                   </div>
                   <div v-if="allConfigs && allConfigs.length" class="data-table__details">
                     <div
-                      v-for="(config, idx) in allConfigs"
-                      :key="idx"
+                      v-for="(config, cIdx) in allConfigs"
+                      :key="cIdx"
                       :class="{
-                        underline: allConfigs.length != idx + 1
+                        underline: allConfigs.length != cIdx + 1
                       }"
                     >
                       <div class="data-table__details-grid">
@@ -653,9 +653,9 @@ const emit = defineEmits(['notification'])
                             <button
                               :class="[
                                 'data-table__expand-button',
-                                { 'data-table__expand-button--expanded': isConfigExpanded(idx) }
+                                { 'data-table__expand-button--expanded': isConfigExpanded(cIdx) }
                               ]"
-                              @click="toggleConfig(idx)"
+                              @click="toggleConfig(cIdx)"
                             >
                               <svg
                                 width="23"
@@ -675,21 +675,21 @@ const emit = defineEmits(['notification'])
                           </div>
                           <span class="data-table__detail-label">
                             <InputText
-                              :id="`configName-${idx}`"
+                              :id="`configName-${cIdx}`"
                               :model-value="config.name"
                               @update:model-value="
-                                handleInputUpdate('config', idx, 'name', $event.value)
+                                handleInputUpdate('config', cIdx, 'name', $event.value)
                               "
                             />
                           </span>
                         </div>
                         <div class="data-table__detail-item">
                           <InputCheckbox
-                            :id="`configNsfw-${idx}`"
+                            :id="`configNsfw-${cIdx}`"
                             :model-value="config.nsfw ? true : false"
                             label=" "
                             @update:model-value="
-                              handleInputUpdate('config', idx, 'nsfw', $event.checked)
+                              handleInputUpdate('config', cIdx, 'nsfw', $event.checked)
                             "
                           />
                         </div>
@@ -730,7 +730,7 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === config.id && fu.action === 'update'
                               )
                             "
-                            @click="handleConfigUpdate(idx, config.id)"
+                            @click="handleConfigUpdate(cIdx, config.id)"
                           />
                           <Button
                             v-if="!config.isPreset"
@@ -741,7 +741,7 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === config.id && fu.action === 'createPreset'
                               )
                             "
-                            @click="handleCreatePreset(idx)"
+                            @click="handleCreatePreset(cIdx)"
                           />
                           <Button
                             v-if="config.id"
@@ -752,7 +752,7 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === config.id && fu.action === 'replace'
                               )
                             "
-                            @click="handleConfigReplace(idx, config.id)"
+                            @click="handleConfigReplace(cIdx, config.id)"
                           />
                           <Button
                             v-if="config.id"
@@ -763,31 +763,36 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === config.id && fu.action === 'delete'
                               )
                             "
-                            @click="handleConfigDelete(idx, config.id)"
+                            @click="handleConfigDelete(cIdx, config.id)"
                           />
                         </div>
                       </div>
-                      <div v-if="allPresets && allPresets.length && isConfigExpanded(idx)">
-                        <div v-for="(preset, idx) in allPresets" :key="idx">
+                      <div v-if="allPresets && allPresets.length && isConfigExpanded(cIdx)">
+                        <div v-for="(preset, pIdx) in allPresets" :key="pIdx">
                           <div v-if="preset.forUqid === config.uqid" class="data-table__preset">
                             <div class="data-table__preset-grid">
                               <div class="data-table__preset-item">
                                 <span class="data-table__preset-label">Preset Name</span>
                                 <InputText
-                                  :id="`presetName-${idx}`"
+                                  :id="`presetName-${pIdx}`"
                                   :model-value="preset.name"
                                   @update:model-value="
-                                    handleInputUpdate('preset', idx, 'name', $event.value)
+                                    handleInputUpdate('preset', pIdx, 'name', $event.value)
                                   "
                                 />
                               </div>
                               <div class="data-table__preset-item">
                                 <span class="data-table__preset-label">Preset Parameter</span>
                                 <InputNumber
-                                  :id="`presetParameter-${idx}`"
+                                  :id="`presetParameter-${pIdx}`"
                                   :model-value="preset.unityParameter"
                                   @update:model-value="
-                                    handleInputUpdate('preset', idx, 'unityParameter', $event.value)
+                                    handleInputUpdate(
+                                      'preset',
+                                      pIdx,
+                                      'unityParameter',
+                                      $event.value
+                                    )
                                   "
                                 />
                               </div>
@@ -800,7 +805,7 @@ const emit = defineEmits(['notification'])
                                       (fu) => fu.id === preset.id && fu.action === 'apply'
                                     )
                                   "
-                                  @click="handlePresetApply(idx)"
+                                  @click="handlePresetApply(pIdx)"
                                 />
                                 <Button
                                   label="Update"
@@ -810,7 +815,7 @@ const emit = defineEmits(['notification'])
                                       (fu) => fu.id === preset.id && fu.action === 'update'
                                     )
                                   "
-                                  @click="handlePresetUpdate(idx)"
+                                  @click="handlePresetUpdate(pIdx)"
                                 />
                                 <Button
                                   label="Delete"
@@ -820,7 +825,7 @@ const emit = defineEmits(['notification'])
                                       (fu) => fu.id === preset.id && fu.action === 'delete'
                                     )
                                   "
-                                  @click="handlePresetDelete(idx)"
+                                  @click="handlePresetDelete(pIdx)"
                                 />
                               </div>
                             </div>
