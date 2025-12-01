@@ -1,7 +1,6 @@
 import { BrowserWindow } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
-import { checkIfExist } from './checkIfExist'
 import { showWarning } from '../services/showWarning'
 
 export async function deletePreset(
