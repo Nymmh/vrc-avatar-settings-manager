@@ -111,6 +111,12 @@ const aviConfig = (): void => {
     resetVars()
 
     avatarConfig.value = data
+    if (avatarConfig.value?.valuedParams) {
+      avatarConfig.value.valuedParams = undefined
+    }
+
+    console.log(avatarConfig.value)
+
     if (!holdSaveName.value) saveName.value = avatarConfig.value?.name || ''
   })
 }

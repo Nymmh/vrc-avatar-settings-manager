@@ -37,6 +37,10 @@ export function configHandlers(context: ConfigHandlerContext): void {
 
     content = await avatarConfig(currentAviId, mainWindow, pendingChanges)
 
+    if (!content) {
+      return { success: false, message: 'Failed to get avatar configuration' }
+    }
+
     const savedConfig = await saveConfig(log, avatarDB, content, saveName, nsfw, false, mainWindow)
     getNames(log, avatarDB, mainWindow, currentAviId)
     return savedConfig
