@@ -1,27 +1,23 @@
 <script lang="ts" setup>
 import { handleChangeView } from '@renderer/composables/changeView'
 import Button from './Button.vue'
+import { appStorage } from '../composables/appStorage'
 
-defineProps({
-  currentView: {
-    type: String,
-    default: 'Waiting'
-  }
-})
+const appStore = appStorage()
 </script>
 
 <template>
   <div class="menu underline">
     <nav class="menu__nav">
       <Button
-        v-show="currentView !== 'Main' && currentView !== 'Waiting'"
+        v-show="appStore.currentView !== 'Main' && appStore.currentView !== 'Waiting'"
         label="Home"
         :small="true"
         :alt-color="true"
         @click="handleChangeView('Main')"
       />
       <Button
-        v-show="currentView !== 'AllData'"
+        v-show="appStore.currentView !== 'AllData'"
         label="All Data"
         :small="true"
         :alt-color="true"

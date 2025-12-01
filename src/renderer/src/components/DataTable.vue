@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import Button from './Button.vue'
 import LoadAvatarFile from './LoadAvatarFile.vue'
 import InputCheckbox from './InputCheckbox.vue'
@@ -7,47 +8,66 @@ import InputText from './InputText.vue'
 import InputNumber from './InputNumber.vue'
 import { appStorage } from '../composables/appStorage'
 
+type OpResult = { success: boolean; message?: string }
+type FailedOperation<T = string | number> = { id: T; action: string }
+
 const appStore = appStorage()
 
-watch(
-  () => appStore.value.dataTableRefresh,
-  (newVal) => {
-    if (newVal) {
-      getAvatars()
-      appStore.value.dataTableRefresh = false
-    }
-  }
-)
-
-const failedAvatarUpdates = ref<
-  {
-    avatarId: string
-    action: 'export' | 'delete' | 'update'
-  }[]
->([])
-const failedConfigUpdates = ref<
-  {
-    id: number
-    action: 'apply' | 'update' | 'export' | 'replace' | 'delete' | 'createPreset' | 'presetData'
-  }[]
->([])
-const failedPresetUpdates = ref<
-  {
-    id: number
-    action: 'apply' | 'update' | 'delete'
-  }[]
->([])
+const failedAvatarUpdates = ref<FailedOperation<string>[]>([])
+const failedConfigUpdates = ref<FailedOperation[]>([])
+const failedPresetUpdates = ref<FailedOperation[]>([])
 const allAvatars = ref<Awaited<ReturnType<typeof window.avatarApi.getAllAvatars>>>([])
 const allConfigs = ref<Awaited<ReturnType<typeof window.avatarApi.getConfigById>>>([])
 const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getAllPresets>>>([])
 const expandedAvatarRow = ref<number | null>(null)
 const expandedConfigRow = ref<number | null>(null)
 
-const getAvatars = async (): Promise<void> => {
+const hasConfigs = computed(() => allConfigs.value && allConfigs.value.length > 0)
+const hasPresets = computed(() => allPresets.value?.length > 0)
+
+const clearFailed = <T,>(array: FailedOperation<T>[], id: T): void => {
+  const idx = array.findIndex((item) => item.id === id)
+  if (idx > -1) array.splice(idx, 1)
+}
+
+const addFailed = <T,>(array: FailedOperation<T>[], id: T, action: string): void => {
+  array.push({ id, action })
+}
+
+const pushNotification = (result: OpResult, successTitle: string, errorTitle: string): void => {
+  emit('notification', {
+    type: result.success ? 'success' : 'error',
+    title: result.success ? successTitle : errorTitle,
+    text: result.message
+  })
+}
+
+const handleOperation = <T,>(
+  result: OpResult,
+  successTitle: string,
+  errorTitle: string,
+  id: T,
+  action: string,
+  failedArray: FailedOperation<T>[]
+): void => {
+  clearFailed(failedArray, id)
+
+  if (!result.success) {
+    addFailed(failedArray, id, action)
+  }
+
+  pushNotification(result, successTitle, errorTitle)
+}
+
+const resetExpandedState = (): void => {
   expandedAvatarRow.value = null
   expandedConfigRow.value = null
   allConfigs.value = []
   allPresets.value = []
+}
+
+const getAvatars = async (): Promise<void> => {
+  resetExpandedState()
   failedAvatarUpdates.value = []
   failedConfigUpdates.value = []
   failedPresetUpdates.value = []
@@ -62,8 +82,7 @@ const getConfigsByAvatar = async (avatarId: string): Promise<void> => {
 }
 
 const getPresetsByConfig = async (idx: number): Promise<void> => {
-  allPresets.value = []
-  const uqid = allConfigs.value![idx].uqid
+  const uqid = allConfigs.value?.[idx]?.uqid
 
   if (!uqid) {
     emit('notification', {
@@ -73,191 +92,143 @@ const getPresetsByConfig = async (idx: number): Promise<void> => {
     return
   }
 
+  allPresets.value = []
   allPresets.value = await window.avatarApi.getPresetsByUqid(uqid)
 }
 
-const isAvatarExpanded = (index: number): boolean => {
-  return expandedAvatarRow.value === index
-}
-
-const isConfigExpanded = (index: number): boolean => {
-  return expandedConfigRow.value === index
-}
-
-const toggleAvatar = (index: number): void => {
-  allConfigs.value = []
-  if (expandedAvatarRow.value === index) {
+const isAvatarExpanded = (idx: number): boolean => expandedAvatarRow.value === idx
+const isConfigExpanded = (idx: number): boolean => expandedConfigRow.value === idx
+const toggleAvatar = (idx: number): void => {
+  if (expandedAvatarRow.value === idx) {
     expandedAvatarRow.value = null
+    allConfigs.value = []
   } else {
-    expandedAvatarRow.value = index
-    getConfigsByAvatar(allAvatars.value[index].avatarId)
+    expandedAvatarRow.value = idx
+    getConfigsByAvatar(allAvatars.value[idx].avatarId)
   }
 }
 
-const toggleConfig = (index: number): void => {
-  allPresets.value = []
-  if (expandedConfigRow.value === index) {
+const toggleConfig = (idx: number): void => {
+  if (expandedConfigRow.value === idx) {
     expandedConfigRow.value = null
+    allPresets.value = []
   } else {
-    expandedConfigRow.value = index
-    getPresetsByConfig(index)
+    expandedConfigRow.value = idx
+    getPresetsByConfig(idx)
   }
 }
 
-const handleUpdate = async (type: string, index: number): Promise<void> => {
-  if (type === 'avatar') {
-    failedAvatarUpdates.value = failedAvatarUpdates.value.filter(
-      (id) => id.avatarId !== allAvatars.value[index].avatarId
-    )
-
-    if (!allAvatars.value![index].name || allAvatars.value![index].name.trim() === '') {
-      failedAvatarUpdates.value.push({
-        avatarId: allAvatars.value![index].avatarId,
-        action: 'update'
-      })
-
-      emit('notification', {
-        type: 'error',
-        title: 'Update Failed',
-        text: 'Avatar name cannot be empty.'
-      })
-      return
-    }
-
-    const res = await window.avatarApi.updateAvatarData(
-      allAvatars.value![index].avatarId,
-      allAvatars.value![index].name
-    )
-
-    let type = 'success'
-    let title = 'Update Successful'
-
-    if (!res.success) {
-      type = 'error'
-      title = 'Update Failed'
-      failedAvatarUpdates.value.push({
-        avatarId: allAvatars.value![index].avatarId,
-        action: 'update'
-      })
-    }
-
-    emit('notification', {
-      type: type,
-      title: title,
-      text: res.message
-    })
+const validateAvatarName = (name: string): string | null => {
+  if (!name || name.trim() === '') {
+    return 'Avatar name cannot be empty.'
   }
+  return null
 }
 
-const handleExport = async (type: string, index: number): Promise<void> => {
-  if (type === 'avatar') {
-    const res = await window.avatarApi.exportAvatar(allAvatars.value[index].avatarId)
-
-    let type = 'success'
-    let title = 'Export Successful'
-    failedAvatarUpdates.value = failedAvatarUpdates.value.filter(
-      (id) => id.avatarId !== allAvatars.value[index].avatarId
-    )
-
-    if (!res.success) {
-      type = 'error'
-      title = 'Export Failed'
-      failedAvatarUpdates.value.push({
-        avatarId: allAvatars.value[index].avatarId,
-        action: 'export'
-      })
-    }
-
-    emit('notification', {
-      type: type,
-      title: title,
-      text: res.message
-    })
+const validatePreset = (preset: (typeof allPresets.value)[0]): string | null => {
+  if (!preset.name || preset.name.trim() === '') {
+    return 'Preset name cannot be empty.'
   }
+  if (!preset.unityParameter || isNaN(preset.unityParameter)) {
+    return 'Unity parameter must be a valid number.'
+  }
+  if (preset.unityParameter <= 0) {
+    return 'Unity parameter must be greater than zero.'
+  }
+  return null
 }
 
-const handleDelete = async (type: string, index: number): Promise<void> => {
-  if (type === 'avatar') {
-    const res = await window.avatarApi.deleteAvatar(allAvatars.value[index].avatarId)
+const handleAvatarUpdate = async (idx: number): Promise<void> => {
+  const avatar = allAvatars.value[idx]
+  const avatarId = avatar.avatarId
 
-    let type = 'success'
-    let title = 'Delete Successful'
-    failedAvatarUpdates.value = failedAvatarUpdates.value.filter(
-      (id) => id.avatarId !== allAvatars.value[index].avatarId
-    )
+  clearFailed(failedAvatarUpdates.value, avatarId)
 
-    if (!res.success) {
-      type = 'error'
-      title = 'Delete Failed'
-      failedAvatarUpdates.value.push({
-        avatarId: allAvatars.value[index].avatarId,
-        action: 'delete'
-      })
-    } else {
-      allAvatars.value.splice(index, 1)
-    }
-
+  const validationError = validateAvatarName(avatar.name)
+  if (validationError) {
+    addFailed(failedAvatarUpdates.value, avatarId, 'update')
     emit('notification', {
-      type: type,
-      title: title,
-      text: res.message
+      type: 'error',
+      title: 'Update Failed',
+      text: validationError
     })
+    return
+  }
+
+  const res = await window.avatarApi.updateAvatarData(avatarId, avatar.name)
+  handleOperation(
+    res,
+    'Update Successful',
+    'Update Failed',
+    avatarId,
+    'update',
+    failedAvatarUpdates.value
+  )
+}
+
+const handleAvatarExport = async (idx: number): Promise<void> => {
+  const avatarId = allAvatars.value[idx].avatarId
+  const res = await window.avatarApi.exportAvatar(avatarId)
+  handleOperation(
+    res,
+    'Export Successful',
+    'Export Failed',
+    avatarId,
+    'export',
+    failedAvatarUpdates.value
+  )
+}
+
+const handleAvatarDelete = async (idx: number): Promise<void> => {
+  const avatarId = allAvatars.value[idx].avatarId
+  const res = await window.avatarApi.deleteAvatar(avatarId)
+
+  handleOperation(
+    res,
+    'Delete Successful',
+    'Delete Failed',
+    avatarId,
+    'delete',
+    failedAvatarUpdates.value
+  )
+
+  if (res.success) {
+    allAvatars.value.splice(idx, 1)
   }
 }
 
 const handleConfigApply = async (configId: number): Promise<void> => {
-  failedConfigUpdates.value = failedConfigUpdates.value.filter((id) => id.id !== configId)
-
   const res = await window.avatarApi.applyConfig(configId)
-
-  let type = 'success'
-  let title = 'Apply Successful'
-
-  if (!res.success) {
-    type = 'error'
-    title = 'Apply Failed'
-    failedConfigUpdates.value.push({
-      id: configId,
-      action: 'apply'
-    })
-  }
-
-  emit('notification', {
-    type: type,
-    title: title
-  })
+  handleOperation(
+    res,
+    'Apply Successful',
+    'Apply Failed',
+    configId,
+    'apply',
+    failedConfigUpdates.value
+  )
 }
+
 const handleConfigExport = async (configId: number): Promise<void> => {
-  failedConfigUpdates.value = failedConfigUpdates.value.filter((id) => id.id !== configId)
-
   const res = await window.avatarApi.exportConfig(configId)
-
-  let type = 'success'
-  let title = 'Export Successful'
-
-  if (!res.success) {
-    type = 'error'
-    title = 'Export Failed'
-    failedConfigUpdates.value.push({
-      id: configId,
-      action: 'export'
-    })
-  }
-
-  emit('notification', {
-    type: type,
-    title: title,
-    text: res.message
-  })
+  handleOperation(
+    res,
+    'Export Successful',
+    'Export Failed',
+    configId,
+    'export',
+    failedConfigUpdates.value
+  )
 }
 
-const handleConfigUpdate = async (index: number, configId: number): Promise<void> => {
-  if (!allConfigs.value![index].id) {
-    failedConfigUpdates.value.push({
-      id: configId,
-      action: 'update'
-    })
+const handleConfigUpdate = async (idx: number): Promise<void> => {
+  if (!allConfigs.value) return
 
+  const config = allConfigs.value[idx]
+  const configId = config.id
+
+  if (!configId) {
+    addFailed(failedConfigUpdates.value, 0, 'update')
     emit('notification', {
       type: 'error',
       title: 'Update Failed',
@@ -265,264 +236,174 @@ const handleConfigUpdate = async (index: number, configId: number): Promise<void
     })
     return
   }
-
-  failedConfigUpdates.value = failedConfigUpdates.value.filter((id) => id.id !== configId)
 
   const res = await window.avatarApi.updateConfigData(
-    allConfigs.value![index].id,
-    allConfigs.value![index].avatarId || 'Unknown',
-    allConfigs.value![index].name,
-    allConfigs.value![index].nsfw ? true : false
+    configId,
+    config.avatarId || 'Unknown',
+    config.name,
+    Boolean(config.nsfw)
   )
 
-  let type = 'success'
-  let title = 'Update Successful'
-
-  if (!res.success) {
-    type = 'error'
-    title = 'Update Failed'
-    failedConfigUpdates.value.push({
-      id: configId,
-      action: 'update'
-    })
-  }
-
-  emit('notification', {
-    type: type,
-    title: title,
-    text: res.message
-  })
+  handleOperation(
+    res,
+    'Update Successful',
+    'Update Failed',
+    configId,
+    'update',
+    failedConfigUpdates.value
+  )
 }
 
-const handleCreatePreset = async (index: number): Promise<void> => {
-  const config = allConfigs.value![index]
+const handleCreatePreset = async (idx: number): Promise<void> => {
+  if (!allConfigs.value) return
 
-  if (!config.id) {
-    failedConfigUpdates.value.push({
-      id: index,
-      action: 'update'
-    })
+  const config = allConfigs.value[idx]
+  const configId = config.id
 
+  if (!configId) {
+    addFailed(failedConfigUpdates.value, 0, 'createPreset')
     emit('notification', {
       type: 'error',
-      title: 'Update Failed',
+      title: 'Create Preset Failed',
       text: 'ID not valid.'
     })
     return
   }
 
-  failedConfigUpdates.value = failedConfigUpdates.value.filter((id) => id.id !== config.id)
-
-  const res = await window.avatarApi.createPresetFromApp(config.id)
-
-  let type = 'success'
-  let title = 'Create Preset Successful'
-
-  if (!res.success) {
-    type = 'error'
-    title = 'Create Preset Failed'
-    failedConfigUpdates.value.push({
-      id: config.id,
-      action: 'createPreset'
-    })
-  }
+  const res = await window.avatarApi.createPresetFromApp(configId)
+  handleOperation(
+    res,
+    'Create Preset Successful',
+    'Create Preset Failed',
+    configId,
+    'createPreset',
+    failedConfigUpdates.value
+  )
 
   if (res.success && config.avatarId) {
-    getConfigsByAvatar(config.avatarId)
+    await getConfigsByAvatar(config.avatarId)
   }
-
-  emit('notification', {
-    type: type,
-    title: title,
-    text: res.message
-  })
 }
 
-const handleConfigReplace = async (index: number, configId: number): Promise<void> => {
-  failedConfigUpdates.value = failedConfigUpdates.value.filter((id) => id.id !== configId)
+const handleConfigReplace = async (idx: number): Promise<void> => {
+  if (!allConfigs.value) return
+
+  const config = allConfigs.value[idx]
+  const configId = config.id!
 
   const res = await window.avatarApi.replaceParams(configId)
+  handleOperation(
+    res,
+    'Replace Params Successful',
+    'Replace Params Failed',
+    configId,
+    'replace',
+    failedConfigUpdates.value
+  )
 
-  let type = 'success'
-  let title = 'Replace Params Successful'
-
-  if (!res.success) {
-    type = 'error'
-    title = 'Replace Params Failed'
-    failedConfigUpdates.value.push({
-      id: configId,
-      action: 'replace'
-    })
-  } else {
-    const avatarId = allConfigs.value![index].avatarId
-    if (avatarId) {
-      getConfigsByAvatar(avatarId)
-    }
+  if (res.success && config.avatarId) {
+    await getConfigsByAvatar(config.avatarId)
   }
-
-  emit('notification', {
-    type: type,
-    title: title,
-    text: res.message
-  })
 }
 
-const handleConfigDelete = async (index: number, configId: number): Promise<void> => {
-  failedConfigUpdates.value = failedConfigUpdates.value.filter((id) => id.id !== configId)
+const handleConfigDelete = async (idx: number): Promise<void> => {
+  if (!allConfigs.value) return
 
+  const configId = allConfigs.value[idx].id!
   const res = await window.avatarApi.deleteConfig(configId)
 
-  let type = 'success'
-  let title = 'Delete Successful'
+  handleOperation(
+    res,
+    'Delete Successful',
+    'Delete Failed',
+    configId,
+    'delete',
+    failedConfigUpdates.value
+  )
 
-  if (!res.success) {
-    type = 'error'
-    title = 'Delete Failed'
-    failedConfigUpdates.value.push({
-      id: configId,
-      action: 'delete'
-    })
-  } else {
-    allConfigs.value!.splice(index, 1)
+  if (res.success) {
+    allConfigs.value.splice(idx, 1)
   }
-
-  emit('notification', {
-    type: type,
-    title: title,
-    text: res.message
-  })
 }
 
 const handlePresetApply = async (idx: number): Promise<void> => {
-  const res = await window.avatarApi.applyPresetFromApp(
-    allPresets.value![idx].avatarId,
-    allPresets.value![idx].unityParameter
+  const preset = allPresets.value[idx]
+  const res = await window.avatarApi.applyPresetFromApp(preset.avatarId, preset.unityParameter)
+
+  handleOperation(
+    { success: Boolean(res), message: '' },
+    'Apply Successful',
+    'Apply Failed',
+    preset.id,
+    'apply',
+    failedPresetUpdates.value
   )
-
-  let type = 'success'
-  let title = 'Apply Successful'
-  failedPresetUpdates.value = failedPresetUpdates.value.filter(
-    (id) => id.id !== allPresets.value![idx].id
-  )
-
-  if (!res) {
-    type = 'error'
-    title = 'Apply Failed'
-    failedPresetUpdates.value.push({ id: allPresets.value![idx].id, action: 'apply' })
-  }
-
-  emit('notification', {
-    type,
-    title
-  })
 }
 
 const handlePresetUpdate = async (idx: number): Promise<void> => {
-  failedPresetUpdates.value = failedPresetUpdates.value.filter(
-    (id) => id.id !== allPresets.value![idx].id
-  )
+  const preset = allPresets.value[idx]
 
-  if (!allPresets.value![idx].name || allPresets.value![idx].name.trim() === '') {
-    failedPresetUpdates.value.push({ id: allPresets.value![idx].id, action: 'update' })
+  clearFailed(failedPresetUpdates.value, preset.id)
 
+  const validationError = validatePreset(preset)
+  if (validationError) {
+    addFailed(failedPresetUpdates.value, preset.id, 'update')
     emit('notification', {
       type: 'error',
       title: 'Update Failed',
-      text: 'Preset name cannot be empty.'
-    })
-    return
-  }
-
-  if (!allPresets.value![idx].unityParameter || isNaN(allPresets.value![idx].unityParameter)) {
-    failedPresetUpdates.value.push({ id: allPresets.value![idx].id, action: 'update' })
-
-    emit('notification', {
-      type: 'error',
-      title: 'Update Failed',
-      text: 'Unity parameter must be a valid number.'
-    })
-    return
-  }
-
-  if (allPresets.value![idx].unityParameter <= 0) {
-    failedPresetUpdates.value.push({ id: allPresets.value![idx].id, action: 'update' })
-
-    emit('notification', {
-      type: 'error',
-      title: 'Update Failed',
-      text: 'Unity parameter must be greater than zero.'
+      text: validationError
     })
     return
   }
 
   const res = await window.avatarApi.updatePresetFromApp(
-    allPresets.value![idx].id,
-    allPresets.value![idx].name,
-    allPresets.value![idx].unityParameter
+    preset.id,
+    preset.name,
+    preset.unityParameter
   )
-
-  let type = 'success'
-  let title = 'Update Successful'
-
-  if (!res.success) {
-    type = 'error'
-    title = 'Update Failed'
-    failedPresetUpdates.value.push({ id: allPresets.value![idx].id, action: 'update' })
-  }
-
-  emit('notification', {
-    type: type,
-    title: title,
-    text: res.message
-  })
+  handleOperation(
+    res,
+    'Update Successful',
+    'Update Failed',
+    preset.id,
+    'update',
+    failedPresetUpdates.value
+  )
 }
 
 const handlePresetDelete = async (idx: number): Promise<void> => {
-  let res = await window.avatarApi.deletePresetFromApp(allPresets.value![idx].id)
+  const preset = allPresets.value[idx]
+  const res = await window.avatarApi.deletePresetFromApp(preset.id)
 
-  let type = 'success'
-  let title = 'Delete Successful'
-  failedPresetUpdates.value = failedPresetUpdates.value.filter(
-    (id) => id.id !== allPresets.value![idx].id
+  handleOperation(
+    res,
+    'Delete Successful',
+    'Delete Failed',
+    preset.id,
+    'delete',
+    failedPresetUpdates.value
   )
 
-  if (!res.success) {
-    type = 'error'
-    title = 'Delete Failed'
-    failedPresetUpdates.value.push({ id: allPresets.value![idx].id, action: 'delete' })
-  } else {
-    getConfigsByAvatar(allPresets.value![idx].avatarId)
+  if (res.success) {
+    await getConfigsByAvatar(preset.avatarId)
   }
-
-  emit('notification', {
-    type,
-    title,
-    text: res.message
-  })
 }
 
-const handleInputUpdate = (type: string, idx: number, field: string, value: string): void => {
-  if (type === 'avatar') {
-    if (!allAvatars.value || allAvatars.value.length === 0) return
+const updateAvatarField = useDebounceFn((idx: number, field: string, value: unknown) => {
+  if (allAvatars.value[idx]) {
+    allAvatars.value[idx][field] = value
+  }
+}, 300)
 
-    const save = allAvatars.value[idx]
+const updateConfigField = (idx: number, field: string, value: unknown): void => {
+  if (allConfigs.value && allConfigs.value[idx]) {
+    allConfigs.value[idx][field] = value
+  }
+}
 
-    if (!save) return
-    ;(save[field] as string) = value
-  } else if (type === 'config') {
-    if (!allConfigs.value || allConfigs.value.length === 0) return
-
-    const config = allConfigs.value[idx]
-
-    if (!config) return
-    ;(config[field] as string | boolean) = value
-  } else if (type === 'preset') {
-    if (!allPresets.value || allPresets.value.length === 0) return
-
-    const preset = allPresets.value[idx]
-
-    if (!preset) return
-    ;(preset[field] as string) = value
+const updatePresetField = (idx: number, field: string, value: unknown): void => {
+  if (allPresets.value[idx]) {
+    allPresets.value[idx][field] = value
   }
 }
 
@@ -536,6 +417,16 @@ onMounted(() => {
   getAvatars()
   refreshListen()
 })
+
+watch(
+  () => appStore.value.dataTableRefresh,
+  (newVal) => {
+    if (newVal) {
+      getAvatars()
+      appStore.value.dataTableRefresh = false
+    }
+  }
+)
 
 const emit = defineEmits(['notification'])
 </script>
@@ -582,7 +473,7 @@ const emit = defineEmits(['notification'])
                   <InputText
                     :id="`avatarName-${idx}`"
                     :model-value="a.name"
-                    @update:model-value="handleInputUpdate('avatar', idx, 'name', $event.value)"
+                    @update:model-value="updateAvatarField(idx, 'name', $event.value)"
                   />
                 </td>
                 <td class="data-table__cell data-table__cell-actions">
@@ -591,30 +482,30 @@ const emit = defineEmits(['notification'])
                     :small="true"
                     :error="
                       failedAvatarUpdates.some(
-                        (fu) => fu.avatarId === a.avatarId && fu.action === 'update'
+                        (fu) => fu.id === a.avatarId && fu.action === 'update'
                       )
                     "
-                    @click="handleUpdate('avatar', idx)"
+                    @click="handleAvatarUpdate(idx)"
                   />
                   <Button
                     label="Export"
                     :small="true"
                     :error="
                       failedAvatarUpdates.some(
-                        (fu) => fu.avatarId === a.avatarId && fu.action === 'export'
+                        (fu) => fu.id === a.avatarId && fu.action === 'export'
                       )
                     "
-                    @click="handleExport('avatar', idx)"
+                    @click="handleAvatarExport(idx)"
                   />
                   <Button
                     label="Delete"
                     :small="true"
                     :error="
                       failedAvatarUpdates.some(
-                        (fu) => fu.avatarId === a.avatarId && fu.action === 'delete'
+                        (fu) => fu.id === a.avatarId && fu.action === 'delete'
                       )
                     "
-                    @click="handleDelete('avatar', idx)"
+                    @click="handleAvatarDelete(idx)"
                   />
                 </td>
               </tr>
@@ -622,7 +513,7 @@ const emit = defineEmits(['notification'])
                 v-if="isAvatarExpanded(idx)"
                 class="data-table__table-row data-table__table-row--expanded underline"
               >
-                <td colspan="4" class="data-table__cell data-table__cell--details">
+                <td colspan="3" class="data-table__cell data-table__cell--details">
                   <div class="data-table__details">
                     <div class="data-table__details-grid">
                       <div class="data-table__detail-item">
@@ -639,12 +530,12 @@ const emit = defineEmits(['notification'])
                       </div>
                     </div>
                   </div>
-                  <div v-if="allConfigs && allConfigs.length" class="data-table__details">
+                  <div v-if="hasConfigs" class="data-table__details">
                     <div
                       v-for="(config, cIdx) in allConfigs"
                       :key="cIdx"
                       :class="{
-                        underline: allConfigs.length != cIdx + 1
+                        underline: allConfigs?.length != cIdx + 1
                       }"
                     >
                       <div class="data-table__details-grid">
@@ -677,9 +568,7 @@ const emit = defineEmits(['notification'])
                             <InputText
                               :id="`configName-${cIdx}`"
                               :model-value="config.name"
-                              @update:model-value="
-                                handleInputUpdate('config', cIdx, 'name', $event.value)
-                              "
+                              @update:model-value="updateConfigField(cIdx, 'name', $event.value)"
                             />
                           </span>
                         </div>
@@ -688,9 +577,7 @@ const emit = defineEmits(['notification'])
                             :id="`configNsfw-${cIdx}`"
                             :model-value="config.nsfw ? true : false"
                             label=" "
-                            @update:model-value="
-                              handleInputUpdate('config', cIdx, 'nsfw', $event.checked)
-                            "
+                            @update:model-value="updateConfigField(cIdx, 'nsfw', $event.checked)"
                           />
                         </div>
                         <div class="data-table__detail-item">
@@ -730,7 +617,7 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === config.id && fu.action === 'update'
                               )
                             "
-                            @click="handleConfigUpdate(cIdx, config.id)"
+                            @click="handleConfigUpdate(cIdx)"
                           />
                           <Button
                             v-if="!config.isPreset"
@@ -752,7 +639,7 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === config.id && fu.action === 'replace'
                               )
                             "
-                            @click="handleConfigReplace(cIdx, config.id)"
+                            @click="handleConfigReplace(cIdx)"
                           />
                           <Button
                             v-if="config.id"
@@ -763,11 +650,11 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === config.id && fu.action === 'delete'
                               )
                             "
-                            @click="handleConfigDelete(cIdx, config.id)"
+                            @click="handleConfigDelete(cIdx)"
                           />
                         </div>
                       </div>
-                      <div v-if="allPresets && allPresets.length && isConfigExpanded(cIdx)">
+                      <div v-if="hasPresets && isConfigExpanded(cIdx)">
                         <div v-for="(preset, pIdx) in allPresets" :key="pIdx">
                           <div v-if="preset.forUqid === config.uqid" class="data-table__preset">
                             <div class="data-table__preset-grid">
@@ -777,7 +664,7 @@ const emit = defineEmits(['notification'])
                                   :id="`presetName-${pIdx}`"
                                   :model-value="preset.name"
                                   @update:model-value="
-                                    handleInputUpdate('preset', pIdx, 'name', $event.value)
+                                    updatePresetField(pIdx, 'name', $event.value)
                                   "
                                 />
                               </div>
@@ -787,12 +674,7 @@ const emit = defineEmits(['notification'])
                                   :id="`presetParameter-${pIdx}`"
                                   :model-value="preset.unityParameter"
                                   @update:model-value="
-                                    handleInputUpdate(
-                                      'preset',
-                                      pIdx,
-                                      'unityParameter',
-                                      $event.value
-                                    )
+                                    updatePresetField(pIdx, 'unityParameter', $event.value)
                                   "
                                 />
                               </div>
