@@ -115,8 +115,6 @@ const aviConfig = (): void => {
       avatarConfig.value.valuedParams = undefined
     }
 
-    console.log(avatarConfig.value)
-
     if (!holdSaveName.value) saveName.value = avatarConfig.value?.name || ''
   })
 }
@@ -194,8 +192,10 @@ const handleSavedUpdated = async (): Promise<void> => {
     Number(configSelectValue.value),
     avatarConfig.value?.avatarId || 'Unknown',
     avatarConfig.value?.avatarName || 'Unknown',
-    avatarConfig.value?.name
+    configSelectOptions.value.find((option) => option.value === Number(configSelectValue.value))
+      ?.label || ''
   )
+
   if (!res.success) {
     pushNotification({
       type: 'error',
@@ -237,7 +237,7 @@ onMounted(() => {
 
 <template>
   <notifications class="notification" position="bottom left" />
-  <Menu :current-view="appStore.currentView" />
+  <Menu />
   <div class="main">
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
     <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
