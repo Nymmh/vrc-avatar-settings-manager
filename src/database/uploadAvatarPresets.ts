@@ -36,7 +36,7 @@ export async function uploadAvatarPresets(
         .prepare(`SELECT id FROM presets WHERE avatarId = ? AND unityParameter = ? LIMIT 1`)
         .get(avatarConfig.presets?.avatarId, avatarConfig.presets?.unityParameter)
 
-      if (existingCheck) {
+      if (existingCheck && avatarConfig.presets?.avatarId) {
         const nextPresetNumber = generateNextPresetNumber(db, avatarConfig.presets.avatarId)
         avatarConfig.presets!.unityParameter = nextPresetNumber
       }
