@@ -1,44 +1,97 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
+import { BrowserWindow } from 'electron'
+import { generateUqid } from '../helpers/generateUqid'
+import { randomString } from '../helpers/randomString'
+import { generateUniqueUqid } from './helpers/generateUniqueUqid'
+import { insertConfig } from './insert/insertConfig'
+import { insertPreset } from './insert/insertPreset'
+import { handleConfigConflict } from './helpers/handleConfigConflict'
+import { getNextDuplicateNumber } from './helpers/getNextDuplicateNumber'
 
 export async function uploadAvatar(
   log: Logger,
   db: Database,
-  loadedJson: exportAllConfigsInterface
+  loadedJson: exportAllConfigsInterface,
+  mainWindow: BrowserWindow
 ): Promise<uploadAvatarConfigInterface> {
   try {
-    const parsedContent: avatarDBInterface[] =
-      typeof loadedJson.configs === 'string' ? JSON.parse(loadedJson.configs) : loadedJson.configs
+    let loadedType: 'avatar' | 'config' = 'avatar'
+    let loadedConfig: avatarDBInterface = {}
+    let parsedContent: avatarDBInterface[] = []
+    let configParams: string = '[]'
 
-    db.prepare(
-      `INSERT INTO avatarStorage (avatarId, name)
+    if (!loadedJson.avatarId) return { success: false, message: 'Invalid avatarId' }
+
+    if (loadedJson.type === 'avatar' || loadedJson?.configs) loadedType = 'avatar'
+    else if (loadedJson.type === 'config' || loadedJson?.valuedParams) loadedType = 'config'
+    else return { success: false, message: 'Malformed config' }
+
+    if (loadedType === 'avatar') {
+      parsedContent =
+        typeof loadedJson.configs === 'string' ? JSON.parse(loadedJson.configs) : loadedJson.configs
+    } else {
+      configParams =
+        typeof loadedJson.valuedParams !== 'string' ? JSON.stringify(loadedJson.valuedParams) : '[]'
+      loadedConfig = loadedJson
+    }
+
+    try {
+      db.prepare(
+        `INSERT INTO avatarStorage (avatarId, name)
          VALUES (?, ?)`
-    ).run(loadedJson.avatarId, loadedJson.name)
+      ).run(loadedJson.avatarId, loadedJson.name)
+    } catch {
+      log.warn('Avatar already exists, skipping')
+    }
 
-    for (const a of parsedContent) {
-      db.prepare(
-        `INSERT INTO avatars (uqid, avatarId, name, avatarName, nsfw, parameters, fromFile, isPreset)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        a.uqid,
-        a.avatarId,
-        a.name,
-        loadedJson.name,
-        a.nsfw ? 1 : 0,
-        a.parameters,
-        1,
-        a.isPreset ? 1 : 0
-      )
+    if (loadedType === 'avatar') {
+      for (const config of parsedContent) {
+        if (!config?.uqid) {
+          config.uqid = generateUniqueUqid(db)
+          if (config.presets?.forUqid) config.presets.forUqid = config.uqid
+        }
 
-      db.prepare(
-        `INSERT INTO presets (foruqId, avatarId, name, unityParameter)
-         VALUES (?, ?, ?, ?)`
-      ).run(
-        a.presets?.forUqid || '',
-        a.presets?.avatarId || '',
-        a.presets?.name || '',
-        a.presets?.unityParameter
-      )
+        const existingConfig = db
+          .prepare(
+            `
+          SELECT id, name FROM avatars WHERE uqid = ? LIMIT 1
+          `
+          )
+          .get(config.uqid) as { id: number; name: string } | undefined
+
+        if (existingConfig?.id) {
+          config.uqid = generateUniqueUqid(db)
+          if (config.presets?.forUqid) config.presets.forUqid = config.uqid
+        }
+
+        if (existingConfig?.name === config.name) {
+          const dup = getNextDuplicateNumber(db, config.name || 'Unknown')
+          config.name = `${config.name} (${dup})`
+        }
+
+        if (config.parameters && typeof config.parameters !== 'string')
+          config.parameters = JSON.stringify(config.parameters)
+
+        insertConfig(db, config, loadedJson.name || 'Unknown', config.parameters || '[]')
+        if (config.isPreset)
+          insertPreset(db, config, loadedJson.avatarId, loadedJson.name || 'Unknown')
+      }
+    } else {
+      if (!loadedConfig.uqid) {
+        loadedConfig.uqid = generateUqid(randomString())
+        if (loadedConfig.presets?.forUqid) loadedConfig.presets.forUqid = loadedConfig.uqid
+      }
+
+      const conflictResult = await handleConfigConflict(db, loadedConfig, mainWindow)
+
+      if (!conflictResult.continue) return { success: false, message: 'Upload cancelled' }
+
+      loadedConfig = conflictResult.config
+
+      insertConfig(db, loadedConfig, loadedConfig.avatarName || 'Unknown', configParams)
+      if (loadedConfig.isPreset)
+        insertPreset(db, loadedConfig, loadedJson.avatarId, loadedConfig.avatarName || 'Unknown')
     }
 
     return { success: true, message: 'Saved' }

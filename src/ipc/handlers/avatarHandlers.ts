@@ -36,7 +36,7 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     const loadedAvatarJson = storage.getLoadedAvatarJson()
     if (!loadedAvatarJson) return { upload: false }
 
-    const res = await uploadAvatarConfig(log, avatarDB, loadedAvatarJson)
+    const res = await uploadAvatarConfig(log, avatarDB, loadedAvatarJson, mainWindow)
     const currentAviId = storage.getCurrentAvatarId()
     getNames(log, avatarDB, mainWindow, currentAviId)
     return res

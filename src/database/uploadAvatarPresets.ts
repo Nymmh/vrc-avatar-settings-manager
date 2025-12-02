@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
 import { showWarning } from '../services/showWarning'
 import { BrowserWindow } from 'electron'
+import { generateNextPresetNumber } from './helpers/generateNextPresetNumber'
 
 export async function uploadAvatarPresets(
   db: Database,
@@ -27,19 +28,27 @@ export async function uploadAvatarPresets(
         `
         UPDATE presets
         SET avatarId = ?, name = ?, unityParameter = ?
-        WHERE foruqId = ?
+        WHERE forUqid = ?
       `
-      ).run(
-        avatarConfig.presets?.avatarId,
-        avatarConfig.presets?.name,
-        avatarConfig.presets?.unityParameter,
-        uqid
-      )
+      ).run(avatarConfig.presets?.avatarId, avatarConfig.presets?.name, uqid)
     } else {
+      const existingCheck = db
+        .prepare(`SELECT id FROM presets WHERE avatarId = ? AND unityParameter = ? LIMIT 1`)
+        .get(avatarConfig.presets?.avatarId, avatarConfig.presets?.unityParameter)
+
+      if (existingCheck) {
+        const nextPresetNumber = generateNextPresetNumber(db, avatarConfig.presets.avatarId)
+        avatarConfig.presets!.unityParameter = nextPresetNumber
+      }
+
       db.prepare(
         `
-          INSERT INTO presets (foruqId, avatarId, name, unityParameter)
+          INSERT INTO presets (forUqid, avatarId, name, unityParameter)
           VALUES (?, ?, ?, ?)
+          ON CONFLICT(forUqid) DO UPDATE SET
+            avatarId = excluded.avatarId,
+            name = excluded.name,
+            unityParameter = excluded.unityParameter 
         `
       ).run(
         uqid,
