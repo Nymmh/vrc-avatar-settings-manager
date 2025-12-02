@@ -15,7 +15,7 @@ interface avatarDB {
 
 interface valuedParams {
   name?: string
-  value?: number | boolean
+  value?: number | boolean | string
   type?: string
 }
 

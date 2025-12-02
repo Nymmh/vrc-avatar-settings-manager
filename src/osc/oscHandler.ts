@@ -25,7 +25,26 @@ export class OSCHandler {
 
     const [address, payload] = data as [string, unknown]
 
-    if (/VF\d+_(Sync|TC_current|Customization)/.test(address)) return
+    if (
+      /\/LastSynced$/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]SyncData/.test(address) ||
+      /^FT\/v2\//.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]SyncPointer$/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]TC_current/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]TC_FullControllerBuilder/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]TC_merged_trackingEyes$/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]TC_VRC[ _]Avatar[ _]Descriptor_trackingEyes$/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]timeSinceLoad$/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]counter$/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]ScaleFactor_b$/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]ScaleFactorDiff$/.test(address) ||
+      /^VF[ _]\d+(?:\.\d+)*$/.test(address) ||
+      /^VF_\d+(?:\.\d+)*[a-z]/.test(address) ||
+      /^VF_\d+(?:\.\d+)*_One$/.test(address) ||
+      /^VF_\d+(?:\.\d+)*_True$/.test(address) ||
+      /^VFH\/Version/.test(address)
+    )
+      return
 
     if (address === '/avatar/change') {
       await this.handleAvatarChange(payload as string)
