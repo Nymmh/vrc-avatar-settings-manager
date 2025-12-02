@@ -16,6 +16,7 @@ import { updateSavedConfig } from '../../database/updateSavedConfig'
 import { updateSavedConfigData } from '../../database/updateSavedData'
 import { replaceParams } from '../../database/replaceParams'
 import { deleteConfig } from '../../database/deleteConfig'
+import { showWarning } from '../../services/showWarning'
 
 interface ConfigHandlerContext {
   log: Logger
@@ -167,6 +168,21 @@ export function configHandlers(context: ConfigHandlerContext): void {
   ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName) => {
     const mainWindow = getMainWindow()
     if (!mainWindow) return { success: false }
+
+    const userResponse = await showWarning(
+      ['Yes', 'No'],
+      0,
+      'Overwrite Warning',
+      'Are you sure you want to overwrite the saved config?',
+      mainWindow
+    )
+
+    if (userResponse.response !== 0) {
+      return {
+        success: false,
+        message: 'Update cancelled by user'
+      }
+    }
 
     const pendingChanges = storage.getPendingChanges()
     const currentAviId = storage.getCurrentAvatarId()
