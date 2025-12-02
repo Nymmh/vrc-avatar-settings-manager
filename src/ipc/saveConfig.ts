@@ -134,8 +134,6 @@ export async function saveConfig(
       )
     }
 
-    console.log(parsedContent)
-
     const avatarName =
       getAvatarName(db, parsedContent.avatarId) ||
       parsedContent.avatarName?.trim() ||
