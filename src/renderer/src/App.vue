@@ -29,22 +29,18 @@ const saveName = ref('')
 const saveNameError = ref('')
 const saveMessage = ref('')
 const saveSuccess = ref(false)
-const saveError = ref('')
 const NSFWValue = ref(false)
 const NSFWError = ref('')
 
 // Load/Apply state
 const configSelectValue = ref('')
 const configSelectOptions = ref<InputSelectInterface[]>([])
-const applyStatus = ref<boolean | undefined>(undefined)
 
 const resetVars = (): void => {
   saveMessage.value = ''
   saveSuccess.value = false
-  saveError.value = ''
   saveNameError.value = ''
   NSFWError.value = ''
-  applyStatus.value = undefined
 }
 
 const pushNotification = (data: NotificationInterface): void => {
@@ -119,7 +115,7 @@ const aviConfig = (): void => {
   })
 }
 
-const handleSave = async (overwrite: boolean): Promise<void> => {
+const handleSave = async (): Promise<void> => {
   resetVars()
 
   if (!saveName.value.trim()) {
@@ -134,8 +130,6 @@ const handleSave = async (overwrite: boolean): Promise<void> => {
   }
 
   if (!avatarConfig.value) {
-    saveError.value = 'No avatar config found'
-
     pushNotification({
       type: 'error',
       title: 'Save Failed',
@@ -144,7 +138,6 @@ const handleSave = async (overwrite: boolean): Promise<void> => {
     return
   }
 
-  if (!overwrite) saveError.value = ''
   holdSaveName.value = true
 
   const res = await window.avatarApi.saveConfig(
@@ -155,7 +148,6 @@ const handleSave = async (overwrite: boolean): Promise<void> => {
 
   saveMessage.value = res?.message || ''
   saveSuccess.value = res?.success || false
-  saveError.value = res?.overwriteMessage || ''
 
   if (res?.message) {
     pushNotification({
@@ -179,7 +171,6 @@ const handleApply = async (): Promise<void> => {
   saveName.value = ''
 
   const res = await window.avatarApi.applyConfig(Number(configSelectValue.value))
-  applyStatus.value = !!res?.success
 
   pushNotification({
     type: res?.success ? 'success' : 'error',
@@ -278,11 +269,7 @@ onMounted(() => {
               :model-value="NSFWValue"
               @update:model-value="handleInputUpdate"
             />
-            <Button label="Save Config" @click="handleSave(false)" />
-          </div>
-          <div v-if="saveError" class="main__save-exists">
-            <p class="failed">{{ saveError }}</p>
-            <Button label="Overwrite" @click="handleSave(true)" />
+            <Button label="Save Config" @click="handleSave" />
           </div>
           <div v-if="saveMessage" class="main__file-saved">
             <p :class="['main__file-saved', saveSuccess ? 'success' : 'failed']">
@@ -304,13 +291,6 @@ onMounted(() => {
             <Button label="Apply" @click="handleApply" />
             <Button label="Update" @click="handleSavedUpdated" />
           </div>
-
-          <p
-            v-if="applyStatus !== undefined"
-            :class="['main__saved-message', applyStatus ? 'success' : 'failed']"
-          >
-            {{ applyStatus ? 'Config applied' : 'Failed to apply config' }}
-          </p>
         </div>
         <LoadFile :avatar-config="avatarConfig" @notification="pushNotification" />
       </div>

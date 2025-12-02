@@ -1,18 +1,13 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { uploadAvatar } from './uploadAvatar'
+import { BrowserWindow } from 'electron'
 
 export async function uploadAvatarConfig(
   log: Logger,
   db: Database,
-  loadedJson: exportAllConfigsInterface
+  loadedJson: exportAllConfigsInterface,
+  mainWindow: BrowserWindow
 ): Promise<uploadAvatarConfigInterface> {
-  if (loadedJson && loadedJson.type !== 'avatar') {
-    return {
-      success: false,
-      message: 'Uploaded data is not an avatar type'
-    }
-  }
-
-  return await uploadAvatar(log, db, loadedJson)
+  return await uploadAvatar(log, db, loadedJson, mainWindow)
 }

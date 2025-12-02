@@ -32,6 +32,7 @@ interface exportAllConfig {
   avatarId?: string
   name?: string
   configs?: avatarDB[]
+  valuedParams?: valuedParams[] | string
 }
 
 interface avatarStorageDB {

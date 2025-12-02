@@ -2,11 +2,13 @@ import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { saveConfigInterface } from '../types/saveConfigInterface'
 import { checkIfExist } from '../database/checkIfExist'
-import { generateUqid } from '../helpers/generateUqid'
 import { checkIfExistByNameAndAvatarId } from '../database/checkIfExistByNameAndAvatarId'
 import { BrowserWindow } from 'electron'
 import { showWarning } from '../services/showWarning'
 import { uploadAvatarPresets } from '../database/uploadAvatarPresets'
+import { generateUniqueUqid } from '../database/helpers/generateUniqueUqid'
+import { getNextDuplicateNumber } from '../database/helpers/getNextDuplicateNumber'
+import { getAvatarName } from '../database/helpers/getAvatarName'
 
 export async function saveConfig(
   log: Logger,
@@ -19,23 +21,18 @@ export async function saveConfig(
 ): Promise<saveConfigInterface> {
   try {
     saveName = saveName.trim()
-    if (!saveName) {
-      return { success: false, message: 'Invalid config name' }
-    }
+    if (!saveName) return { success: false, message: 'Invalid config name' }
 
     const parsedContent: avatarDBInterface =
       typeof content === 'string' ? JSON.parse(content) : content
 
-    if (!parsedContent || !parsedContent.avatarId)
-      return { success: false, message: 'Invalid config' }
+    if (!parsedContent?.avatarId) return { success: false, message: 'Invalid config' }
 
-    const nsfwValue = nsfw ? 1 : 0
-    const fromFileValue = fromFile ? 1 : 0
     const parametersJson =
-      (typeof parsedContent.valuedParams === 'string'
+      typeof parsedContent.valuedParams === 'string'
         ? parsedContent.valuedParams
-        : JSON.stringify(parsedContent.valuedParams)) || '[]'
-    const uqid = generateUqid(parsedContent?.avatarId || 'unknown')
+        : JSON.stringify(parsedContent.valuedParams || [])
+    const uqid = generateUniqueUqid(db)
     let uploadedPresets = false
 
     if (!fromFile && parsedContent.avatarId.trim()) {
@@ -50,9 +47,7 @@ export async function saveConfig(
           mainWindow
         )
 
-        if (userResponse.response !== 0) {
-          return { success: false, message: 'Save cancelled' }
-        }
+        if (userResponse.response !== 0) return { success: false, message: 'Save cancelled' }
 
         db.prepare(
           `
@@ -60,23 +55,22 @@ export async function saveConfig(
         SET nsfw = ?, parameters = ?, fromFile = 0
         WHERE name = ? AND avatarId = ?
       `
-        ).run(nsfwValue, parametersJson, saveName, parsedContent.avatarId)
+        ).run(nsfw ? 1 : 0, parametersJson, saveName, parsedContent.avatarId)
 
         return { success: true, message: 'Saved' }
       }
     } else if (fromFile && parsedContent.uqid?.trim()) {
       if (checkIfExist(db, parsedContent.uqid)) {
         const userResponse = await showWarning(
-          ['Yes', 'No', 'Cancel'],
+          ['Yes', 'No', 'Cancel Upload'],
           0,
           'Avatar Config Exists',
           `A config with that id already exists. Do you want to overwrite it?`,
           mainWindow
         )
 
-        if (userResponse.response === 2) {
-          return { success: false, message: 'Save cancelled' }
-        } else if (userResponse.response === 0) {
+        if (userResponse.response === 2) return { success: false, message: 'Save cancelled' }
+        if (userResponse.response === 0) {
           let presetSave = parsedContent.isPreset
 
           if (parsedContent.isPreset && parsedContent?.presets?.avatarId) {
@@ -94,10 +88,10 @@ export async function saveConfig(
             `
         UPDATE avatars
         SET name = ?, nsfw = ?, parameters = ?, fromFile = 1, isPreset = ?
-        WHERE uqid = ?
-      `
+        WHERE uqid = ? 
+        `
           ).run(
-            saveName?.trim() || parsedContent?.name?.trim() || 'Unknown',
+            saveName || 'Unknown',
             parsedContent.nsfw ? 1 : 0,
             parametersJson,
             presetSave ? 1 : 0,
@@ -105,51 +99,48 @@ export async function saveConfig(
           )
 
           return { success: true, message: 'Saved' }
-        } else {
-          parsedContent.uqid = uqid
         }
+
+        parsedContent.uqid = uqid
       }
     } else {
       log.error('Error saving config')
       return { success: false, message: 'Internal error' }
     }
 
-    let uploadName = saveName
-    let counter = 1
+    const existingConfig = db
+      .prepare(
+        `
+          SELECT id, name FROM avatars WHERE avatarId = ? LIMIT 1
+          `
+      )
+      .get(parsedContent.avatarId) as { id: number; name: string } | undefined
 
-    while (checkIfExistByNameAndAvatarId(db, uploadName, parsedContent.avatarId)) {
-      uploadName = `${saveName} (${counter})`
-      counter++
+    if (existingConfig?.name === saveName) {
+      const dup = getNextDuplicateNumber(db, saveName)
+      saveName = `${saveName} (${dup})`
     }
 
-    saveName = uploadName
+    let presetSave = parsedContent?.isPreset || 0
 
-    let presetSave = parsedContent.isPreset
-
-    if (parsedContent.isPreset && parsedContent?.presets?.avatarId && !uploadedPresets) {
+    if (parsedContent.isPreset && parsedContent.presets?.avatarId && !uploadedPresets) {
       parsedContent.presets.avatarId = parsedContent.avatarId
       presetSave = await uploadAvatarPresets(
         db,
         parsedContent,
         mainWindow,
-        parsedContent?.uqid || uqid,
+        parsedContent.uqid || uqid,
         false
       )
     }
 
-    const avatarName = db
-      .prepare('SELECT name FROM avatarStorage WHERE avatarId = ? LIMIT 1')
-      .get(parsedContent.avatarId) as
-      | {
-          name: string
-        }
-      | undefined
+    console.log(parsedContent)
 
-    if (avatarName?.name) {
-      parsedContent.avatarName = avatarName.name
-    } else {
-      parsedContent.avatarName = parsedContent?.name
-    }
+    const avatarName =
+      getAvatarName(db, parsedContent.avatarId) ||
+      parsedContent.avatarName?.trim() ||
+      parsedContent.name?.trim() ||
+      'Unknown'
 
     db.prepare(
       `
@@ -165,25 +156,20 @@ export async function saveConfig(
         isPreset = excluded.isPreset
     `
     ).run(
-      parsedContent?.uqid || uqid,
+      parsedContent.uqid || uqid,
       parsedContent.avatarId,
       saveName,
-      parsedContent.avatarName?.trim() || parsedContent?.name?.trim() || 'Unknown',
-      nsfwValue,
+      avatarName,
+      nsfw ? 1 : 0,
       parametersJson,
-      fromFileValue,
-      presetSave ? 1 : 0
+      fromFile ? 1 : 0,
+      presetSave
     )
 
     db.prepare(
-      `
-      INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?)
-      ON CONFLICT(avatarId) DO NOTHING
-      `
-    ).run(
-      parsedContent.avatarId,
-      parsedContent.avatarName?.trim() || parsedContent?.name?.trim() || 'Unknown'
-    )
+      `INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?)
+     ON CONFLICT(avatarId) DO NOTHING`
+    ).run(parsedContent.avatarId, avatarName)
 
     return { success: true, message: 'Saved' }
   } catch (e) {

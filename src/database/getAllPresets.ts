@@ -9,11 +9,11 @@ export function getAllPresets(
   try {
     if (uqid) {
       const q = db.prepare(
-        'SELECT id,foruqId,avatarId,name,unityParameter FROM presets WHERE foruqId = ? LIMIT 1'
+        'SELECT id,forUqid,avatarId,name,unityParameter FROM presets WHERE forUqid = ? LIMIT 1'
       )
       return q.all(uqid) as avatarPresetsInterface[]
     } else {
-      const q = db.prepare('SELECT id,foruqId,avatarId,name,unityParameter FROM presets')
+      const q = db.prepare('SELECT id,forUqid,avatarId,name,unityParameter FROM presets')
       return q.all() as avatarPresetsInterface[]
     }
   } catch (e) {
