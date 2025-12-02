@@ -7,6 +7,13 @@ const EXCLUDED_NAMES = new Set([
   'Go/StandIdle',
   'Go/CrouchIdle',
   'Go/ProneIdle',
+  'Go/StandType',
+  'Go/StandIdleMirror',
+  'Go/CrouchIdleMirror',
+  'Go/ProneIdleMirror',
+  'Go/Dash',
+  'Go/DashDistance',
+  'Go/Dash/Right/FistWeight',
   'EyeTrackingActive',
   'LipTrackingActive',
   'VisemesEnable',
@@ -28,6 +35,7 @@ export function formatConfig(
     name: parsedConfig.name || '',
     valuedParams: []
   }
+
   if (!Array.isArray(parsedCache.animationParameters) || !Array.isArray(parsedConfig.parameters))
     return formattedData
 
@@ -52,13 +60,15 @@ export function formatConfig(
 
     let value = c.value
 
-    if (hasPendingChanges && pendingChanges.has(c.name)) {
-      const pendingValue = pendingChanges.get(c.name)
+    const formattedName = c.name.replace(/ /g, '_')
+
+    if (hasPendingChanges && pendingChanges.has(formattedName)) {
+      const pendingValue = pendingChanges.get(formattedName)
       value = typeof pendingValue === 'boolean' ? (pendingValue ? 1 : 0) : pendingValue
     }
 
     ap.push({
-      name: c.name,
+      name: formattedName,
       value,
       type
     })
