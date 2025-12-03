@@ -100,8 +100,8 @@ const avatarApi = {
     ipcRenderer.invoke('deletePresetFromApp', id),
   createPresetFromApp: async (id: number): Promise<createPresetInterface> =>
     ipcRenderer.invoke('createPresetFromApp', id),
-  getSavedByUqid: async (uqid: string): Promise<avatarDBInterface[] | null> =>
-    ipcRenderer.invoke('getSavedByUqid', uqid),
+  getConfigByUqid: async (uqid: string): Promise<avatarDBInterface[] | null> =>
+    ipcRenderer.invoke('getConfigByUqid', uqid),
   getPresetsByUqid: async (uqid: string): Promise<avatarPresetsInterface[] | null> =>
     ipcRenderer.invoke('getPresetsByUqid', uqid),
   uploadAvatarConfig: async (): Promise<uploadAvatarConfigInterface> =>

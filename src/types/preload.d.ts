@@ -46,7 +46,7 @@ export interface avatarApi {
   updatePresetFromApp: (id: number, saveName: string, parameter: number) => updatePresetInterface
   deletePresetFromApp: (id: number) => deletePresetInterface
   createPresetFromApp: (id: number) => createPresetInterface
-  getSavedByUqid: (uqid: string) => Promise<getAllSavedInterface[] | null>
+  getConfigByUqid: (uqid: string) => Promise<getAllSavedInterface[] | null>
   getPresetsByUqid: (uqid: string) => Promise<getAllPresetsInterface[] | null>
   uploadAvatarConfig: () => Promise<uploadAvatarConfigInterface>
   loadAvatarConfig: () => Promise<loadAvatarConfigInterface>

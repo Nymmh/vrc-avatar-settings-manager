@@ -18,7 +18,7 @@ const failedConfigUpdates = ref<FailedOperation[]>([])
 const failedPresetUpdates = ref<FailedOperation[]>([])
 const allAvatars = ref<Awaited<ReturnType<typeof window.avatarApi.getAllAvatars>>>([])
 const allConfigs = ref<Awaited<ReturnType<typeof window.avatarApi.getConfigById>>>([])
-const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getAllPresets>>>([])
+const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getPresetsByUqid>>>([])
 const expandedAvatarRow = ref<number | null>(null)
 const expandedConfigRow = ref<number | null>(null)
 
