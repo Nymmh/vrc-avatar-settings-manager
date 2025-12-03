@@ -161,7 +161,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return await getAllSaved(log, avatarDB)
   })
 
-  ipcMain.handle('getSavedByUqid', async (_event, uqid: string) => {
+  ipcMain.handle('getConfigByUqid', async (_event, uqid: string) => {
     return await getAllSaved(log, avatarDB, uqid)
   })
 
