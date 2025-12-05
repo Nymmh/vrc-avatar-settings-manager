@@ -250,7 +250,7 @@ onMounted(() => {
   <Menu />
   <div class="main">
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
-    <!-- <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" /> -->
+    <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
     <div v-show="appStore.currentView === 'Main'" class="main__content">
       <Card>
         <div class="main__avatar-data">
