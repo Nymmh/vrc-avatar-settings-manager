@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import Button from './Button.vue'
 import Card from './Card.vue'
@@ -435,6 +435,15 @@ const refreshListen = async (): Promise<void> => {
 onMounted(() => {
   getAvatars()
   refreshListen()
+})
+
+onUnmounted(() => {
+  allAvatars.value = []
+  allConfigs.value = []
+  allPresets.value = []
+  failedAvatarUpdates.value = []
+  failedConfigUpdates.value = []
+  failedPresetUpdates.value = []
 })
 
 watch(
