@@ -6,3 +6,15 @@
 @use './app.scss';
 @use './colors.scss';
 @use './lines.scss';
+@use './boxShadow.scss';
+
+@font-face {
+  font-family: 'Manrope', sans-serif;
+  src:
+    url('../assets/fonts/Manrope-Regular.ttf') format('truetype'),
+    url('../assets/fonts/Manrope-Medium.ttf') format('truetype'),
+    url('../assets/fonts/Manrope-SemiBold.ttf') format('truetype');
+  font-weight: 400 600 800;
+  font-style: normal;
+  font-display: swap;
+}

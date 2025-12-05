@@ -14,7 +14,7 @@ export function avatarDatabase(log: Logger): DBType {
 
   db.pragma('journal_mode = WAL')
 
-  const version = db.pragma('user_version', { simple: true }) as number
+  let version = db.pragma('user_version', { simple: true }) as number
 
   if (version === 0) {
     db.transaction(() => {
@@ -58,7 +58,21 @@ export function avatarDatabase(log: Logger): DBType {
       db.pragma('user_version = 1')
     })()
 
-    log.info('Meow Storage ver 1 setup complete')
+    version = 1
+    log.info('Meow Storage version 1 setup complete')
+  }
+
+  if (version === 1) {
+    db.transaction(() => {
+      db.prepare(
+        `CREATE INDEX IF NOT EXISTS idx_avatarsStorage_avatarId ON avatarStorage (avatarId)`
+      ).run()
+
+      db.pragma('user_version = 2')
+    })()
+
+    version = 2
+    log.info('Meow Storage upgraded to version 2')
   }
 
   db.pragma('synchronous = NORMAL')

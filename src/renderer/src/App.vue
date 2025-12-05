@@ -9,6 +9,7 @@ import InputText from './components/InputText.vue'
 import LoadFile from './components/LoadFile.vue'
 import Menu from './components/Menu.vue'
 import Waiting from './components/Waiting.vue'
+import Card from './components/Card.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
 import type { avatarConfigType } from '../../types/avatarConfigType'
 import { NotificationInterface } from './types/notificationInterface'
@@ -203,6 +204,24 @@ const handleSavedUpdated = async (): Promise<void> => {
   })
 }
 
+const handleDelete = async (): Promise<void> => {
+  resetVars()
+  saveName.value = ''
+
+  const res = await window.avatarApi.deleteConfig(Number(configSelectValue.value))
+
+  pushNotification({
+    type: res?.success ? 'success' : 'error',
+    title: res?.success ? 'Delete Successful' : 'Delete Failed',
+    text: res?.message || ''
+  })
+
+  if (res?.success) {
+    configSelectValue.value = ''
+    savedConfigs()
+  }
+}
+
 const handleInputUpdate = ({ id, value, checked }): void => {
   if (id == 'config-name-input') {
     saveName.value = value
@@ -231,69 +250,77 @@ onMounted(() => {
   <Menu />
   <div class="main">
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
-    <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
+    <!-- <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" /> -->
     <div v-show="appStore.currentView === 'Main'" class="main__content">
-      <div :class="['main__avatar-data', { underline: appStore.avatarFoundFile }]">
-        <div class="main__avatar-data-file">
-          <p :class="['main__avatar-found', appStore.avatarFoundFile ? 'success' : 'failed']">
-            {{ appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data' }}
-          </p>
-          <Button
-            v-if="!appStore.avatarFoundFile"
-            :small="true"
-            label="Refresh"
-            @click="refreshAviFile"
-          />
-        </div>
-        <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
-          Avatar ID: <span class="main__avatar-id__id">{{ appStore.avatarId }}</span>
-        </p>
-        <p v-if="avatarConfig?.name" class="main__avatar-name">
-          Name: <span class="main__avatar-name__name">{{ avatarConfig?.name }}</span>
-        </p>
-      </div>
-      <div v-if="appStore.avatarFoundFile" class="main__buttons">
-        <div class="main__save-wrapper underline">
-          <div class="main__save">
-            <InputText
-              id="config-name-input"
-              label="Save Name: "
-              :error="saveNameError"
-              :model-value="saveName"
-              @update:model-value="handleInputUpdate"
-            />
-            <InputCheckbox
-              id="config-nsfw"
-              label="NSFW"
-              :error="NSFWError"
-              :model-value="NSFWValue"
-              @update:model-value="handleInputUpdate"
-            />
-            <Button label="Save Config" @click="handleSave" />
-          </div>
-          <div v-if="saveMessage" class="main__file-saved">
-            <p :class="['main__file-saved', saveSuccess ? 'success' : 'failed']">
-              {{ saveMessage }}
+      <Card>
+        <div class="main__avatar-data">
+          <div class="main__avatar-data-file">
+            <p :class="['main__avatar-found', appStore.avatarFoundFile ? 'success' : 'failed']">
+              {{ appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data' }}
             </p>
-          </div>
-        </div>
-        <div v-if="configSelectOptions.length" class="main__saved-wrapper underline">
-          <div class="main__saved-current-avi">
-            <InputSelect
-              id="select-config"
-              label="Saved Configs: "
-              :model-value="configSelectValue"
-              :options="configSelectOptions"
-              @update:model-value="handleInputUpdate"
+            <Button
+              v-if="!appStore.avatarFoundFile"
+              :small="true"
+              :hero="true"
+              label="Refresh"
+              @click="refreshAviFile"
             />
           </div>
-          <div v-if="configSelectValue" class="main__apply-buttons">
-            <Button label="Apply" @click="handleApply" />
-            <Button label="Update" @click="handleSavedUpdated" />
+          <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
+            Avatar ID: <span class="main__avatar-id__id">{{ appStore.avatarId }}</span>
+          </p>
+          <p v-if="avatarConfig?.name" class="main__avatar-name">
+            Name: <span class="main__avatar-name__name">{{ avatarConfig?.name }}</span>
+          </p>
+        </div>
+      </Card>
+      <Card v-if="appStore.avatarFoundFile">
+        <div class="main__buttons">
+          <div class="main__save-wrapper">
+            <div class="main__save">
+              <InputText
+                id="config-name-input"
+                label="Save Name: "
+                :error="saveNameError"
+                :model-value="saveName"
+                @update:model-value="handleInputUpdate"
+              />
+              <InputCheckbox
+                id="config-nsfw"
+                label="NSFW"
+                :error="NSFWError"
+                :model-value="NSFWValue"
+                @update:model-value="handleInputUpdate"
+              />
+              <Button label="Save Config" :hero="true" @click="handleSave" />
+            </div>
+            <div v-if="saveMessage" class="main__file-saved">
+              <p :class="['main__file-saved', saveSuccess ? 'success' : 'failed']">
+                {{ saveMessage }}
+              </p>
+            </div>
+          </div>
+          <div v-if="configSelectOptions.length" class="main__saved-wrapper">
+            <div class="main__saved-current-avi">
+              <InputSelect
+                id="select-config"
+                label="Saved Configs: "
+                :model-value="configSelectValue"
+                :options="configSelectOptions"
+                @update:model-value="handleInputUpdate"
+              />
+            </div>
+            <div v-if="configSelectValue" class="main__apply-buttons">
+              <Button label="Apply" @click="handleApply" />
+              <Button label="Update" @click="handleSavedUpdated" />
+              <Button label="Delete" :error="true" @click="handleDelete" />
+            </div>
           </div>
         </div>
+      </Card>
+      <Card v-if="appStore.avatarFoundFile">
         <LoadFile :avatar-config="avatarConfig" @notification="pushNotification" />
-      </div>
+      </Card>
     </div>
   </div>
   <Footer @notification="pushNotification" />
@@ -310,8 +337,15 @@ onMounted(() => {
   height: 94%;
   justify-content: center;
   overflow: hidden;
+  padding-left: 16px;
+  padding-right: 16px;
 
   &__content {
+    align-items: center;
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 36px;
+    justify-content: center;
     width: 100%;
   }
 
@@ -330,11 +364,15 @@ onMounted(() => {
     gap: 16px;
   }
 
+  &__avatar-found {
+    font-weight: 700;
+  }
+
   &__avatar-id,
   &__avatar-name {
     &__id,
     &__name {
-      font-weight: bold;
+      font-weight: 700;
     }
   }
 
@@ -342,8 +380,7 @@ onMounted(() => {
     align-items: center;
     display: flex;
     flex-flow: column;
-    gap: 16px;
-    padding-top: 16px;
+    gap: 18px;
     width: 100%;
   }
 
@@ -352,7 +389,7 @@ onMounted(() => {
     align-items: center;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
     width: 100%;
   }
 
@@ -361,8 +398,12 @@ onMounted(() => {
   &__apply-buttons {
     align-items: center;
     display: flex;
-    gap: 16px;
+    gap: 18px;
     justify-content: center;
+  }
+
+  &__file-saved {
+    font-weight: 700;
   }
 }
 
@@ -374,5 +415,52 @@ onMounted(() => {
   .success {
     color: var(--color--primary-a1);
   }
+}
+
+.ps {
+  height: 100%;
+  position: relative;
+}
+
+.ps__rail-y {
+  background-color: transparent !important;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  width: 10px;
+  z-index: 10;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.ps__rail-y:hover,
+.ps--active-y {
+  opacity: 1;
+}
+
+.ps__thumb-y {
+  background: linear-gradient(135deg, rgba(90, 123, 153, 0.4), rgba(74, 127, 184, 0.4));
+  border-radius: 6px;
+  cursor: pointer;
+  right: 1px;
+  transition: all 0.3s ease;
+  width: 8px;
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(90, 123, 153, 0.7), rgba(74, 127, 184, 0.7));
+    width: 10px;
+  }
+}
+
+.ps__rail-x {
+  display: none;
+}
+
+.ps .ps__rail-y:hover,
+.ps .ps__rail-y:focus,
+.ps.ps--in-scrolling.ps--y > .ps__rail-y {
+  opacity: 1;
+  background-color: transparent !important;
 }
 </style>

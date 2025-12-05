@@ -29,7 +29,9 @@ defineEmits(['update:modelValue'])
         class="input-checkbox__input"
         type="checkbox"
         :checked="modelValue"
-        @change="$emit('update:modelValue', $event.currentTarget as HTMLInputElement)"
+        @change="
+          $emit('update:modelValue', { id, checked: ($event.target as HTMLInputElement).checked })
+        "
       />
       <label v-if="label" :for="id" class="input-checkbox__label">
         <span class="input-checkbox__label-text">{{ label }}</span>
@@ -41,6 +43,9 @@ defineEmits(['update:modelValue'])
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+@use '../styles/scss/color.scss' as colors;
+
 .input-checkbox {
   &__wrapper {
     display: flex;
@@ -59,6 +64,7 @@ defineEmits(['update:modelValue'])
     height: 0;
     opacity: 0;
     position: absolute;
+    transition: all 0.5s ease-in-out;
     width: 0;
   }
 
@@ -67,6 +73,7 @@ defineEmits(['update:modelValue'])
     cursor: pointer;
     display: flex;
     gap: 8px;
+    transition: all 0.25s;
     user-select: none;
   }
 
@@ -75,7 +82,7 @@ defineEmits(['update:modelValue'])
   }
 
   &__checkmark {
-    background-color: var(--color--primary-a2);
+    background-color: var(--color--primary-a6);
     border: 1px solid transparent;
     border-radius: 4px;
     display: block;
@@ -108,7 +115,15 @@ defineEmits(['update:modelValue'])
   }
 }
 
+.input-checkbox__input:not(:checked) ~ .input-checkbox__label:hover .input-checkbox__checkmark {
+  background-color: #{color.adjust(colors.$color--primary-a6, $lightness: -20%)};
+}
+
 .input-checkbox__input:checked ~ .input-checkbox__label:hover .input-checkbox__checkmark {
+  background-color: #{color.adjust(colors.$color--primary-a4, $lightness: -20%)};
+}
+
+.input-checkbox__input ~ .input-checkbox__label:hover .input-checkbox__checkmark {
   border-color: var(--color--primary-a3);
 }
 </style>

@@ -110,6 +110,7 @@ const emit = defineEmits(['update:modelValue'])
   border: 1px solid var(--color--primary-a4);
   border-right: none;
   display: inline;
+  font-weight: 700;
   padding: 6px 12px;
   transition: border-color 0.25s;
   width: fit-content;

@@ -87,6 +87,9 @@ importers:
       vue-tsc:
         specifier: ^3.0.7
         version: 3.1.4(typescript@5.9.3)
+      vue3-perfect-scrollbar:
+        specifier: ^2.0.0
+        version: 2.0.0(vue@3.5.24(typescript@5.9.3))
 
 packages:
 
@@ -2204,6 +2207,9 @@ packages:
   pend@1.2.0:
     resolution: {integrity: sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==}
 
+  perfect-scrollbar@1.5.6:
+    resolution: {integrity: sha512-rixgxw3SxyJbCaSpo1n35A/fwI1r2rdwMKOTCg/AcG+xOEyZcE8UHVjpZMFCVImzsFoCZeJTT+M/rdEIQYO2nw==}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -2660,6 +2666,11 @@ packages:
     hasBin: true
     peerDependencies:
       typescript: '>=5.0.0'
+
+  vue3-perfect-scrollbar@2.0.0:
+    resolution: {integrity: sha512-nSWVcRyViCgt0Pe3RhU3w/BllLcFSrEzYOGlRBjSyhVmiZlERHHziffW+9P8L0IMEWouC5t+uYrgNJGSAElqMA==}
+    peerDependencies:
+      vue: ^3.0.0
 
   vue@3.5.24:
     resolution: {integrity: sha512-uTHDOpVQTMjcGgrqFPSb8iO2m1DUvo+WbGqoXQz8Y1CeBYQ0FXf2z1gLRaBtHjlRz7zZUBHxjVB5VTLzYkvftg==}
@@ -5033,6 +5044,8 @@ snapshots:
 
   pend@1.2.0: {}
 
+  perfect-scrollbar@1.5.6: {}
+
   picocolors@1.1.1: {}
 
   picomatch@2.3.1: {}
@@ -5505,6 +5518,11 @@ snapshots:
       '@volar/typescript': 2.4.23
       '@vue/language-core': 3.1.4(typescript@5.9.3)
       typescript: 5.9.3
+
+  vue3-perfect-scrollbar@2.0.0(vue@3.5.24(typescript@5.9.3)):
+    dependencies:
+      perfect-scrollbar: 1.5.6
+      vue: 3.5.24(typescript@5.9.3)
 
   vue@3.5.24(typescript@5.9.3):
     dependencies:

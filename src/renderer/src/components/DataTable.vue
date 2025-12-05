@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import Button from './Button.vue'
+import Card from './Card.vue'
 import LoadAvatarFile from './LoadAvatarFile.vue'
 import InputCheckbox from './InputCheckbox.vue'
 import InputText from './InputText.vue'
@@ -21,9 +22,23 @@ const allConfigs = ref<Awaited<ReturnType<typeof window.avatarApi.getConfigById>
 const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getPresetsByUqid>>>([])
 const expandedAvatarRow = ref<number | null>(null)
 const expandedConfigRow = ref<number | null>(null)
+const searchAvatar = ref('')
 
 const hasConfigs = computed(() => allConfigs.value && allConfigs.value.length > 0)
 const hasPresets = computed(() => allPresets.value?.length > 0)
+
+const filteredAvatars = computed(() => {
+  if (!searchAvatar.value.trim()) {
+    return allAvatars.value
+  }
+
+  const query = searchAvatar.value.toLowerCase()
+  return allAvatars.value.filter((avatar) => {
+    return (
+      avatar.avatarId?.toLowerCase().includes(query) || avatar.name?.toLowerCase().includes(query)
+    )
+  })
+})
 
 const clearFailed = <T,>(array: FailedOperation<T>[], id: T): void => {
   const idx = array.findIndex((item) => item.id === id)
@@ -407,6 +422,10 @@ const updatePresetField = (idx: number, field: string, value: unknown): void => 
   }
 }
 
+const handleSearchUpdate = ({ value }: { value: string }): void => {
+  searchAvatar.value = value
+}
+
 const refreshListen = async (): Promise<void> => {
   await window.avatarApi.dataTableRefresh(() => {
     getAvatars()
@@ -433,28 +452,102 @@ const emit = defineEmits(['notification'])
 
 <template>
   <div class="data-table">
-    <div class="data-table__content">
-      <LoadAvatarFile @uploaded="getAvatars" @notification="$emit('notification', $event)" />
-      <div class="data-table__table-wrapper">
-        <table class="data-table__table">
-          <thead class="data-table__table-head">
-            <tr class="data-table__table-row">
-              <th class="data-table__table-header">Avatar Id</th>
-              <th class="data-table__table-header">Avatar Name</th>
-              <th class="data-table__table-header"></th>
-            </tr>
-          </thead>
-          <tbody class="data-table__table-body">
-            <template v-for="(a, idx) in allAvatars" :key="idx">
-              <tr :class="['data-table__table-row', { underline: allAvatars.length != idx + 1 }]">
-                <td class="data-table__cell data-table__cell--expand">
-                  <div class="data-table__expand-button-wrapper">
+    <PerfectScrollbar
+      :options="{
+        wheelPropagation: false,
+        suppressScrollX: true,
+        swipeEasing: false,
+        minScrollbarLength: 40
+      }"
+    >
+      <div class="data-table__content">
+        <Card>
+          <LoadAvatarFile @uploaded="getAvatars" @notification="$emit('notification', $event)" />
+        </Card>
+        <Card>
+          <InputText
+            id="avatar-search"
+            :model-value="searchAvatar"
+            label="Search Avatars: "
+            placeholder="Search by ID or Name..."
+            @update:model-value="handleSearchUpdate"
+          />
+        </Card>
+        <div v-for="(a, idx) in filteredAvatars" :key="idx" class="data-table__avatar-wrapper">
+          <Card>
+            <div class="data-table__avatar">
+              <div class="data-table__avatar-header">
+                <button
+                  v-if="a.avatarId"
+                  :class="[
+                    'data-table__expand-button',
+                    { 'data-table__expand-button--expanded': isAvatarExpanded(idx) }
+                  ]"
+                  @click="toggleAvatar(idx)"
+                >
+                  <svg
+                    width="23"
+                    height="23"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" fill="none" />
+                  </svg>
+                </button>
+                <div class="data-table__avatar-info">
+                  <p class="data-table__avatar-label">Avatar ID:</p>
+                  <p class="data-table__avatar-value">{{ a.avatarId }}</p>
+                </div>
+              </div>
+
+              <div class="data-table__avatar-field">
+                <label class="data-table__avatar-label">Avatar Name: </label>
+                <InputText
+                  :id="`avatarName-${idx}`"
+                  :model-value="a.name"
+                  @update:model-value="updateAvatarField(idx, 'name', $event.value)"
+                />
+              </div>
+
+              <div class="data-table__avatar-actions">
+                <Button
+                  label="Update"
+                  :small="true"
+                  :error="
+                    failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'update')
+                  "
+                  @click="handleAvatarUpdate(idx)"
+                />
+                <Button
+                  label="Export"
+                  :small="true"
+                  :error="
+                    failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'export')
+                  "
+                  @click="handleAvatarExport(idx)"
+                />
+                <Button
+                  label="Delete"
+                  :small="true"
+                  :error="
+                    failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'delete')
+                  "
+                  @click="handleAvatarDelete(idx)"
+                />
+              </div>
+            </div>
+            <div v-if="isAvatarExpanded(idx) && hasConfigs" class="data-table__configs">
+              <Card v-for="(config, cIdx) in allConfigs" :key="cIdx">
+                <div class="data-table__config">
+                  <div class="data-table__config-header">
                     <button
+                      v-if="config.isPreset"
                       :class="[
                         'data-table__expand-button',
-                        { 'data-table__expand-button--expanded': isAvatarExpanded(idx) }
+                        { 'data-table__expand-button--expanded': isConfigExpanded(cIdx) }
                       ]"
-                      @click="toggleAvatar(idx)"
+                      @click="toggleConfig(cIdx)"
                     >
                       <svg
                         width="23"
@@ -466,263 +559,176 @@ const emit = defineEmits(['notification'])
                         <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" fill="none" />
                       </svg>
                     </button>
+                    <h3 class="data-table__config-title">Config</h3>
                   </div>
-                  {{ a.avatarId }}
-                </td>
-                <td class="data-table__cell">
-                  <InputText
-                    :id="`avatarName-${idx}`"
-                    :model-value="a.name"
-                    @update:model-value="updateAvatarField(idx, 'name', $event.value)"
-                  />
-                </td>
-                <td class="data-table__cell data-table__cell-actions">
-                  <Button
-                    label="Update"
-                    :small="true"
-                    :error="
-                      failedAvatarUpdates.some(
-                        (fu) => fu.id === a.avatarId && fu.action === 'update'
-                      )
-                    "
-                    @click="handleAvatarUpdate(idx)"
-                  />
-                  <Button
-                    label="Export"
-                    :small="true"
-                    :error="
-                      failedAvatarUpdates.some(
-                        (fu) => fu.id === a.avatarId && fu.action === 'export'
-                      )
-                    "
-                    @click="handleAvatarExport(idx)"
-                  />
-                  <Button
-                    label="Delete"
-                    :small="true"
-                    :error="
-                      failedAvatarUpdates.some(
-                        (fu) => fu.id === a.avatarId && fu.action === 'delete'
-                      )
-                    "
-                    @click="handleAvatarDelete(idx)"
-                  />
-                </td>
-              </tr>
-              <tr
-                v-if="isAvatarExpanded(idx)"
-                class="data-table__table-row data-table__table-row--expanded underline"
-              >
-                <td colspan="3" class="data-table__cell data-table__cell--details">
-                  <div class="data-table__details">
-                    <div class="data-table__details-grid">
-                      <div class="data-table__detail-item">
-                        <span class="data-table__detail-label">Config Name</span>
-                      </div>
-                      <div class="data-table__detail-item">
-                        <span class="data-table__detail-label">NSFW</span>
-                      </div>
-                      <div class="data-table__detail-item">
-                        <span class="data-table__detail-label">From File</span>
-                      </div>
-                      <div class="data-table__detail-item">
-                        <span class="data-table__detail-label"></span>
-                      </div>
+
+                  <div class="data-table__config-fields">
+                    <div class="data-table__config-field">
+                      <label class="data-table__config-label">Name: </label>
+                      <InputText
+                        :id="`configName-${cIdx}`"
+                        :model-value="config.name"
+                        @update:model-value="updateConfigField(cIdx, 'name', $event.value)"
+                      />
+                    </div>
+
+                    <div class="data-table__config-field">
+                      <InputCheckbox
+                        :id="`configNsfw-${cIdx}`"
+                        :model-value="config.nsfw ? true : false"
+                        label="NSFW: "
+                        @update:model-value="updateConfigField(cIdx, 'nsfw', $event.checked)"
+                      />
+                    </div>
+
+                    <div class="data-table__config-field data-table__config-field--from-file">
+                      <label class="data-table__config-label">From File: </label>
+                      <p class="data-table__config-value">{{ config.fromFile ? 'Yes' : 'No' }}</p>
                     </div>
                   </div>
-                  <div v-if="hasConfigs" class="data-table__details">
-                    <div
-                      v-for="(config, cIdx) in allConfigs"
-                      :key="cIdx"
-                      :class="{
-                        underline: allConfigs?.length != cIdx + 1
-                      }"
+
+                  <div class="data-table__config-actions">
+                    <Button
+                      v-if="config.id"
+                      label="Apply"
+                      :small="true"
+                      :error="
+                        failedConfigUpdates.some(
+                          (fu) => fu.id === config.id && fu.action === 'apply'
+                        )
+                      "
+                      @click="handleConfigApply(config.id)"
+                    />
+                    <Button
+                      v-if="config.id"
+                      label="Export"
+                      :small="true"
+                      :error="
+                        failedConfigUpdates.some(
+                          (fu) => fu.id === config.id && fu.action === 'export'
+                        )
+                      "
+                      @click="handleConfigExport(config.id)"
+                    />
+                    <Button
+                      v-if="config.id"
+                      label="Update"
+                      :small="true"
+                      :error="
+                        failedConfigUpdates.some(
+                          (fu) => fu.id === config.id && fu.action === 'update'
+                        )
+                      "
+                      @click="handleConfigUpdate(cIdx)"
+                    />
+                    <Button
+                      v-if="!config.isPreset"
+                      label="Create Preset"
+                      :small="true"
+                      :error="
+                        failedConfigUpdates.some(
+                          (fu) => fu.id === config.id && fu.action === 'createPreset'
+                        )
+                      "
+                      @click="handleCreatePreset(cIdx)"
+                    />
+                    <Button
+                      v-if="config.id"
+                      label="Replace Params"
+                      :small="true"
+                      :error="
+                        failedConfigUpdates.some(
+                          (fu) => fu.id === config.id && fu.action === 'replace'
+                        )
+                      "
+                      @click="handleConfigReplace(cIdx)"
+                    />
+                    <Button
+                      v-if="config.id"
+                      label="Delete"
+                      :small="true"
+                      :error="
+                        failedConfigUpdates.some(
+                          (fu) => fu.id === config.id && fu.action === 'delete'
+                        )
+                      "
+                      @click="handleConfigDelete(cIdx)"
+                    />
+                  </div>
+
+                  <div v-if="hasPresets && isConfigExpanded(cIdx)" class="data-table__presets">
+                    <Card
+                      v-for="(preset, pIdx) in allPresets"
+                      :key="pIdx"
+                      v-show="preset.forUqid === config.uqid"
                     >
-                      <div class="data-table__details-grid">
-                        <div class="data-table__detail-item data-table__detail-item-expand">
-                          <div v-if="config.isPreset" class="data-table__expand-button-wrapper">
-                            <button
-                              :class="[
-                                'data-table__expand-button',
-                                { 'data-table__expand-button--expanded': isConfigExpanded(cIdx) }
-                              ]"
-                              @click="toggleConfig(cIdx)"
-                            >
-                              <svg
-                                width="23"
-                                height="23"
-                                viewBox="0 0 16 16"
-                                fill="currentColor"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M4 6l4 4 4-4"
-                                  stroke="currentColor"
-                                  stroke-width="2"
-                                  fill="none"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                          <span class="data-table__detail-label">
+                      <div class="data-table__preset">
+                        <h4 class="data-table__preset-title">Preset</h4>
+
+                        <div class="data-table__preset-fields">
+                          <div class="data-table__preset-field">
+                            <label class="data-table__preset-label">Name: </label>
                             <InputText
-                              :id="`configName-${cIdx}`"
-                              :model-value="config.name"
-                              @update:model-value="updateConfigField(cIdx, 'name', $event.value)"
+                              :id="`presetName-${pIdx}`"
+                              :model-value="preset.name"
+                              @update:model-value="updatePresetField(pIdx, 'name', $event.value)"
                             />
-                          </span>
+                          </div>
+
+                          <div class="data-table__preset-field">
+                            <label class="data-table__preset-label">Parameter: </label>
+                            <InputNumber
+                              :id="`presetParameter-${pIdx}`"
+                              :model-value="preset.unityParameter"
+                              @update:model-value="
+                                updatePresetField(pIdx, 'unityParameter', $event.value)
+                              "
+                            />
+                          </div>
                         </div>
-                        <div class="data-table__detail-item">
-                          <InputCheckbox
-                            :id="`configNsfw-${cIdx}`"
-                            :model-value="config.nsfw ? true : false"
-                            label=" "
-                            @update:model-value="updateConfigField(cIdx, 'nsfw', $event.checked)"
-                          />
-                        </div>
-                        <div class="data-table__detail-item">
-                          <span class="data-table__detail-label">
-                            {{ config.fromFile ? 'Yes' : 'No' }}
-                          </span>
-                        </div>
-                        <div class="data-table__detail-item data-table__cell-actions">
+
+                        <div class="data-table__preset-actions">
                           <Button
-                            v-if="config.id"
                             label="Apply"
                             :small="true"
                             :error="
-                              failedConfigUpdates.some(
-                                (fu) => fu.id === config.id && fu.action === 'apply'
+                              failedPresetUpdates.some(
+                                (fu) => fu.id === preset.id && fu.action === 'apply'
                               )
                             "
-                            @click="handleConfigApply(config.id)"
+                            @click="handlePresetApply(pIdx)"
                           />
                           <Button
-                            v-if="config.id"
-                            label="Export"
-                            :small="true"
-                            :error="
-                              failedConfigUpdates.some(
-                                (fu) => fu.id === config.id && fu.action === 'export'
-                              )
-                            "
-                            @click="handleConfigExport(config.id)"
-                          />
-                          <Button
-                            v-if="config.id"
                             label="Update"
                             :small="true"
                             :error="
-                              failedConfigUpdates.some(
-                                (fu) => fu.id === config.id && fu.action === 'update'
+                              failedPresetUpdates.some(
+                                (fu) => fu.id === preset.id && fu.action === 'update'
                               )
                             "
-                            @click="handleConfigUpdate(cIdx)"
+                            @click="handlePresetUpdate(pIdx)"
                           />
                           <Button
-                            v-if="!config.isPreset"
-                            label="Create Preset"
-                            :small="true"
-                            :error="
-                              failedConfigUpdates.some(
-                                (fu) => fu.id === config.id && fu.action === 'createPreset'
-                              )
-                            "
-                            @click="handleCreatePreset(cIdx)"
-                          />
-                          <Button
-                            v-if="config.id"
-                            label="Replace Params"
-                            :small="true"
-                            :error="
-                              failedConfigUpdates.some(
-                                (fu) => fu.id === config.id && fu.action === 'replace'
-                              )
-                            "
-                            @click="handleConfigReplace(cIdx)"
-                          />
-                          <Button
-                            v-if="config.id"
                             label="Delete"
                             :small="true"
                             :error="
-                              failedConfigUpdates.some(
-                                (fu) => fu.id === config.id && fu.action === 'delete'
+                              failedPresetUpdates.some(
+                                (fu) => fu.id === preset.id && fu.action === 'delete'
                               )
                             "
-                            @click="handleConfigDelete(cIdx)"
+                            @click="handlePresetDelete(pIdx)"
                           />
                         </div>
                       </div>
-                      <div v-if="hasPresets && isConfigExpanded(cIdx)">
-                        <div v-for="(preset, pIdx) in allPresets" :key="pIdx">
-                          <div v-if="preset.forUqid === config.uqid" class="data-table__preset">
-                            <div class="data-table__preset-grid">
-                              <div class="data-table__preset-item">
-                                <span class="data-table__preset-label">Preset Name</span>
-                                <InputText
-                                  :id="`presetName-${pIdx}`"
-                                  :model-value="preset.name"
-                                  @update:model-value="
-                                    updatePresetField(pIdx, 'name', $event.value)
-                                  "
-                                />
-                              </div>
-                              <div class="data-table__preset-item">
-                                <span class="data-table__preset-label">Preset Parameter</span>
-                                <InputNumber
-                                  :id="`presetParameter-${pIdx}`"
-                                  :model-value="preset.unityParameter"
-                                  @update:model-value="
-                                    updatePresetField(pIdx, 'unityParameter', $event.value)
-                                  "
-                                />
-                              </div>
-                              <div class="data-table__preset-actions">
-                                <Button
-                                  label="Apply"
-                                  :small="true"
-                                  :error="
-                                    failedPresetUpdates.some(
-                                      (fu) => fu.id === preset.id && fu.action === 'apply'
-                                    )
-                                  "
-                                  @click="handlePresetApply(pIdx)"
-                                />
-                                <Button
-                                  label="Update"
-                                  :small="true"
-                                  :error="
-                                    failedPresetUpdates.some(
-                                      (fu) => fu.id === preset.id && fu.action === 'update'
-                                    )
-                                  "
-                                  @click="handlePresetUpdate(pIdx)"
-                                />
-                                <Button
-                                  label="Delete"
-                                  :small="true"
-                                  :error="
-                                    failedPresetUpdates.some(
-                                      (fu) => fu.id === preset.id && fu.action === 'delete'
-                                    )
-                                  "
-                                  @click="handlePresetDelete(pIdx)"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    </Card>
                   </div>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
+                </div>
+              </Card>
+            </div>
+          </Card>
+        </div>
       </div>
-    </div>
+    </PerfectScrollbar>
   </div>
 </template>
 
@@ -732,87 +738,192 @@ const emit = defineEmits(['notification'])
   flex-flow: column;
   gap: 28px;
   height: 100%;
-  position: relative;
   overflow: hidden;
   width: 100%;
 
+  :deep(.ps) {
+    height: 100%;
+  }
+
   &__content {
+    align-items: center;
     display: flex;
     flex-flow: column;
     gap: 28px;
-    height: 100%;
-    overflow-x: auto;
-    overflow-y: auto;
+    padding-bottom: 28px;
     padding-right: 8px;
+    width: 100%;
+  }
+
+  &__avatar-wrapper {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
     justify-content: center;
+    gap: 16px;
     width: 100%;
   }
 
-  &__table-wrapper {
-    overflow-x: hidden;
+  &__avatar {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
     width: 100%;
   }
 
-  &__table {
-    border-collapse: collapse;
+  &__avatar-header {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-self: flex-start;
+  }
+
+  &__avatar-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__avatar-label {
+    color: var(--color--primary-a2);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  &__avatar-value {
+    font-weight: 700;
+  }
+
+  &__avatar-field {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+  }
+
+  &__avatar-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  &__configs {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+    width: calc(100% - 32px);
+  }
+
+  &__config {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
     width: 100%;
   }
 
-  &__table-header {
-    background: var(--color--primary-a1);
-    padding-top: 16px;
-    position: sticky;
-    top: 0;
-    vertical-align: middle;
-    z-index: 1;
-
-    &:not(:first-child) {
-      padding-left: 16px;
-    }
-
-    &:not(:last-child) {
-      padding-right: 16px;
-    }
+  &__config-header {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    right: 15px;
+    position: relative;
   }
 
-  &__cell {
-    padding-top: 16px;
-    padding-bottom: 16px;
-    vertical-align: middle;
-
-    &:not(:first-child) {
-      padding-left: 16px;
-    }
-
-    &:not(:last-child) {
-      padding-right: 16px;
-    }
-
-    &--expand {
-      align-items: center;
-      display: flex;
-      gap: 8px;
-    }
-
-    &--details {
-      padding-left: 2rem;
-    }
+  &__config-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
   }
 
-  &__expand-button-wrapper {
-    height: 30px;
-    width: 30px;
+  &__config-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__config-field {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+  }
+
+  &__config-label {
+    color: var(--color--primary-a2);
+  }
+
+  &__config-value {
+    font-weight: 700;
+  }
+
+  &__config-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  &__presets {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+    width: calc(100% - 24px);
+  }
+
+  &__preset {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+
+  &__preset-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__preset-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__preset-field {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+  }
+
+  &__preset-label {
+    color: var(--color--primary-a2);
+  }
+
+  &__preset-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
   }
 
   &__expand-button {
     align-items: center;
-    display: flex;
+    background: transparent;
+    border: none;
     cursor: pointer;
-    height: 100%;
+    display: flex;
+    flex-shrink: 0;
+    height: 30px;
     justify-content: center;
     transform: rotate(-90deg);
     transition: transform 0.2s;
-    width: 100%;
+    width: 30px;
 
     &--expanded {
       transform: rotate(0deg);
@@ -821,65 +932,6 @@ const emit = defineEmits(['notification'])
     svg {
       pointer-events: none;
     }
-  }
-
-  &__cell-actions {
-    align-items: center;
-    display: flex;
-    flex-flow: row wrap;
-    gap: 8px;
-  }
-
-  &__detail-item-expand {
-    align-items: center;
-    display: flex;
-    flex-flow: row nowrap;
-    gap: 12px;
-  }
-
-  &__details {
-    width: 100%;
-  }
-
-  &__details-grid {
-    align-items: center;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
-    padding-top: 16px;
-    width: 100%;
-  }
-
-  &__preset {
-    padding-left: 4rem;
-    padding-top: 16px;
-  }
-
-  &__preset-grid {
-    align-items: center;
-    border-top: 1px solid var(--color--primary-a3);
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    padding-top: 16px;
-    width: 100%;
-  }
-
-  &__preset-item {
-    display: flex;
-    flex-flow: column;
-    gap: 12px;
-  }
-
-  &__preset-actions {
-    align-items: center;
-    display: flex;
-    flex-flow: row wrap;
-    gap: 8px;
-  }
-
-  &__empty {
-    text-align: center;
   }
 }
 </style>
