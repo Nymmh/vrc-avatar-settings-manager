@@ -4,22 +4,39 @@ body,
   -webkit-font-smoothing: antialiased;
   display: flex;
   flex-flow: column;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Manrope', Avenir, Helvetica, Arial, sans-serif;
   gap: 16px;
   max-width: 100%;
   justify-content: center;
+  letter-spacing: 0.04em;
   overflow: hidden;
   width: 100%;
 }
 
 body {
-  background-color: #181a1c;
+  background:
+    linear-gradient(27deg, #0a0c0e 5px, transparent 5px) 0 5px,
+    linear-gradient(207deg, #0a0c0e 5px, transparent 5px) 10px 0px,
+    linear-gradient(27deg, #0f1113 5px, transparent 5px) 0px 10px,
+    linear-gradient(207deg, #0f1113 5px, transparent 5px) 10px 5px,
+    linear-gradient(90deg, #0d0f11 10px, transparent 10px),
+    linear-gradient(
+      #0e1012 25%,
+      #0b0d0f 25%,
+      #0b0d0f 50%,
+      transparent 50%,
+      transparent 75%,
+      #111315 75%,
+      #111315
+    );
+  background-color: #080a0c;
+  background-size: 20px 20px;
+
   color: #bfc9d6;
-  padding: 16px;
 }
 
 #app {
-  height: calc(100vh - 2rem);
+  height: 100vh;
 }
 
 .app {

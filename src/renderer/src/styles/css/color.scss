@@ -1,13 +1,22 @@
 @use '../scss/color.scss';
+@use 'sass:color' as sass-color;
 
 :root {
   --color--primary-a1: #{color.$color--primary-a1};
+  --color--primary-a1-rgb: #{sass-color.change(color.$color--primary-a1, $alpha: 0.7)};
   --color--primary-a2: #{color.$color--primary-a2};
   --color--primary-a3: #{color.$color--primary-a3};
   --color--primary-a4: #{color.$color--primary-a4};
+  --color--primary-a4-rgb: #{sass-color.change(color.$color--primary-a4, $alpha: 0.7)};
   --color--primary-a5: #{color.$color--primary-a5};
   --color--primary-a6: #{color.$color--primary-a6};
   --color--secondary-a1: #{color.$color--secondary-a1};
   --color--failed: #{color.$color--failed};
   --color--success: #{color.$color--success};
+  --color--gradient-button: #{color.$color--gradient-button};
+  --color--gradient-select: #{color.$color--gradient-select};
+  --color--gradient-error: #{color.$color--gradient-error};
+  --color--gradient-hero: #{color.$color--gradient-hero};
+  --color--card-glass-bg: #{color.$color--card-glass-bg};
+  --color--card-glass-border: #{color.$color--card-glass-border};
 }

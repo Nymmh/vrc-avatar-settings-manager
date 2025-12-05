@@ -97,39 +97,46 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+@use '../styles/scss/color.scss' as colors;
+
 .input-select {
   align-items: center;
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 4px;
   justify-content: center;
   width: fit-content;
 
   &__label {
     color: var(--color--primary-a2);
+    cursor: pointer;
   }
 
   &__wrapper {
     position: relative;
     max-width: 300px;
-    min-width: 150px;
+    min-width: 200px;
     width: fit-content;
   }
 
   &__trigger {
     align-items: center;
-    background-color: var(--color--primary-a6);
-    border: 1px solid var(--color--primary-a6);
+    background: var(--color--gradient-select);
+    border: 1px solid transparent;
     border-radius: 8px;
     cursor: pointer;
     display: flex;
     gap: 8px;
     justify-content: space-between;
     padding: 8px 12px;
-    transition: all 0.1s;
+    transition: all 0.5s ease-in-out;
     width: 100%;
 
     &:hover {
+      background:
+        linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+        var(--color--gradient-select);
       border-color: var(--color--primary-a3);
     }
 
@@ -165,14 +172,14 @@ onUnmounted(() => {
     margin: 0;
     max-height: 200px;
     max-width: 300px;
-    min-width: 150px;
+    min-width: 200px;
     overflow-y: auto;
     padding: 0;
     position: absolute;
     top: 100%;
     left: 0;
     width: 100%;
-    z-index: 10;
+    z-index: 100;
   }
 
   &__option {

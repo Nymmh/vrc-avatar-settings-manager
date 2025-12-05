@@ -2,7 +2,7 @@
 defineProps({
   placeholder: {
     type: String,
-    default: 'Avatar Name'
+    default: ''
   },
   modelValue: {
     type: String,
@@ -52,20 +52,34 @@ defineEmits(['update:modelValue'])
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+@use '../styles/scss/color.scss' as colors;
+
 .input-text {
-  border-radius: 8px;
-  border: 1px solid var(--color--primary-a4);
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid var(--color--primary-a4);
+  border-radius: 0;
   display: inline;
+  font-weight: 700;
   padding: 6px 12px;
-  transition: border-color 0.25s;
+  transition: all 1s ease-in-out;
   width: fit-content;
 
   &--error {
-    border-color: var(--color--failed);
+    border-bottom-color: var(--color--failed);
   }
 
-  &:hover {
-    border-color: var(--color--primary-a3);
+  &:hover,
+  &:focus,
+  &:focus-visible {
+    border-bottom: 2px solid transparent;
+    border-image: linear-gradient(135deg, #5a7b99 0%, #4a7fb8 100%) 1;
+    border-image-slice: 1;
+  }
+
+  &__label {
+    font-weight: 500;
   }
 
   &__wrapper {
