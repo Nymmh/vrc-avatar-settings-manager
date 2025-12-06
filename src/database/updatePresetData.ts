@@ -1,13 +1,26 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
+import { BrowserWindow } from 'electron'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
-export function updatePresetData(
+export async function updatePresetData(
   log: Logger,
   db: Database,
+  mainWindow: BrowserWindow,
   id: number,
   saveName: string,
   parameter: number
-): updatePresetInterface {
+): Promise<updatePresetInterface> {
+  const userResponse = await showDialogNoSound(
+    ['Yes', 'No'],
+    0,
+    'Update Preset',
+    `Are you sure you want to update this presets?`,
+    mainWindow
+  )
+
+  if (userResponse.response !== 0) return { success: false, message: 'Update cancelled' }
+
   const existing = db
     .prepare(
       `

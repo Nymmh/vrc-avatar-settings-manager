@@ -1,8 +1,8 @@
 import { Database } from 'better-sqlite3'
 import { BrowserWindow } from 'electron'
-import { showWarning } from '../../services/showWarning'
 import { generateUniqueUqid } from './generateUniqueUqid'
 import { getNextDuplicateNumber } from './getNextDuplicateNumber'
+import { showDialogNoSound } from '../../services/showDialogNoSound'
 
 interface ConfigResult {
   continue: boolean
@@ -19,7 +19,7 @@ export async function handleConfigConflict(
     .get(config.uqid) as { id: number; name: string } | undefined
 
   if (existingConfig?.id) {
-    const userResponse = await showWarning(
+    const userResponse = await showDialogNoSound(
       ['Yes', 'No', 'Cancel Upload'],
       0,
       'Overwrite Warning',

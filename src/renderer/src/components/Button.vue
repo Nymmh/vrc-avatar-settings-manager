@@ -16,6 +16,10 @@ defineProps({
     type: Boolean,
     default: false
   },
+  warning: {
+    type: Boolean,
+    default: false
+  },
   hero: {
     type: Boolean,
     default: false
@@ -31,6 +35,7 @@ defineProps({
         'button__wrapper--small': small,
         'button__wrapper--alt-color': altColor,
         'button__wrapper--error': error,
+        'button__wrapper--warning': warning,
         'button__wrapper--hero': hero
       }
     ]"
@@ -79,6 +84,17 @@ defineProps({
         background:
           linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
           var(--color--gradient-error) !important;
+      }
+    }
+
+    &--warning {
+      background: var(--color--gradient-warning);
+      color: var(--color--primary-a2);
+
+      &:hover {
+        background:
+          linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+          var(--color--gradient-warning) !important;
       }
     }
 

@@ -2,7 +2,7 @@ import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { BrowserWindow } from 'electron'
 import { loadConfig } from '../ipc/loadConfig'
-import { showWarning } from '../services/showWarning'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function replaceParams(
   log: Logger,
@@ -12,6 +12,16 @@ export async function replaceParams(
 ): Promise<replaceParamsInterface> {
   try {
     if (!id || id <= 0) return { success: false, message: 'Invalid ID' }
+
+    const userResponse = await showDialogNoSound(
+      ['Yes', 'No'],
+      0,
+      'Replace Parameters',
+      `Are you sure you want to replace the avatar parameters? This action cannot be undone.`,
+      mainWindow
+    )
+
+    if (userResponse.response !== 0) return { success: false, message: 'Replace cancelled' }
 
     const parsedConfig = await loadConfig(log, mainWindow)
 
@@ -26,7 +36,7 @@ export async function replaceParams(
     if (!q) return { success: false, message: 'No saved config found with that ID' }
 
     if (parsedConfig?.avatarId?.trim() && parsedConfig.avatarId.trim() !== q.avatarId) {
-      const userResponse = await showWarning(
+      const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
         0,
         'Avatar ID Mismatch',
@@ -38,7 +48,7 @@ export async function replaceParams(
     }
 
     if (parsedConfig.nsfw) {
-      const userResponse = await showWarning(
+      const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
         0,
         'NSFW Warning',

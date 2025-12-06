@@ -526,6 +526,7 @@ const emit = defineEmits(['notification'])
                   :error="
                     failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'update')
                   "
+                  :warning="true"
                   @click="handleAvatarUpdate(idx)"
                 />
                 <Button
@@ -539,9 +540,7 @@ const emit = defineEmits(['notification'])
                 <Button
                   label="Delete"
                   :small="true"
-                  :error="
-                    failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'delete')
-                  "
+                  :error="true"
                   @click="handleAvatarDelete(idx)"
                 />
               </div>
@@ -598,7 +597,7 @@ const emit = defineEmits(['notification'])
 
                   <div class="data-table__config-actions">
                     <Button
-                      v-if="config.id"
+                      v-if="config.id && appStore.avatarId"
                       label="Apply"
                       :small="true"
                       :error="
@@ -628,12 +627,14 @@ const emit = defineEmits(['notification'])
                           (fu) => fu.id === config.id && fu.action === 'update'
                         )
                       "
+                      :warning="true"
                       @click="handleConfigUpdate(cIdx)"
                     />
                     <Button
                       v-if="!config.isPreset"
                       label="Create Preset"
                       :small="true"
+                      :hero="true"
                       :error="
                         failedConfigUpdates.some(
                           (fu) => fu.id === config.id && fu.action === 'createPreset'
@@ -642,7 +643,7 @@ const emit = defineEmits(['notification'])
                       @click="handleCreatePreset(cIdx)"
                     />
                     <Button
-                      v-if="config.id"
+                      v-if="config.id && appStore.avatarId"
                       label="Replace Params"
                       :small="true"
                       :error="
@@ -650,17 +651,14 @@ const emit = defineEmits(['notification'])
                           (fu) => fu.id === config.id && fu.action === 'replace'
                         )
                       "
+                      :warning="true"
                       @click="handleConfigReplace(cIdx)"
                     />
                     <Button
                       v-if="config.id"
                       label="Delete"
                       :small="true"
-                      :error="
-                        failedConfigUpdates.some(
-                          (fu) => fu.id === config.id && fu.action === 'delete'
-                        )
-                      "
+                      :error="true"
                       @click="handleConfigDelete(cIdx)"
                     />
                   </div>
@@ -698,6 +696,7 @@ const emit = defineEmits(['notification'])
 
                         <div class="data-table__preset-actions">
                           <Button
+                            v-if="appStore.avatarId"
                             label="Apply"
                             :small="true"
                             :error="
@@ -715,16 +714,13 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === preset.id && fu.action === 'update'
                               )
                             "
+                            :warning="true"
                             @click="handlePresetUpdate(pIdx)"
                           />
                           <Button
                             label="Delete"
                             :small="true"
-                            :error="
-                              failedPresetUpdates.some(
-                                (fu) => fu.id === preset.id && fu.action === 'delete'
-                              )
-                            "
+                            :error="true"
                             @click="handlePresetDelete(pIdx)"
                           />
                         </div>
@@ -825,6 +821,10 @@ const emit = defineEmits(['notification'])
     gap: 16px;
     margin-top: 20px;
     width: calc(100% - 32px);
+
+    :deep(.card) {
+      width: 100%;
+    }
   }
 
   &__config {

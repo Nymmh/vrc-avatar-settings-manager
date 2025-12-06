@@ -43,7 +43,7 @@ export function presetHandlers(context: PresetHandlerContext): void {
       const mainWindow = getMainWindow()
       if (!mainWindow) return { success: false }
 
-      return await updatePresetData(log, avatarDB, id, saveName, parameter)
+      return await updatePresetData(log, avatarDB, mainWindow, id, saveName, parameter)
     }
   )
 

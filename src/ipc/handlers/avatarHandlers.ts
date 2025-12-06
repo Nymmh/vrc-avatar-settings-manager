@@ -67,7 +67,7 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     const mainWindow = getMainWindow()
     if (!mainWindow) return { success: false }
 
-    const res = await updateAvatarData(log, avatarDB, avatarId, name)
+    const res = await updateAvatarData(log, avatarDB, mainWindow, avatarId, name)
     const currentAviId = storage.getCurrentAvatarId()
     getNames(log, avatarDB, mainWindow, currentAviId)
     return res

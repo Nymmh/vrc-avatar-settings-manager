@@ -4,11 +4,11 @@ import { saveConfigInterface } from '../types/saveConfigInterface'
 import { checkIfExist } from '../database/checkIfExist'
 import { checkIfExistByNameAndAvatarId } from '../database/checkIfExistByNameAndAvatarId'
 import { BrowserWindow } from 'electron'
-import { showWarning } from '../services/showWarning'
 import { uploadAvatarPresets } from '../database/uploadAvatarPresets'
 import { generateUniqueUqid } from '../database/helpers/generateUniqueUqid'
 import { getNextDuplicateNumber } from '../database/helpers/getNextDuplicateNumber'
 import { getAvatarName } from '../database/helpers/getAvatarName'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function saveConfig(
   log: Logger,
@@ -39,7 +39,7 @@ export async function saveConfig(
       const existing = checkIfExistByNameAndAvatarId(db, saveName, parsedContent.avatarId)
 
       if (existing) {
-        const userResponse = await showWarning(
+        const userResponse = await showDialogNoSound(
           ['Yes', 'No'],
           0,
           'Avatar Config Exists',
@@ -61,7 +61,7 @@ export async function saveConfig(
       }
     } else if (fromFile && parsedContent.uqid?.trim()) {
       if (checkIfExist(db, parsedContent.uqid)) {
-        const userResponse = await showWarning(
+        const userResponse = await showDialogNoSound(
           ['Yes', 'No', 'Cancel Upload'],
           0,
           'Avatar Config Exists',

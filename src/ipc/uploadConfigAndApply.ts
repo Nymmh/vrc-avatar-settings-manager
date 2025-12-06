@@ -4,7 +4,7 @@ import { BrowserWindow } from 'electron'
 import { Database } from 'better-sqlite3'
 import { saveConfig } from './saveConfig'
 import { uploadConfig } from '../services/uploadConfig'
-import { showWarning } from '../services/showWarning'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function uploadConfigAndApply(
   log: Logger,
@@ -27,7 +27,7 @@ export async function uploadConfigAndApply(
   currentAviId = currentAviId?.trim()
 
   if (currentAviId !== loadedJson.avatarId) {
-    const userResponse = await showWarning(
+    const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
       0,
       'Confirm',
@@ -47,7 +47,7 @@ export async function uploadConfigAndApply(
   let upload: unknown
 
   if (loadedJson?.nsfw) {
-    const userResponse = await showWarning(
+    const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
       0,
       'NSFW Warning',
