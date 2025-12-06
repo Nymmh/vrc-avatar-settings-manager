@@ -311,9 +311,19 @@ onMounted(() => {
               />
             </div>
             <div v-if="configSelectValue" class="main__apply-buttons">
-              <Button label="Apply" @click="handleApply" />
-              <Button label="Update" :warning="true" @click="handleSavedUpdated" />
-              <Button label="Delete" :error="true" @click="handleDelete" />
+              <Button label="Apply" tooltip="Apply selected config" @click="handleApply" />
+              <Button
+                label="Update"
+                tooltip="Update selected config with current avatar settings"
+                :warning="true"
+                @click="handleSavedUpdated"
+              />
+              <Button
+                label="Delete"
+                tooltip="Delete selected config"
+                :error="true"
+                @click="handleDelete"
+              />
             </div>
           </div>
         </div>

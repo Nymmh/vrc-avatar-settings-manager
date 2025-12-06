@@ -23,6 +23,10 @@ defineProps({
   hero: {
     type: Boolean,
     default: false
+  },
+  tooltip: {
+    type: String,
+    default: ''
   }
 })
 </script>
@@ -43,6 +47,7 @@ defineProps({
     <button class="button">
       {{ label }}
     </button>
+    <span v-if="tooltip" class="button__tooltip">{{ tooltip }}</span>
   </div>
 </template>
 
@@ -127,6 +132,43 @@ defineProps({
     &:focus,
     &:focus-visible {
       outline: 4px auto -webkit-focus-ring-color;
+    }
+
+    position: relative;
+
+    &:hover .button__tooltip {
+      opacity: 1;
+      transition-delay: 0.75s;
+    }
+  }
+
+  &__tooltip {
+    backdrop-filter: blur(2px);
+    background-color: #{color.adjust(colors.$color--card-glass-bg, $alpha: 0.5, $lightness: -5%)};
+    border: 1px solid var(--color--card-glass-border);
+    border-radius: 8px;
+    bottom: 100%;
+    color: var(--color--primary-a2);
+    font-size: 0.8em;
+    left: 50%;
+    margin-bottom: 8px;
+    opacity: 0;
+    padding: 6px 12px;
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(-50%);
+    transition: opacity 0.35s ease-in-out;
+    white-space: nowrap;
+    z-index: 1000;
+
+    &::after {
+      border: 5px solid transparent;
+      border-top: 5px solid rgba(0, 0, 0, 0.7);
+      content: '';
+      left: 50%;
+      position: absolute;
+      top: 100%;
+      transform: translateX(-50%);
     }
   }
 }
