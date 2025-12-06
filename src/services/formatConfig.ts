@@ -38,6 +38,7 @@ const EXCLUDED_NAMES = new Set([
   'RemoteModeActive',
   'AvatarVersion',
   'GroundProximity',
+  'Go/VRCEmote',
   'Go/Locomotion',
   'Go/Jump&Fall',
   'Go/StandIdle',
