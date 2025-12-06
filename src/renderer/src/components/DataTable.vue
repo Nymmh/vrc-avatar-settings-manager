@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
+import type { OverlayScrollbars } from 'overlayscrollbars'
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
 import Button from './Button.vue'
 import Card from './Card.vue'
 import LoadAvatarFile from './LoadAvatarFile.vue'
@@ -23,6 +25,9 @@ const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getPresetsByUq
 const expandedAvatarRow = ref<number | null>(null)
 const expandedConfigRow = ref<number | null>(null)
 const searchAvatar = ref('')
+const scrollContainer = ref<{ osInstance: () => OverlayScrollbars | null } | null>(null)
+const avatarRefs = ref<(HTMLElement | null)[]>([])
+const configRefs = ref<(HTMLElement | null)[]>([])
 
 const hasConfigs = computed(() => allConfigs.value && allConfigs.value.length > 0)
 const hasPresets = computed(() => allPresets.value?.length > 0)
@@ -120,6 +125,19 @@ const toggleAvatar = (idx: number): void => {
   } else {
     expandedAvatarRow.value = idx
     getConfigsByAvatar(allAvatars.value[idx].avatarId)
+
+    setTimeout(() => {
+      const el = avatarRefs.value[idx]
+      const osInstance = scrollContainer.value?.osInstance?.()
+      if (el && osInstance) {
+        const viewport = osInstance.elements().viewport
+        const containerRect = viewport.getBoundingClientRect()
+        const elRect = el.getBoundingClientRect()
+        const scrollTop = viewport.scrollTop
+        const targetScroll = scrollTop + elRect.top - containerRect.top - 44
+        viewport.scrollTo({ top: targetScroll, behavior: 'smooth' })
+      }
+    }, 100)
   }
 }
 
@@ -130,6 +148,13 @@ const toggleConfig = (idx: number): void => {
   } else {
     expandedConfigRow.value = idx
     getPresetsByConfig(idx)
+
+    setTimeout(() => {
+      const el = configRefs.value[idx]
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }, 100)
   }
 }
 
@@ -461,12 +486,15 @@ const emit = defineEmits(['notification'])
 
 <template>
   <div class="data-table">
-    <PerfectScrollbar
+    <OverlayScrollbarsComponent
+      ref="scrollContainer"
+      element="div"
+      defer
       :options="{
-        wheelPropagation: false,
-        suppressScrollX: true,
-        swipeEasing: false,
-        minScrollbarLength: 40
+        scrollbars: {
+          autoHide: 'move',
+          autoHideDelay: 300
+        }
       }"
     >
       <div class="data-table__content">
@@ -484,7 +512,7 @@ const emit = defineEmits(['notification'])
         </Card>
         <div v-for="(a, idx) in filteredAvatars" :key="idx" class="data-table__avatar-wrapper">
           <Card>
-            <div class="data-table__avatar">
+            <div :ref="(el) => (avatarRefs[idx] = el as HTMLElement)" class="data-table__avatar">
               <div class="data-table__avatar-header">
                 <button
                   v-if="a.avatarId"
@@ -550,7 +578,10 @@ const emit = defineEmits(['notification'])
             </div>
             <div v-if="isAvatarExpanded(idx) && hasConfigs" class="data-table__configs">
               <Card v-for="(config, cIdx) in allConfigs" :key="cIdx">
-                <div class="data-table__config">
+                <div
+                  :ref="(el) => (configRefs[cIdx] = el as HTMLElement)"
+                  class="data-table__config"
+                >
                   <div class="data-table__config-header">
                     <button
                       v-if="config.isPreset"
@@ -745,7 +776,7 @@ const emit = defineEmits(['notification'])
           </Card>
         </div>
       </div>
-    </PerfectScrollbar>
+    </OverlayScrollbarsComponent>
   </div>
 </template>
 
@@ -767,8 +798,8 @@ const emit = defineEmits(['notification'])
     display: flex;
     flex-flow: column;
     gap: 28px;
-    padding-bottom: 28px;
-    padding-right: 8px;
+    height: 100%;
+    padding-top: 22px;
     width: 100%;
   }
 
@@ -779,6 +810,10 @@ const emit = defineEmits(['notification'])
     justify-content: center;
     gap: 16px;
     width: 100%;
+
+    &:is(:last-child) {
+      padding-bottom: 22px;
+    }
   }
 
   &__avatar {
