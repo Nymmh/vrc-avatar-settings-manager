@@ -27,7 +27,7 @@ export async function exportAvatar(
 
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Avatar',
-      defaultPath: `${path.join(avatarData, q.name || '')}.json`,
+      defaultPath: `${path.join(avatarData, `avatar_${q.name || ''}`)}.json`,
       filters: [
         { name: 'JSON', extensions: ['json'] },
         { name: 'All Files', extensions: ['*'] }

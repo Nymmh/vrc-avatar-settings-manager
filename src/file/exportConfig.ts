@@ -29,7 +29,7 @@ export async function exportConfig(
 
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Config',
-      defaultPath: `${path.join(avatarConfigData, q.name || '')}.json`,
+      defaultPath: `${path.join(avatarConfigData, `config_${q.name || ''}`)}.json`,
       filters: [
         { name: 'JSON', extensions: ['json'] },
         { name: 'All Files', extensions: ['*'] }

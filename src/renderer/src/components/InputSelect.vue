@@ -179,7 +179,7 @@ onUnmounted(() => {
     top: 100%;
     left: 0;
     width: 100%;
-    z-index: 100;
+    z-index: 10000;
   }
 
   &__option {

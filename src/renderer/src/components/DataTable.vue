@@ -527,6 +527,7 @@ const emit = defineEmits(['notification'])
                     failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'update')
                   "
                   :warning="true"
+                  tooltip="Update the Avatar Name"
                   @click="handleAvatarUpdate(idx)"
                 />
                 <Button
@@ -535,12 +536,14 @@ const emit = defineEmits(['notification'])
                   :error="
                     failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'export')
                   "
+                  tooltip="Export avatar and all associated data to file"
                   @click="handleAvatarExport(idx)"
                 />
                 <Button
                   label="Delete"
                   :small="true"
                   :error="true"
+                  tooltip="Delete avatar and all associated data"
                   @click="handleAvatarDelete(idx)"
                 />
               </div>
@@ -600,6 +603,7 @@ const emit = defineEmits(['notification'])
                       v-if="config.id && appStore.avatarId"
                       label="Apply"
                       :small="true"
+                      tooltip="Apply config"
                       :error="
                         failedConfigUpdates.some(
                           (fu) => fu.id === config.id && fu.action === 'apply'
@@ -611,6 +615,7 @@ const emit = defineEmits(['notification'])
                       v-if="config.id"
                       label="Export"
                       :small="true"
+                      tooltip="Export config and associated preset(optional) to file"
                       :error="
                         failedConfigUpdates.some(
                           (fu) => fu.id === config.id && fu.action === 'export'
@@ -622,6 +627,7 @@ const emit = defineEmits(['notification'])
                       v-if="config.id"
                       label="Update"
                       :small="true"
+                      tooltip="Update config name & NSFW status"
                       :error="
                         failedConfigUpdates.some(
                           (fu) => fu.id === config.id && fu.action === 'update'
@@ -635,6 +641,7 @@ const emit = defineEmits(['notification'])
                       label="Create Preset"
                       :small="true"
                       :hero="true"
+                      tooltip="Create a new preset for this config"
                       :error="
                         failedConfigUpdates.some(
                           (fu) => fu.id === config.id && fu.action === 'createPreset'
@@ -643,9 +650,10 @@ const emit = defineEmits(['notification'])
                       @click="handleCreatePreset(cIdx)"
                     />
                     <Button
-                      v-if="config.id && appStore.avatarId"
+                      v-if="config.id"
                       label="Replace Params"
                       :small="true"
+                      tooltip="Replace config parameters with ones from a file, must be a config file not an avatar file"
                       :error="
                         failedConfigUpdates.some(
                           (fu) => fu.id === config.id && fu.action === 'replace'
@@ -659,6 +667,7 @@ const emit = defineEmits(['notification'])
                       label="Delete"
                       :small="true"
                       :error="true"
+                      tooltip="Delete config and all associated presets"
                       @click="handleConfigDelete(cIdx)"
                     />
                   </div>
@@ -699,6 +708,7 @@ const emit = defineEmits(['notification'])
                             v-if="appStore.avatarId"
                             label="Apply"
                             :small="true"
+                            tooltip="Apply preset"
                             :error="
                               failedPresetUpdates.some(
                                 (fu) => fu.id === preset.id && fu.action === 'apply'
@@ -709,6 +719,7 @@ const emit = defineEmits(['notification'])
                           <Button
                             label="Update"
                             :small="true"
+                            tooltip="Update preset name & parameter"
                             :error="
                               failedPresetUpdates.some(
                                 (fu) => fu.id === preset.id && fu.action === 'update'
@@ -720,6 +731,7 @@ const emit = defineEmits(['notification'])
                           <Button
                             label="Delete"
                             :small="true"
+                            tooltip="Delete preset"
                             :error="true"
                             @click="handlePresetDelete(pIdx)"
                           />
