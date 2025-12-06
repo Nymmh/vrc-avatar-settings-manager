@@ -4,7 +4,7 @@ import Database from 'better-sqlite3'
 import path from 'path'
 import fs from 'fs'
 import { checkDataFolder } from './checkDataFolder'
-import { showWarning } from '../services/showWarning'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function exportConfig(
   log: Logger,
@@ -44,7 +44,7 @@ export async function exportConfig(
     let savePresets = 0
 
     if (q.isPreset) {
-      const userResponse = await showWarning(
+      const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
         0,
         'Marked As Preset',

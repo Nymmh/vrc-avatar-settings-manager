@@ -2,7 +2,7 @@ import Database from 'better-sqlite3'
 import { Logger } from 'electron-log'
 import { checkIfExistById } from './checkIfExistById'
 import { BrowserWindow } from 'electron'
-import { showWarning } from '../services/showWarning'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function updateSavedConfigData(
   log: Logger,
@@ -23,7 +23,7 @@ export async function updateSavedConfigData(
       return { success: false, message: `No config found` }
     }
 
-    const userResponse = await showWarning(
+    const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
       0,
       'Update Warning',
