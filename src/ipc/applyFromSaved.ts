@@ -3,7 +3,7 @@ import { BrowserWindow } from 'electron'
 import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
 import { applyConfig } from '../services/applyConfig'
-import { showWarning } from '../services/showWarning'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function applyFromSaved(
   log: Logger,
@@ -37,7 +37,7 @@ export async function applyFromSaved(
     const warningButtons = ['Apply', 'Cancel']
 
     if (q.avatarId !== currentAvatarId) {
-      const userResponse = await showWarning(
+      const userResponse = await showDialogNoSound(
         warningButtons,
         0,
         'Avatar Mismatch',
@@ -51,7 +51,7 @@ export async function applyFromSaved(
     }
 
     if (q.nsfw) {
-      const userResponse = await showWarning(
+      const userResponse = await showDialogNoSound(
         warningButtons,
         0,
         'NSFW',

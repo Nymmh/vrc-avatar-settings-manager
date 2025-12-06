@@ -1,8 +1,7 @@
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { BrowserWindow } from 'electron'
-
-import { showWarning } from '../services/showWarning'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function deleteConfig(
   log: Logger,
@@ -19,7 +18,7 @@ export async function deleteConfig(
 
     if (!q) return { success: false, message: 'No saved config found with that ID' }
 
-    const userResponse = await showWarning(
+    const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
       0,
       'Confirm Delete',

@@ -2,7 +2,7 @@ import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { saveConfig } from './saveConfig'
 import { BrowserWindow } from 'electron'
-import { showWarning } from '../services/showWarning'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function uploadConfig(
   log: Logger,
@@ -25,7 +25,7 @@ export async function uploadConfig(
   config.avatarId = avatarId?.trim() || config.avatarId?.trim() || 'Unknown'
 
   if (config?.nsfw && !nsfw) {
-    const userResponse = await showWarning(
+    const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
       0,
       'NSFW Warning',

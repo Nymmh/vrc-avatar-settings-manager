@@ -16,7 +16,7 @@ import { updateSavedConfig } from '../../database/updateSavedConfig'
 import { updateSavedConfigData } from '../../database/updateSavedData'
 import { replaceParams } from '../../database/replaceParams'
 import { deleteConfig } from '../../database/deleteConfig'
-import { showWarning } from '../../services/showWarning'
+import { showDialogNoSound } from '../../services/showDialogNoSound'
 
 interface ConfigHandlerContext {
   log: Logger
@@ -169,7 +169,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     const mainWindow = getMainWindow()
     if (!mainWindow) return { success: false }
 
-    const userResponse = await showWarning(
+    const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
       0,
       'Overwrite Warning',
@@ -206,7 +206,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     const mainWindow = getMainWindow()
     if (!mainWindow) return { success: false }
 
-    const res = await updateSavedConfigData(log, avatarDB, id, avatarId, saveName, nsfw)
+    const res = await updateSavedConfigData(log, avatarDB, mainWindow, id, avatarId, saveName, nsfw)
     const currentAviId = storage.getCurrentAvatarId()
 
     getNames(log, avatarDB, mainWindow, currentAviId)

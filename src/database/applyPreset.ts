@@ -2,8 +2,8 @@ import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
 import { applyConfig } from '../services/applyConfig'
-import { showWarning } from '../services/showWarning'
 import { BrowserWindow } from 'electron'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function applyPreset(
   log: Logger,
@@ -46,7 +46,7 @@ export async function applyPreset(
     }
 
     if (nsfwCheck && avatarData.nsfw) {
-      const userResponse = await showWarning(
+      const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
         0,
         'Avatar ID Mismatch',

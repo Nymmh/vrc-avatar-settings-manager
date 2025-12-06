@@ -312,7 +312,7 @@ onMounted(() => {
             </div>
             <div v-if="configSelectValue" class="main__apply-buttons">
               <Button label="Apply" @click="handleApply" />
-              <Button label="Update" @click="handleSavedUpdated" />
+              <Button label="Update" :warning="true" @click="handleSavedUpdated" />
               <Button label="Delete" :error="true" @click="handleDelete" />
             </div>
           </div>

@@ -184,10 +184,6 @@ const emit = defineEmits(['update:modelValue'])
     &:active {
       background-color: var(--color--primary-a6);
     }
-
-    &--up {
-      border-bottom: 1px solid var(--color--primary-a4);
-    }
   }
 
   &__error {

@@ -1,15 +1,18 @@
 import Database from 'better-sqlite3'
 import { Logger } from 'electron-log'
 import { checkIfExistById } from './checkIfExistById'
+import { BrowserWindow } from 'electron'
+import { showWarning } from '../services/showWarning'
 
-export function updateSavedConfigData(
+export async function updateSavedConfigData(
   log: Logger,
   db: Database,
+  mainWindow: BrowserWindow,
   id: number,
   avatarId: string,
   saveName: string,
   nsfw: boolean | undefined
-): updateConfigInterface {
+): Promise<updateConfigInterface> {
   try {
     saveName = saveName.trim()
     if (!saveName) return { success: false, message: 'Save name is required' }
@@ -18,6 +21,21 @@ export function updateSavedConfigData(
 
     if (!existing) {
       return { success: false, message: `No config found` }
+    }
+
+    const userResponse = await showWarning(
+      ['Yes', 'No'],
+      0,
+      'Update Warning',
+      'Are you sure you want to update the saved config?',
+      mainWindow
+    )
+
+    if (userResponse.response !== 0) {
+      return {
+        success: false,
+        message: 'Update cancelled'
+      }
     }
 
     avatarId = avatarId.trim() || 'Unknown'

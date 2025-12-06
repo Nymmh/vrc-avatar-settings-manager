@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
-import { showWarning } from '../services/showWarning'
 import { BrowserWindow } from 'electron'
 import { generateNextPresetNumber } from './helpers/generateNextPresetNumber'
+import { showDialogNoSound } from '../services/showDialogNoSound'
 
 export async function uploadAvatarPresets(
   db: Database,
@@ -11,7 +11,7 @@ export async function uploadAvatarPresets(
   update: boolean
 ): Promise<number> {
   try {
-    const userResponse = await showWarning(
+    const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
       0,
       'Presets found',
