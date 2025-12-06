@@ -22,9 +22,13 @@ export async function exportAllConfigs(
 
     const { fullExport } = checkDataFolder()
 
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`
+    const fileName = `asm-export-${timestamp}`
+
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Config',
-      defaultPath: `${path.join(fullExport, 'export')}.json`,
+      defaultPath: `${path.join(fullExport, fileName)}.json`,
       filters: [
         { name: 'JSON', extensions: ['json'] },
         { name: 'All Files', extensions: ['*'] }
