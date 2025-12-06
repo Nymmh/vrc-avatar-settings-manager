@@ -68,6 +68,8 @@ export class OSCHandler {
   }
 
   private async handlePresets(address: string): Promise<void> {
+    if (this.storage.getPendingState()) return
+    this.storage.setPendingState(true)
     const cleanAddress = address.replace('/avatar/parameters/', '')
     const match = cleanAddress.match(/\/(\d+)\//)
 
@@ -88,6 +90,8 @@ export class OSCHandler {
         this.oscClient,
         false
       )
+
+      this.storage.setPendingState(false)
     } else if (address.includes('Update')) {
       await updatePreset(
         this.log,
@@ -99,8 +103,12 @@ export class OSCHandler {
       )
 
       await avatarConfig(this.storage.getCurrentAvatarId(), this.mainWindow, new Map())
+      this.storage.setPendingState(false)
       getNames(this.log, this.avatarDB, this.mainWindow, this.storage.getCurrentAvatarId())
-    } else this.log.warn('Unknown preset address: ', address)
+    } else {
+      this.log.warn('Unknown preset address: ', address)
+      this.storage.setPendingState(false)
+    }
   }
 
   private handleParamChange(address: string, payload: unknown): void {

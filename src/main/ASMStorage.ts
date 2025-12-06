@@ -3,6 +3,7 @@ export class ASMStorage {
   private loadedJson: avatarDBInterface | null = null
   private pendingChanges: Map<string, unknown> = new Map()
   private loadedAvatarJson: exportAllConfigsInterface | null = null
+  private pendingState: boolean = false
 
   getCurrentAvatarId(): string {
     return this.currentAviId
@@ -43,10 +44,19 @@ export class ASMStorage {
     this.loadedAvatarJson = data
   }
 
+  getPendingState(): boolean {
+    return this.pendingState
+  }
+
+  setPendingState(newState: boolean): void {
+    this.pendingState = newState
+  }
+
   cleanState(): void {
     this.currentAviId = ''
     this.loadedJson = null
     this.pendingChanges.clear()
     this.loadedAvatarJson = null
+    this.pendingState = false
   }
 }

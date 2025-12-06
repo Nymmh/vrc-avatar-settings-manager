@@ -74,8 +74,8 @@ async function setupOSC(): Promise<void> {
       throw new Error('Required dependencies not initialized')
     }
 
+    asmStorage.setPendingState(false)
     oscHandler = new OSCHandler(log, mainWindow, avatarDB, OSC_CLIENT, asmStorage)
-
     OSC_SERVER.on('message', (data) => oscHandler!.handleMessage(data))
 
     log.info('OSC setup complete')

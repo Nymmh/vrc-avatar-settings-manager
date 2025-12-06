@@ -87,13 +87,23 @@ const EXCLUDED_NAMES = new Set([
   'Go/Height',
   'Go/HeightFactor',
   'Go/HeightSmooth',
+  'Go/Station/Chair',
   'EyeTrackingActive',
   'LipTrackingActive',
   'VisemesEnable',
   'FacialExpressionsDisabled',
   'State/TrackingActive',
   'Smoothing/Local',
-  'State/VisemesEnable'
+  'State/VisemesEnable',
+  'FT/Debug',
+  'FT/EyeSync',
+  'FaceTrackingLimits',
+  'FaceTrackingEmulation',
+  'FacialExpressionsDisabled',
+  'VisemesEnable',
+  'EyeDilationEnable',
+  'LipTrackingActive',
+  'EyeTrackingActive'
 ])
 
 export function formatConfig(
@@ -129,6 +139,7 @@ export function formatConfig(
       value === undefined ||
       /\/LastSynced$/.test(c.name) ||
       /^FT\/v2\//.test(c.name) ||
+      /Nymh\/ASM\/Preset\//.test(c.name) ||
       /^VF[ _]?\d+(?:\.\d+)*[_/]SyncData/.test(c.name) ||
       /^VF[ _]?\d+(?:\.\d+)*[_/]SyncPointer$/.test(c.name) ||
       /^VF[ _]?\d+(?:\.\d+)*[_/]TC_current/.test(c.name) ||
@@ -143,7 +154,9 @@ export function formatConfig(
       /^VF_\d+(?:\.\d+)*[a-z]/.test(c.name) ||
       /^VF_\d+(?:\.\d+)*_One$/.test(c.name) ||
       /^VF_\d+(?:\.\d+)*_True$/.test(c.name) ||
-      /^VFH\/Version/.test(c.name)
+      /^VFH\/Version/.test(c.name) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/Debug$/.test(c.name) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/EyeSync$/.test(c.name)
     )
       return ap
 
