@@ -34,25 +34,15 @@ export async function importAllConfigs(
     const parsedData = JSON.parse(data) as exportAllConfigsInterface[]
 
     for (const avatar of parsedData) {
-      const existing = db
-        .prepare('SELECT id FROM avatarStorage WHERE avatarId = ?')
-        .get(avatar.avatarId)
-
-      if (existing) {
-        log.info(`Avatar with ID ${avatar.avatarId} already exists. Skipping import.`)
-        continue
-      }
-
-      db.prepare(`INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?)`).run(
-        avatar.avatarId,
-        avatar.name
-      )
+      db.prepare(
+        `INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?) ON CONFLICT(avatarId) DO NOTHING`
+      ).run(avatar.avatarId, avatar.name)
 
       if (!avatar.configs) continue
 
       for (const c of avatar.configs) {
         db.prepare(
-          `INSERT INTO avatars (uqid, avatarId, name, avatarName, nsfw, parameters, fromFile, isPreset) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO avatars (uqid, avatarId, name, avatarName, nsfw, parameters, fromFile, isPreset) VALUES (?, ?, ?, ?, ?, ?, ?, ?) on CONFLICT(uqid) DO NOTHING`
         ).run(
           c.uqid,
           c.avatarId,
@@ -66,7 +56,7 @@ export async function importAllConfigs(
 
         if (c.isPreset === 1 && c.presets) {
           db.prepare(
-            `INSERT INTO presets (forUqid, avatarId, name, unityParameter) VALUES (?, ?, ?, ?)`
+            `INSERT INTO presets (forUqid, avatarId, name, unityParameter) VALUES (?, ?, ?, ?) on CONFLICT(forUqid) DO NOTHING`
           ).run(
             c.presets.forUqid,
             c.presets.avatarId,
