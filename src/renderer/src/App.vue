@@ -16,6 +16,7 @@ import { NotificationInterface } from './types/notificationInterface'
 import { savedNamesType } from './types/savedNamesInterface'
 import { appStorage } from './composables/appStorage'
 import AllData from './views/AllData.vue'
+import 'overlayscrollbars/overlayscrollbars.css'
 
 const appStore = appStorage()
 const { notify } = useNotification()
@@ -356,6 +357,8 @@ onMounted(() => {
     flex-flow: column nowrap;
     gap: 36px;
     justify-content: center;
+    padding-bottom: 22px;
+    padding-top: 22px;
     width: 100%;
   }
 
@@ -427,50 +430,17 @@ onMounted(() => {
   }
 }
 
-.ps {
-  height: 100%;
-  position: relative;
-}
-
-.ps__rail-y {
-  background-color: transparent !important;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  width: 10px;
-  z-index: 10;
-
-  &:hover {
-    opacity: 1;
-  }
-}
-
-.ps__rail-y:hover,
-.ps--active-y {
-  opacity: 1;
-}
-
-.ps__thumb-y {
-  background: linear-gradient(135deg, rgba(90, 123, 153, 0.4), rgba(74, 127, 184, 0.4));
-  border-radius: 6px;
-  cursor: pointer;
-  right: 1px;
-  transition: all 0.3s ease;
-  width: 8px;
-
-  &:hover {
-    background: linear-gradient(135deg, rgba(90, 123, 153, 0.7), rgba(74, 127, 184, 0.7));
-    width: 10px;
-  }
-}
-
-.ps__rail-x {
-  display: none;
-}
-
-.ps .ps__rail-y:hover,
-.ps .ps__rail-y:focus,
-.ps.ps--in-scrolling.ps--y > .ps__rail-y {
-  opacity: 1;
-  background-color: transparent !important;
+.os-theme-dark {
+  --os-handle-bg: linear-gradient(135deg, rgba(63, 81, 102, 0.4) 0%, rgba(47, 90, 145, 0.4) 100%);
+  --os-handle-bg-hover: linear-gradient(
+    135deg,
+    rgba(63, 81, 102, 0.7) 0%,
+    rgba(47, 90, 145, 0.7) 100%
+  );
+  --os-handle-bg-active: linear-gradient(
+    135deg,
+    rgba(63, 81, 102, 0.7) 0%,
+    rgba(47, 90, 145, 0.7) 100%
+  );
 }
 </style>

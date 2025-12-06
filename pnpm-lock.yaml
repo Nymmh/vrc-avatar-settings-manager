@@ -66,6 +66,12 @@ importers:
       eslint-plugin-vue:
         specifier: ^10.4.0
         version: 10.5.1(@typescript-eslint/parser@8.47.0(eslint@9.39.1)(typescript@5.9.3))(eslint@9.39.1)(vue-eslint-parser@10.2.0(eslint@9.39.1))
+      overlayscrollbars:
+        specifier: ^2.13.0
+        version: 2.13.0
+      overlayscrollbars-vue:
+        specifier: ^0.5.9
+        version: 0.5.9(overlayscrollbars@2.13.0)(vue@3.5.24(typescript@5.9.3))
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -87,9 +93,6 @@ importers:
       vue-tsc:
         specifier: ^3.0.7
         version: 3.1.4(typescript@5.9.3)
-      vue3-perfect-scrollbar:
-        specifier: ^2.0.0
-        version: 2.0.0(vue@3.5.24(typescript@5.9.3))
 
 packages:
 
@@ -2158,6 +2161,15 @@ packages:
   oscquery@1.1.1:
     resolution: {integrity: sha512-npYejdwS/M/k7+Z1y2eugibWWNKgZ0P48BGOEho+PVy5jotqMytKJVbfiDOCOq7G4/ln6vmVK096b3xGO1bDlw==}
 
+  overlayscrollbars-vue@0.5.9:
+    resolution: {integrity: sha512-zZEcsb6llnKaRwXTP44E4RrmwuH+eAi70mgCdiiPwcPBE2H99Vs2V0q7sWnEanqU3462ch38e4SmIMnuH906DQ==}
+    peerDependencies:
+      overlayscrollbars: ^2.0.0
+      vue: ^3.2.25
+
+  overlayscrollbars@2.13.0:
+    resolution: {integrity: sha512-uQGpLESrbFDLTWucWAKX9ceIANj7detMwH/2yJ315Llt72ZcWN3P6ckMotoqVv2Mk29R/pnhDtgYjy4K+kwAyQ==}
+
   p-cancelable@2.1.1:
     resolution: {integrity: sha512-BZOr3nRQHOntUjTrH8+Lh54smKHoHyur8We1V8DSMVrl5A2malOOwuJRnKRDjSnkoeBh4at6BwEnb5I7Jl31wg==}
     engines: {node: '>=8'}
@@ -2206,9 +2218,6 @@ packages:
 
   pend@1.2.0:
     resolution: {integrity: sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==}
-
-  perfect-scrollbar@1.5.6:
-    resolution: {integrity: sha512-rixgxw3SxyJbCaSpo1n35A/fwI1r2rdwMKOTCg/AcG+xOEyZcE8UHVjpZMFCVImzsFoCZeJTT+M/rdEIQYO2nw==}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -2666,11 +2675,6 @@ packages:
     hasBin: true
     peerDependencies:
       typescript: '>=5.0.0'
-
-  vue3-perfect-scrollbar@2.0.0:
-    resolution: {integrity: sha512-nSWVcRyViCgt0Pe3RhU3w/BllLcFSrEzYOGlRBjSyhVmiZlERHHziffW+9P8L0IMEWouC5t+uYrgNJGSAElqMA==}
-    peerDependencies:
-      vue: ^3.0.0
 
   vue@3.5.24:
     resolution: {integrity: sha512-uTHDOpVQTMjcGgrqFPSb8iO2m1DUvo+WbGqoXQz8Y1CeBYQ0FXf2z1gLRaBtHjlRz7zZUBHxjVB5VTLzYkvftg==}
@@ -5007,6 +5011,13 @@ snapshots:
       - debug
       - supports-color
 
+  overlayscrollbars-vue@0.5.9(overlayscrollbars@2.13.0)(vue@3.5.24(typescript@5.9.3)):
+    dependencies:
+      overlayscrollbars: 2.13.0
+      vue: 3.5.24(typescript@5.9.3)
+
+  overlayscrollbars@2.13.0: {}
+
   p-cancelable@2.1.1: {}
 
   p-limit@3.1.0:
@@ -5043,8 +5054,6 @@ snapshots:
   pe-library@0.4.1: {}
 
   pend@1.2.0: {}
-
-  perfect-scrollbar@1.5.6: {}
 
   picocolors@1.1.1: {}
 
@@ -5518,11 +5527,6 @@ snapshots:
       '@volar/typescript': 2.4.23
       '@vue/language-core': 3.1.4(typescript@5.9.3)
       typescript: 5.9.3
-
-  vue3-perfect-scrollbar@2.0.0(vue@3.5.24(typescript@5.9.3)):
-    dependencies:
-      perfect-scrollbar: 1.5.6
-      vue: 3.5.24(typescript@5.9.3)
 
   vue@3.5.24(typescript@5.9.3):
     dependencies:
