@@ -61,8 +61,18 @@ const emit = defineEmits(['notification'])
     <div class="footer__center">
       <a href="https://jinxxy.com/Nymh" target="_blank" rel="noopener noreferrer">Nymh</a>
       <a href="https://discord.gg/rcCCkbDsY3" target="_blank" rel="noopener noreferrer">Discord</a>
-      <Button label="Export All" :small="true" @click="handleExport" />
-      <Button label="Import All" :small="true" @click="handleImport" />
+      <Button
+        label="Export All"
+        :small="true"
+        tooltip="Export all data to a file"
+        @click="handleExport"
+      />
+      <Button
+        label="Import All"
+        :small="true"
+        tooltip="Import all data from a file"
+        @click="handleImport"
+      />
     </div>
   </div>
 </template>
