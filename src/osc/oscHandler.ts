@@ -42,7 +42,9 @@ export class OSCHandler {
       /^VF_\d+(?:\.\d+)*[a-z]/.test(address) ||
       /^VF_\d+(?:\.\d+)*_One$/.test(address) ||
       /^VF_\d+(?:\.\d+)*_True$/.test(address) ||
-      /^VFH\/Version/.test(address)
+      /^VFH\/Version/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/Debug$/.test(address) ||
+      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/EyeSync$/.test(address)
     )
       return
 
