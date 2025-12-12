@@ -35,3 +35,7 @@ If you open ASM while already in-game, switch to a different avatar and then swi
 ## How can I share configs with other people?
 
 Export your configuration and send the file to a friend, who can then import it into their ASM. You can read the detailed explanation on exporting and importing [here](./detailed-export-import.md).
+
+## Can I include ASM configs with my commercial avatars?
+
+Yes! Avatar creators are welcome to include ASM-exported configurations and presets with their commercial avatar products. When doing so, please provide attribution by crediting Avatar Settings Manager and linking to the download page (https://github.com/Nymmh/vrc-avatar-settings-manager/releases). This allows your customers to easily load and use the configurations you've created. See Section 3.2 of the [EULA](./terms.md) for complete details.
