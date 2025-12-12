@@ -26,9 +26,9 @@ ASM also works with cloned avatars.
 - Currently only windows is supported
 - Download and install the latest version from [here](https://github.com/Nymmh/vrc-avatar-settings-manager/releases)
 - (Optional) Download the ASM unity package from [here](https://github.com/Nymmh/vrc-avatar-settings-manager/releases)
-- - Added the ASM package to your avatar's root and upload
+- - Add the ASM package to your avatar's root and upload
 - - ASM must be running for the preset menu to work
-- Run the application
+- Run the ASM
 - Launch VRChat
 
 ## Building from source
@@ -37,9 +37,9 @@ ASM also works with cloned avatars.
 
 ## Bug Reports & Feature Requests
 
-- Bug reports & feature requests can be created as a [Github Issue](https://github.com/Nymmh/vrc-avatar-settings-manager/issues) or in the [Discord](https://discord.gg/rcCCkbDsY3)
+- Bug reports & feature requests can be created as a [Github Issue](https://github.com/Nymmh/vrc-avatar-settings-manager/issues) or in the [Discord](https://discord.gg/rcCCkbDsY3). When making a bug report please include the Meow.log
 
-## Is ASM against VRChat TOS
+## Is ASM against VRChat TOS?
 
 No, ASM is not against VRChat TOS.
 
