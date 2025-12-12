@@ -1,34 +1,46 @@
-# vrc-avatar-settings-manager
+# Avatar Settings Manager
 
-## Project Setup
+Avatar Settings Manager(ASM) is a free comprehensive lightweight VRChat utility designed to preserve, manage, and share avatar parameter configurations. Never lose your avatar settings again, whether from accidental resets, avatar updates, or switching between variations.
 
-### Pre-requisites
-[Node.js 22.15+](https://nodejs.org/en/download/current)
+With ASM, you can save complete parameter snapshots, create reusable presets for quick configuration changes, and seamlessly transfer settings between avatar variations. Share your configurations with friends through exported files, allowing them to instantly replicate your setup.
 
-[pnpm](https://pnpm.io/installation)
+The included Unity package addon enables in-game preset management through your radial menu, allowing on the fly preset management. Best part is it costs 0 avatar parameters.
 
-### Install
+ASM also works with cloned avatars.
 
-```bash
-$ pnpm install
-```
+## Features
 
-### Development
+- Save & Manage Configurations - Store complete parameter snapshots for any avatar
+- Preset System - Create multiple presets per avatar for quick parameter switching
+- In-Game Preset Control - Unity package addon provides radial menu integration for applying and updating presets without leaving VRChat (uses 0 avatar parameters)
+- Cross-Avatar Transfer - Apply settings from one avatar version to another with mismatch warnings
+- Import/Export - Share individual configurations or entire avatar setups via portable files
+- Batch Operations - Export and import all configurations at once
+- Avatar Mismatch Protection - Warns when applying configs to different avatars to prevent unexpected results
+- NSFW Filtering - Tag and filter configurations marked as NSFW
+- Clone Avatar Support - Works seamlessly with cloned avatars
+- Parameter Monitoring - Monitors VRChat data to detect changes in real-time
 
-```bash
-$ pnpm run dev
-```
+## Getting Started
 
-### Build
+- Currently only windows is supported
+- Download and install the latest version from [here](https://github.com/Nymmh/vrc-avatar-settings-manager/releases)
+- (Optional) Download the ASM unity package from [here](https://github.com/Nymmh/vrc-avatar-settings-manager/releases)
+- - Added the ASM package to your avatar's root and upload
+- - ASM must be running for the preset menu to work
+- Run the application
+- Launch VRChat
 
-```bash
-$ pnpm run typecheck
-$ pnpm run build
-$ pnpm build:win
-```
+## Building from source
 
-### Development Notes
-- If Electron fails to install, ensure that your installation process is using the `.npmrc` file configured for the mirror. In my experience, the main npm distribution of Electron often fails, and using the mirror resolves the issue.
-- - If it still fails try to run: `node node_modules/electron/install.js`
-- - If that also fails, delete everything inside `node_modules/electron/`, then download [Electron@38.7.0](https://github.com/electron/electron/releases/tag/v38.7.0). Extract the source code into `node_modules/electron/`, and run: `node node_modules/electron/install.js`
-- When adding new packages, install them as `devDependencies` using: `pnpm i -D <package_name>`. Only add a package as a regular dependency if it is explicitly required at build runtime.
+- View the doc [here](./README/build-from-source.md) to build from source
+
+## Bug Reports & Feature Requests
+
+- Bug reports & feature requests can be created as a [Github Issue](https://github.com/Nymmh/vrc-avatar-settings-manager/issues) or in the [Discord](https://discord.gg/rcCCkbDsY3)
+
+## Is ASM against VRChat TOS
+
+No, ASM is not against VRChat TOS.
+
+ASM does not modify your game in anyway and uses features and data provided by VRChat. It is not a mod or cheat.
