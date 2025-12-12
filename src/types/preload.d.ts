@@ -58,10 +58,17 @@ export interface avatarApi {
   importAllConfigs: () => Promise<importAllConfigsInterface>
   getConfigById: (avatarId: string) => Promise<avatarDBInterface[] | null>
   dataTableRefresh: (meowback: () => void) => void
+  getLogFileSize: () => Promise<string>
 }
 
 export interface appApi {
   appVersion: () => string
+  getLogFileSize: () => Promise<string>
+  openLogFile: () => void
+  deleteLogFile: () => Promise<boolean>
+  getSaveFaceTrackingSetting: () => Promise<boolean>
+  setSaveFaceTrackingSetting: (value: boolean) => Promise<boolean>
+  parameterRateUpdate: (meowback: (rate: string) => void) => void
 }
 
 declare global {

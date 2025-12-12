@@ -9,13 +9,29 @@ import { updatePreset } from '../database/updatePreset'
 import { ASMStorage } from '../main/ASMStorage'
 
 export class OSCHandler {
+  private parameterCount: number = 0
+  private lastResetTime: number = Date.now()
+
   constructor(
     private log: Logger,
     private mainWindow: BrowserWindow,
     private avatarDB: Database,
     private oscClient: Client,
     private storage: ASMStorage
-  ) {}
+  ) {
+    setInterval(() => {
+      const now = Date.now()
+      const elapsed = (now - this.lastResetTime) / 1000
+      const rate = Math.round(this.parameterCount / elapsed)
+
+      if (this.parameterCount > 0) {
+        this.mainWindow.webContents.send('parameterRateUpdate', `${rate} params/sec`)
+      }
+
+      this.parameterCount = 0
+      this.lastResetTime = now
+    }, 1000)
+  }
 
   async handleMessage(data: unknown[]): Promise<void> {
     if (!data || data.length === 0) {
@@ -43,8 +59,7 @@ export class OSCHandler {
       /^VF_\d+(?:\.\d+)*_One$/.test(address) ||
       /^VF_\d+(?:\.\d+)*_True$/.test(address) ||
       /^VFH\/Version/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/Debug$/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/EyeSync$/.test(address)
+      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/Debug$/.test(address)
     )
       return
 
@@ -65,7 +80,7 @@ export class OSCHandler {
     this.storage.setCurrentAvatarId(avatarId)
     this.mainWindow.webContents.send('avatarId', { id: avatarId })
 
-    await avatarConfig(avatarId, this.mainWindow, new Map())
+    await avatarConfig(this.avatarDB, avatarId, this.mainWindow, new Map())
     getNames(this.log, this.avatarDB, this.mainWindow, avatarId)
   }
 
@@ -104,7 +119,12 @@ export class OSCHandler {
         this.mainWindow
       )
 
-      await avatarConfig(this.storage.getCurrentAvatarId(), this.mainWindow, new Map())
+      await avatarConfig(
+        this.avatarDB,
+        this.storage.getCurrentAvatarId(),
+        this.mainWindow,
+        new Map()
+      )
       this.storage.setPendingState(false)
       getNames(this.log, this.avatarDB, this.mainWindow, this.storage.getCurrentAvatarId())
     } else {
@@ -116,5 +136,6 @@ export class OSCHandler {
   private handleParamChange(address: string, payload: unknown): void {
     const cleanAddress = address.replace('/avatar/parameters/', '')
     this.storage.setPendingChanges(cleanAddress, payload)
+    this.parameterCount++
   }
 }

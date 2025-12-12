@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs'
+import Database from 'better-sqlite3'
 import { BrowserWindow } from 'electron'
 import { formatConfig } from './formatConfig'
 import { lookForConfig } from '../file/lookForConfig'
@@ -10,6 +11,7 @@ const BOM_REGEX = /^\uFEFF/
 const JUNK_REGEX = /^[^{\[]+/
 
 export function avatarConfig(
+  db: Database,
   avatarId: string,
   mainWindow: BrowserWindow,
   pendingChanges: Map<string, unknown>
@@ -32,7 +34,7 @@ export function avatarConfig(
     fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
   )
 
-  const formattedDataConfig = formatConfig(aviConfigData, aviCacheData, pendingChanges)
+  const formattedDataConfig = formatConfig(db, aviConfigData, aviCacheData, pendingChanges)
 
   mainWindow.webContents.send('foundAvatarFile', {
     success: true

@@ -10,12 +10,13 @@ import LoadFile from './components/LoadFile.vue'
 import Menu from './components/Menu.vue'
 import Waiting from './components/Waiting.vue'
 import Card from './components/Card.vue'
+import AllData from './views/AllData.vue'
+import Settings from './views/Settings.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
 import type { avatarConfigType } from '../../types/avatarConfigType'
 import { NotificationInterface } from './types/notificationInterface'
 import { savedNamesType } from './types/savedNamesInterface'
 import { appStorage } from './composables/appStorage'
-import AllData from './views/AllData.vue'
 import 'overlayscrollbars/overlayscrollbars.css'
 
 const appStore = appStorage()
@@ -252,6 +253,7 @@ onMounted(() => {
   <div class="main">
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
     <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
+    <Settings v-if="appStore.currentView === 'Settings'" @notification="pushNotification" />
     <div v-show="appStore.currentView === 'Main'" class="main__content">
       <Card>
         <div class="main__avatar-data">

@@ -1,3 +1,6 @@
+import Database from 'better-sqlite3'
+import { getSaveFaceTrackingSetting } from '../database/getSaveFaceTrackingSetting'
+
 const EXCLUDED_NAMES = new Set([
   'VRCEmote',
   'VRCFaceBlendH',
@@ -35,7 +38,6 @@ const EXCLUDED_NAMES = new Set([
   'Seated',
   'InStation',
   'PreviewMode',
-  'RemoteModeActive',
   'AvatarVersion',
   'GroundProximity',
   'Go/VRCEmote',
@@ -89,25 +91,27 @@ const EXCLUDED_NAMES = new Set([
   'Go/HeightFactor',
   'Go/HeightSmooth',
   'Go/Station/Chair',
+  'FT/Debug'
+])
+
+const FT_EXCLUDED_NAMES = new Set([
   'EyeTrackingActive',
   'LipTrackingActive',
-  'VisemesEnable',
-  'FacialExpressionsDisabled',
-  'State/TrackingActive',
-  'Smoothing/Local',
-  'State/VisemesEnable',
-  'FT/Debug',
-  'FT/EyeSync',
-  'FaceTrackingLimits',
-  'FaceTrackingEmulation',
-  'FacialExpressionsDisabled',
-  'VisemesEnable',
   'EyeDilationEnable',
-  'LipTrackingActive',
-  'EyeTrackingActive'
+  'FacialExpressionsDisabled',
+  'VisemesEnable',
+  'State/VisemesEnable',
+  'State/TrackingActive',
+  'RemoteModeActive',
+  'Smoothing/Local',
+  'FaceTrackingEmulation',
+  'FaceTrackingLimits',
+  'FT/EyeSync',
+  'FT/EyeSyncMix'
 ])
 
 export function formatConfig(
+  db: Database,
   aviData: string,
   aviCache: string,
   pendingChanges: Map<string, unknown>
@@ -156,10 +160,15 @@ export function formatConfig(
       /^VF_\d+(?:\.\d+)*_One$/.test(c.name) ||
       /^VF_\d+(?:\.\d+)*_True$/.test(c.name) ||
       /^VFH\/Version/.test(c.name) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/Debug$/.test(c.name) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/EyeSync$/.test(c.name)
+      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/Debug$/.test(c.name)
     )
       return ap
+
+    if (getSaveFaceTrackingSetting(db) === false) {
+      if (FT_EXCLUDED_NAMES.has(c.name) || /^VF[ _]\d+(?:\.\d+)*$/.test(c.name)) {
+        return ap
+      }
+    }
 
     const type = parameterMap.get(c.name)
 

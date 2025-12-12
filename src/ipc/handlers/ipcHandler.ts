@@ -9,16 +9,24 @@ import { presetHandlers } from './presetHandlers'
 import { avatarHandlers } from './avatarHandlers'
 import { exportHandlers } from './exportHandlers'
 
+interface DataFolder {
+  folderPath: string
+  avatarConfigData: string
+  avatarData: string
+  fullExport: string
+}
+
 interface HandlerContext {
   log: Logger
   avatarDB: Database
   storage: ASMStorage
   getMainWindow: () => BrowserWindow | null
   getOSCClient: () => Client | null
+  dataFolder: DataFolder
 }
 
 export function ipcHandlers(context: HandlerContext): void {
-  appHandlers()
+  appHandlers(context)
   configHandlers(context)
   presetHandlers(context)
   avatarHandlers(context)

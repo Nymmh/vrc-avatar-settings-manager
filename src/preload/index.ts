@@ -3,7 +3,25 @@ import { saveConfigInterface } from '../types/saveConfigInterface'
 import { loadConfigInterface } from '../types/loadConfigInterface'
 
 const appApi = {
-  appVersion: (): Promise<string> => ipcRenderer.invoke('appVersion')
+  appVersion: (): Promise<string> => ipcRenderer.invoke('appVersion'),
+  getLogFileSize: async (): Promise<string> => ipcRenderer.invoke('getLogFileSize'),
+  openLogFile: (): void => {
+    ipcRenderer.invoke('openLogFile')
+  },
+  deleteLogFile: (): Promise<boolean> => {
+    return ipcRenderer.invoke('deleteLogFile')
+  },
+  getSaveFaceTrackingSetting: (): Promise<boolean> => {
+    return ipcRenderer.invoke('getSaveFaceTrackingSetting')
+  },
+  setSaveFaceTrackingSetting: (value: boolean): Promise<boolean> => {
+    return ipcRenderer.invoke('setSaveFaceTrackingSetting', value)
+  },
+  parameterRateUpdate: (meowback: (rate: string) => void): void => {
+    ipcRenderer.on('parameterRateUpdate', (_event: IpcRendererEvent, data: string): void =>
+      meowback(data)
+    )
+  }
 }
 
 const avatarApi = {
