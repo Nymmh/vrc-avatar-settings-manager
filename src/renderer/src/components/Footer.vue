@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import Button from './Button.vue'
 import { appStorage } from '../composables/appStorage'
+import { handleChangeView } from '@renderer/composables/changeView'
 
 const appStore = appStorage()
 
@@ -72,6 +73,14 @@ const emit = defineEmits(['notification'])
         :small="true"
         tooltip="Import all data from a file"
         @click="handleImport"
+      />
+    </div>
+    <div class="footer_right">
+      <Button
+        v-show="appStore.currentView !== 'Settings'"
+        label="Settings"
+        :small="true"
+        @click="handleChangeView('Settings')"
       />
     </div>
   </div>

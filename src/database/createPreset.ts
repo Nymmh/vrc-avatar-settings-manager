@@ -24,7 +24,7 @@ export async function createPreset(
       uqid = generateUqid(avatarId)
     }
 
-    const aviData = await avatarConfig(avatarId, mainWindow, pendingChanges)
+    const aviData = await avatarConfig(db, avatarId, mainWindow, pendingChanges)
 
     db.prepare(
       `

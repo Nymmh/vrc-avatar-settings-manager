@@ -36,7 +36,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     const currentAviId = storage.getCurrentAvatarId()
     const pendingChanges = storage.getPendingChanges()
 
-    content = await avatarConfig(currentAviId, mainWindow, pendingChanges)
+    content = await avatarConfig(avatarDB, currentAviId, mainWindow, pendingChanges)
 
     if (!content) {
       return { success: false, message: 'Failed to get avatar configuration' }
@@ -152,7 +152,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     const currentAviId = storage.getCurrentAvatarId()
     storage.setLoadedJson(null)
 
-    avatarConfig(currentAviId, mainWindow, new Map())
+    avatarConfig(avatarDB, currentAviId, mainWindow, new Map())
     getNames(log, avatarDB, mainWindow, currentAviId)
     return { success: true }
   })

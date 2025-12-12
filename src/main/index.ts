@@ -13,6 +13,7 @@ import { oscQuery } from '../osc/oscQuery'
 import { OSCHandler } from '../osc/oscHandler'
 import { ASMStorage } from './ASMStorage'
 import { ipcHandlers } from '../ipc/handlers/ipcHandler'
+import { deleteOldLog } from '../file/deleteOldLog'
 
 let mainWindow: BrowserWindow | null = null
 let OSC_CLIENT: Client | null = null
@@ -26,7 +27,9 @@ log.initialize()
 log.transports.file.resolvePathFn = () => path.join(dataFolder.folderPath, 'meow.log')
 log.transports.file.fileName = 'meow.log'
 log.transports.file.format = '[{y}-{m}-{d} {h}:{i}] [{level}] {text}'
+log.transports.file.maxSize = 5 * 1024 * 1024 // 5 MB
 log.transports.file.level = 'info'
+deleteOldLog(log, dataFolder.folderPath)
 log.info('Meow Meow starting...')
 
 const avatarDB = avatarDatabase(log)
@@ -98,7 +101,8 @@ app.whenReady().then(async () => {
     avatarDB,
     storage: asmStorage,
     getMainWindow: () => mainWindow,
-    getOSCClient: () => OSC_CLIENT
+    getOSCClient: () => OSC_CLIENT,
+    dataFolder
   })
 
   createWindow()

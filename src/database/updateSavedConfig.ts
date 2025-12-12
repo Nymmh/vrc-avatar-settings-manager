@@ -35,7 +35,7 @@ export function updateSavedConfig(
       )
       .get(id) as { name: string; avatarId: string; uqid: string } | undefined
 
-    const avatarConfigResult = avatarConfig(avatarId, mainWindow, pendingChanges)
+    const avatarConfigResult = avatarConfig(db, avatarId, mainWindow, pendingChanges)
 
     if (!avatarConfigResult) {
       log.error('Failed to get avatar config')

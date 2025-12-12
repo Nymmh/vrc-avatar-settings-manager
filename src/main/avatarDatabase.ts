@@ -75,6 +75,27 @@ export function avatarDatabase(log: Logger): DBType {
     log.info('Meow Storage upgraded to version 2')
   }
 
+  if (version === 2) {
+    db.transaction(() => {
+      db.prepare(
+        `CREATE TABLE IF NOT EXISTS settings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          key TEXT NOT NULL UNIQUE,
+          value TEXT NOT NULL
+        )`
+      ).run()
+
+      db.prepare(
+        `INSERT OR IGNORE INTO settings (key, value) VALUES ('saveFaceTrackingSettings', 'false')`
+      ).run()
+
+      db.pragma('user_version = 3')
+    })()
+
+    version = 3
+    log.info('Meow Storage upgraded to version 3')
+  }
+
   db.pragma('synchronous = NORMAL')
   db.pragma('cache_size = -7168')
   db.pragma('temp_store = MEMORY')
