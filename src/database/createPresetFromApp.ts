@@ -56,7 +56,7 @@ export async function createPresetFromApp(
     log.info('Preset created from app successfully')
     return { success: true, message: 'Preset created successfully' }
   } catch (e) {
-    log.error('Error creating preset from app:', e)
+    log.info('Error creating preset from app:', e)
     return { success: false, message: 'Error creating preset' }
   }
 }

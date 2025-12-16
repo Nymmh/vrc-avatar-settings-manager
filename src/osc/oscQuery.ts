@@ -22,7 +22,7 @@ export async function oscQuery(log: Logger): Promise<number> {
     log.info(`Query is listening on port ${oscPort}`)
     return oscPort
   } catch (e) {
-    log.error('Failed to start Query:', e)
+    log.info('Failed to start Query:', e)
     throw new Error('Failed to start Query')
   }
 }

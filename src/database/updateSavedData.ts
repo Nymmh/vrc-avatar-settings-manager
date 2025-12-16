@@ -100,7 +100,7 @@ export async function updateSavedConfigData(
       message: `Config ${saveName} updated`
     }
   } catch (error) {
-    log.error('Error updating config:', error)
+    log.info('Error updating config:', error)
     return { success: false, message: 'Error updating config' }
   }
 }

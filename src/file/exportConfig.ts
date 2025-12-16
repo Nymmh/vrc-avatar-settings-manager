@@ -37,7 +37,7 @@ export async function exportConfig(
     })
 
     if (canceled || !filePath) {
-      log.error('Export configuration canceled or no file path specified')
+      log.info('Export configuration canceled or no file path specified')
       return { success: false, message: 'Export configuration canceled or no file path specified' }
     }
 
@@ -93,7 +93,7 @@ export async function exportConfig(
 
     return { success: true, message: 'Config exported' }
   } catch (error) {
-    log.error('Error exporting config:', error)
+    log.info('Error exporting config:', error)
     return { success: false, message: 'Error exporting config' }
   }
 }

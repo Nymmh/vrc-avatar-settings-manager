@@ -44,7 +44,7 @@ export async function deletePreset(
 
     return { success: true, message: 'Preset deleted successfully.' }
   } catch (e) {
-    log.error('Error deleting preset:', e)
+    log.info('Error deleting preset:', e)
     return { success: false, message: 'Error deleting preset' }
   }
 }

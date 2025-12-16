@@ -54,7 +54,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     const dataParsedConfig = await loadConfig(log, mainWindow)
 
     if (!dataParsedConfig) {
-      log.error('No file data')
+      log.info('No file data')
       return { name: '', match: false, error: 'No file data' }
     }
 
@@ -97,7 +97,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
       const currentAviId = storage.getCurrentAvatarId()
 
       if (!loadedJson) {
-        log.error('No configuration loaded to upload')
+        log.info('No configuration loaded to upload')
         return { success: false }
       }
 
@@ -125,7 +125,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
 
       const loadedJson = storage.getLoadedJson()
       if (!loadedJson) {
-        log.error('No configuration loaded to upload')
+        log.info('No configuration loaded to upload')
         return { success: false }
       }
 

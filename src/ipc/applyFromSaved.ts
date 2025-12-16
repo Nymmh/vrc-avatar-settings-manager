@@ -21,7 +21,7 @@ export async function applyFromSaved(
       .get(id) as applyFromSavedInterface | undefined
 
     if (!q) {
-      log.error(`Config not found: ${id}`)
+      log.info(`Config not found: ${id}`)
       return false
     }
 
@@ -30,7 +30,7 @@ export async function applyFromSaved(
     try {
       parameters = JSON.parse(q.parameters)
     } catch {
-      log.error('Error parsing JSON:')
+      log.info('Error parsing JSON:')
       return false
     }
 
@@ -66,7 +66,7 @@ export async function applyFromSaved(
 
     return await applyConfig(log, parameters, OSC_CLIENT)
   } catch (e) {
-    log.error('Error applying config from saved:', e)
+    log.info('Error applying config from saved:', e)
     return false
   }
 }

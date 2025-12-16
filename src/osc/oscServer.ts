@@ -16,7 +16,7 @@ export function oscServer(log: Logger, PORT: number): Promise<Server> {
     })
 
     OSC_SERVER.on('error', (e) => {
-      log.error('OSC server error:', e)
+      log.info('OSC server error:', e)
       rej(e)
     })
   })
