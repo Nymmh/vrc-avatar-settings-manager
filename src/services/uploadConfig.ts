@@ -10,7 +10,7 @@ export async function uploadConfig(
     log.info('Starting config upload...')
 
     if (!loadedJson?.valuedParams?.length) {
-      log.error('No parameters found to upload')
+      log.info('No parameters found to upload')
       return false
     }
 
@@ -49,7 +49,7 @@ export async function uploadConfig(
     log.info('Config upload complete')
     return true
   } catch (e) {
-    log.error('Error during config upload:', e)
+    log.info('Error during config upload:', e)
     return false
   }
 }

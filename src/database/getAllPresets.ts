@@ -17,7 +17,7 @@ export function getAllPresets(
       return q.all() as avatarPresetsInterface[]
     }
   } catch (e) {
-    log.error('Error getting all presets:', e)
+    log.info('Error getting all presets:', e)
     return null
   }
 }

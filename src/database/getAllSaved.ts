@@ -19,7 +19,7 @@ export function getAllSaved(
       return q.all() as avatarDBInterface[]
     }
   } catch (e) {
-    log.error('Error getting all saved configs:', e)
+    log.info('Error getting all saved configs:', e)
     return null
   }
 }

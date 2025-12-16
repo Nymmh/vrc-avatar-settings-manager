@@ -138,7 +138,7 @@ defineProps({
 
     &:hover .button__tooltip {
       opacity: 1;
-      transition-delay: 0.75s;
+      transition-delay: 0.55s;
     }
   }
 

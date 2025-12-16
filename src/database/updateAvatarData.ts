@@ -37,7 +37,7 @@ export async function updateAvatarData(
 
     return { success: true }
   } catch (e) {
-    log.error('Error updating avatar data:', e)
+    log.info('Error updating avatar data:', e)
     return { success: false, message: 'Error updating avatar data' }
   }
 }

@@ -36,7 +36,7 @@ export async function deleteConfig(
 
     return { success: true, message: 'Configuration deleted successfully' }
   } catch (e) {
-    log.error('Error deleting config:', e)
+    log.info('Error deleting config:', e)
     return { success: false, message: 'Error deleting config' }
   }
 }

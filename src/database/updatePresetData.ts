@@ -86,7 +86,7 @@ export async function updatePresetData(
 
     return { success: true, message: 'Preset updated' }
   } catch (e) {
-    log.error('Error updating preset data:', e)
+    log.info('Error updating preset data:', e)
     return { success: false, message: 'Error updating preset' }
   }
 }

@@ -14,6 +14,6 @@ export async function updatePreset(
   try {
     await createPreset(log, db, avatarId, presetId, pendingChanges, mainWindow)
   } catch (e) {
-    log.error('Error updating preset:', e)
+    log.info('Error updating preset:', e)
   }
 }

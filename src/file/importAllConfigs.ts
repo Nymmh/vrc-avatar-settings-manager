@@ -72,7 +72,7 @@ export async function importAllConfigs(
       message: 'Import completed successfully'
     }
   } catch (e) {
-    log.error('Import All Configs Error: ', e)
+    log.info('Import All Configs Error: ', e)
     return { success: false, message: 'Import All Configs Error' }
   }
 }

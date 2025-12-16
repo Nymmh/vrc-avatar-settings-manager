@@ -35,7 +35,7 @@ export async function exportAvatar(
     })
 
     if (canceled || !filePath) {
-      log.error('Export configuration canceled or no file path specified')
+      log.info('Export configuration canceled or no file path specified')
       return { success: false, message: 'Export configuration canceled or no file path specified' }
     }
 
@@ -71,7 +71,7 @@ export async function exportAvatar(
 
     return { success: true, message: 'Config exported' }
   } catch (e) {
-    log.error('Error exporting avatar:', e)
+    log.info('Error exporting avatar:', e)
     return { success: false, message: 'Error exporting avatar' }
   }
 }

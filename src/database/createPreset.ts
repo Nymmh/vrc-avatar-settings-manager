@@ -73,6 +73,6 @@ export async function createPreset(
 
     log.info('Preset created/updated successfully')
   } catch (e) {
-    log.error('Error creating/updating preset:', e)
+    log.info('Error creating/updating preset:', e)
   }
 }

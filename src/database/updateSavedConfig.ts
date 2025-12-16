@@ -38,7 +38,7 @@ export function updateSavedConfig(
     const avatarConfigResult = avatarConfig(db, avatarId, mainWindow, pendingChanges)
 
     if (!avatarConfigResult) {
-      log.error('Failed to get avatar config')
+      log.info('Failed to get avatar config')
       return { success: false, message: 'Failed to get avatar config' }
     }
 
@@ -61,7 +61,7 @@ export function updateSavedConfig(
       message: `Config ${saveName} updated`
     }
   } catch (error) {
-    log.error('Error updating config:', error)
+    log.info('Error updating config:', error)
     return { success: false, message: 'Error updating config' }
   }
 }

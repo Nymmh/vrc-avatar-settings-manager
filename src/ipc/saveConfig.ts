@@ -104,7 +104,7 @@ export async function saveConfig(
         parsedContent.uqid = uqid
       }
     } else {
-      log.error('Error saving config')
+      log.info('Error saving config')
       return { success: false, message: 'Internal error' }
     }
 
@@ -171,7 +171,7 @@ export async function saveConfig(
 
     return { success: true, message: 'Saved' }
   } catch (e) {
-    log.error('Saving Error: ', e)
+    log.info('Saving Error: ', e)
     return { success: false, message: 'Database error' }
   }
 }

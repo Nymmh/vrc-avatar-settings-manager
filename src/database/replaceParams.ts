@@ -66,7 +66,7 @@ export async function replaceParams(
 
     return { success: true, message: 'Parameters replaced' }
   } catch (e) {
-    log.error('Error replacing parameters:', e)
+    log.info('Error replacing parameters:', e)
     return { success: false, message: 'Error replacing parameters' }
   }
 }

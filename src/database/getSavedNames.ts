@@ -16,6 +16,6 @@ export function getNames(
 
     mainWindow.webContents.send('savedNames', names)
   } catch (e) {
-    log.error('Error getting saved names:', e)
+    log.info('Error getting saved names:', e)
   }
 }

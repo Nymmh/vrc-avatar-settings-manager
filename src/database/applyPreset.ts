@@ -26,7 +26,7 @@ export async function applyPreset(
       .get(avatarId, presetId) as { forUqid: string } | undefined
 
     if (!preset) {
-      log.error('No preset found')
+      log.info('No preset found')
       return false
     }
 
@@ -41,7 +41,7 @@ export async function applyPreset(
       .get(preset.forUqid) as { parameters: string; nsfw: boolean } | undefined
 
     if (!avatarData) {
-      log.error('No avatar config found')
+      log.info('No avatar config found')
       return false
     }
 
@@ -61,7 +61,7 @@ export async function applyPreset(
 
     return await applyConfig(log, parameters, OSC_CLIENT)
   } catch (e) {
-    log.error('Error applying preset:', e)
+    log.info('Error applying preset:', e)
     return false
   }
 }
