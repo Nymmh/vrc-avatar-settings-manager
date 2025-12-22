@@ -53,7 +53,11 @@ export interface avatarApi {
   getAllAvatars: () => Promise<getAllAvatarsInterface[]>
   deleteAvatar: (avatarId: string) => Promise<deleteAvatarInterface>
   exportAvatar: (avatarId: string) => Promise<exportAvatarInterface>
-  updateAvatarData: (avatarId: string, name: string) => Promise<updateAvatarDataInterface>
+  updateAvatarData: (
+    avatarId: string,
+    name: string,
+    updateId: string
+  ) => Promise<updateAvatarDataInterface>
   exportAllConfigs: () => Promise<exportAllConfigsPromiseInterface>
   importAllConfigs: () => Promise<importAllConfigsInterface>
   getConfigById: (avatarId: string) => Promise<avatarDBInterface[] | null>

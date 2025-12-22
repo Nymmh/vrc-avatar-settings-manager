@@ -9,10 +9,11 @@ export async function updateAvatarData(
   db: Database,
   mainWindow: BrowserWindow,
   avatarId: string,
-  avatarName: string
+  avatarName: string,
+  updateId: string
 ): Promise<updateAvatarDataInterface> {
   try {
-    if (!avatarId || !avatarName) {
+    if (!avatarId || !avatarName || !updateId) {
       return { success: false, message: 'Avatar ID and name are required' }
     }
 
@@ -28,6 +29,20 @@ export async function updateAvatarData(
 
     const q = db.prepare('UPDATE avatarStorage SET name = ? WHERE avatarId = ?')
     const result = q.run(avatarName, avatarId)
+
+    console.log(updateId)
+    console.log(avatarId)
+
+    if (updateId !== avatarId) {
+      const q2 = db.prepare('UPDATE avatarStorage SET avatarId = ? WHERE avatarId = ?')
+      q2.run(updateId, avatarId)
+
+      const au = db.prepare('UPDATE avatars SET avatarId = ? WHERE avatarId = ?')
+      au.run(updateId, avatarId)
+
+      const pu = db.prepare('UPDATE presets SET avatarId = ? WHERE avatarId = ?')
+      pu.run(updateId, avatarId)
+    }
 
     if (result.changes === 0) {
       return { success: false, message: 'No avatar found with the provided ID' }
