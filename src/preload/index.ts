@@ -131,8 +131,12 @@ const avatarApi = {
     ipcRenderer.invoke('deleteAvatar', avatarId),
   exportAvatar: async (avatarId: string): Promise<exportAvatarInterface> =>
     ipcRenderer.invoke('exportAvatar', avatarId),
-  updateAvatarData: async (avatarId: string, name: string): Promise<updateAvatarDataInterface> =>
-    ipcRenderer.invoke('updateAvatarData', avatarId, name),
+  updateAvatarData: async (
+    avatarId: string,
+    name: string,
+    updateId: string
+  ): Promise<updateAvatarDataInterface> =>
+    ipcRenderer.invoke('updateAvatarData', avatarId, name, updateId),
   exportAllConfigs: async (): Promise<exportAllConfigsInterface> =>
     ipcRenderer.invoke('exportAllConfigs'),
   importAllConfigs: async (): Promise<importAllConfigsInterface> =>

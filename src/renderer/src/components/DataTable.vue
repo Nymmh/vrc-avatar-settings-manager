@@ -181,6 +181,7 @@ const validatePreset = (preset: (typeof allPresets.value)[0]): string | null => 
 const handleAvatarUpdate = async (idx: number): Promise<void> => {
   const avatar = allAvatars.value[idx]
   const avatarId = avatar.avatarId
+  const updatedAvatarId = allAvatars.value[idx].avatarIdInput || avatar.avatarId
 
   clearFailed(failedAvatarUpdates.value, avatarId)
 
@@ -195,7 +196,7 @@ const handleAvatarUpdate = async (idx: number): Promise<void> => {
     return
   }
 
-  const res = await window.avatarApi.updateAvatarData(avatarId, avatar.name)
+  const res = await window.avatarApi.updateAvatarData(avatarId, avatar.name, updatedAvatarId)
   handleOperation(
     res,
     'Update Successful',
@@ -204,6 +205,8 @@ const handleAvatarUpdate = async (idx: number): Promise<void> => {
     'update',
     failedAvatarUpdates.value
   )
+
+  getAvatars()
 }
 
 const handleAvatarExport = async (idx: number): Promise<void> => {
@@ -534,7 +537,18 @@ const emit = defineEmits(['notification'])
                 </button>
                 <div class="data-table__avatar-info">
                   <p class="data-table__avatar-label">Avatar ID:</p>
-                  <p class="data-table__avatar-value">{{ a.avatarId }}</p>
+                  <div
+                    :style="{
+                      width: `${Math.min((a.avatarId?.length || 10) * 9.4 + 40, 500)}px`,
+                      maxWidth: '500px'
+                    }"
+                  >
+                    <InputText
+                      :id="`avatarId-${idx}`"
+                      :model-value="a.avatarId"
+                      @update:model-value="updateAvatarField(idx, 'avatarIdInput', $event.value)"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -555,7 +569,7 @@ const emit = defineEmits(['notification'])
                     failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'update')
                   "
                   :warning="true"
-                  tooltip="Update the Avatar Name"
+                  tooltip="Update the Avatar ID and Name"
                   @click="handleAvatarUpdate(idx)"
                 />
                 <Button
@@ -826,7 +840,7 @@ const emit = defineEmits(['notification'])
   }
 
   &__avatar-header {
-    align-items: center;
+    align-items: flex-start;
     display: flex;
     gap: 12px;
     justify-self: flex-start;
@@ -977,6 +991,7 @@ const emit = defineEmits(['notification'])
     flex-shrink: 0;
     height: 30px;
     justify-content: center;
+    margin-top: -5px;
     transform: rotate(-90deg);
     transition: transform 0.2s;
     width: 30px;

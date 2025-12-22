@@ -64,7 +64,7 @@ defineEmits(['update:modelValue'])
   font-weight: 700;
   padding: 6px 12px;
   transition: all 1s ease-in-out;
-  width: fit-content;
+  width: 100%;
 
   &--error {
     border-bottom-color: var(--color--failed);
@@ -87,7 +87,7 @@ defineEmits(['update:modelValue'])
     flex-flow: column;
     gap: 8px;
     justify-content: center;
-    width: fit-content;
+    width: 100%;
   }
 
   &__group {

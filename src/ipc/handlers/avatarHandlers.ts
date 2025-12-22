@@ -63,13 +63,16 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     return await exportAvatar(log, avatarDB, dialog, mainWindow, avatarId)
   })
 
-  ipcMain.handle('updateAvatarData', async (_event, avatarId: string, name: string) => {
-    const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+  ipcMain.handle(
+    'updateAvatarData',
+    async (_event, avatarId: string, name: string, updateId: string) => {
+      const mainWindow = getMainWindow()
+      if (!mainWindow) return { success: false }
 
-    const res = await updateAvatarData(log, avatarDB, mainWindow, avatarId, name)
-    const currentAviId = storage.getCurrentAvatarId()
-    getNames(log, avatarDB, mainWindow, currentAviId)
-    return res
-  })
+      const res = await updateAvatarData(log, avatarDB, mainWindow, avatarId, name, updateId)
+      const currentAviId = storage.getCurrentAvatarId()
+      getNames(log, avatarDB, mainWindow, currentAviId)
+      return res
+    }
+  )
 }
