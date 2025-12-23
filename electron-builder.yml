@@ -38,6 +38,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   oneClick: false
   perMachine: true
+  license: README/terms.txt
   installerLanguages:
     - en-US
   deleteAppDataOnUninstall: true
