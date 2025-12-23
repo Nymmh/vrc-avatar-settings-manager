@@ -40,6 +40,16 @@ If you open ASM while already in-game, switch to a different avatar and then swi
 
 Export your configuration and send the file to a friend, who can then import it into their ASM. You can read the detailed explanation on exporting and importing [here](./detailed-export-import.md).
 
+## Why is the Incoming 0 params/sec?
+
+This could be caused by several issues:
+
+- VRChat is not running
+- OSC is not enabled in VRChat
+- The avatar has no parameters
+
+If the issue persists, please ask in the [Discord](https://discord.gg/rcCCkbDsY3) and include a copy of `Meow.log`.
+
 ## Can I include ASM configs with my commercial avatars?
 
 Yes! Avatar creators are welcome to include ASM-exported configurations and presets with their commercial avatar products. When doing so, please provide attribution by crediting Avatar Settings Manager and linking to the download page (https://github.com/Nymmh/vrc-avatar-settings-manager/releases). This allows your customers to easily load and use the configurations you've created. See Section 3.2 of the [EULA](./terms.md#32-commercial-use-of-exported-configurations) for complete details.
