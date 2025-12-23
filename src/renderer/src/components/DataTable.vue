@@ -179,9 +179,13 @@ const validatePreset = (preset: (typeof allPresets.value)[0]): string | null => 
 }
 
 const handleAvatarUpdate = async (idx: number): Promise<void> => {
-  const avatar = allAvatars.value[idx]
+  const avatar = allAvatars.value[idx] as unknown as {
+    avatarId: string
+    avatarIdInput?: string
+    name: string
+  }
   const avatarId = avatar.avatarId
-  const updatedAvatarId = allAvatars.value[idx].avatarIdInput || avatar.avatarId
+  const updatedAvatarId = avatar.avatarIdInput || avatar.avatarId
 
   clearFailed(failedAvatarUpdates.value, avatarId)
 
