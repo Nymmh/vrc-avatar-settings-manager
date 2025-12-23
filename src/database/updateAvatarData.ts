@@ -3,6 +3,7 @@ import Database from 'better-sqlite3'
 import { syncAvatarNames } from './syncAvatarNames'
 import { BrowserWindow } from 'electron'
 import { showDialogNoSound } from '../services/showDialogNoSound'
+import { generateNextPresetNumber } from './helpers/generateNextPresetNumber'
 
 export async function updateAvatarData(
   log: Logger,
@@ -34,14 +35,40 @@ export async function updateAvatarData(
     console.log(avatarId)
 
     if (updateId !== avatarId) {
-      const q2 = db.prepare('UPDATE avatarStorage SET avatarId = ? WHERE avatarId = ?')
-      q2.run(updateId, avatarId)
+      const avatarStorageSearch = db.prepare(
+        'SELECT avatarId FROM avatarStorage WHERE avatarId = ? LIMIT 1'
+      )
+      const avatarStorageExists = avatarStorageSearch.get(updateId)
+      if (!avatarStorageExists) {
+        const asu = db.prepare('UPDATE avatarStorage SET avatarId = ? WHERE avatarId = ?')
+        asu.run(updateId, avatarId)
 
-      const au = db.prepare('UPDATE avatars SET avatarId = ? WHERE avatarId = ?')
-      au.run(updateId, avatarId)
+        const au = db.prepare('UPDATE avatars SET avatarId = ? WHERE avatarId = ?')
+        au.run(updateId, avatarId)
 
-      const pu = db.prepare('UPDATE presets SET avatarId = ? WHERE avatarId = ?')
-      pu.run(updateId, avatarId)
+        const pu = db.prepare('UPDATE presets SET avatarId = ? WHERE avatarId = ?')
+        pu.run(updateId, avatarId)
+      } else {
+        const au = db.prepare('UPDATE avatars SET avatarId = ? WHERE avatarId = ?')
+        au.run(updateId, avatarId)
+
+        const presetsToUpdate = db
+          .prepare('SELECT id, unityParameter FROM presets WHERE avatarId = ?')
+          .all(avatarId) as { id: number; unityParameter: number }[]
+
+        for (const preset of presetsToUpdate) {
+          const presetNumber = generateNextPresetNumber(db, avatarId)
+
+          db.prepare('UPDATE presets SET avatarId = ?, unityParameter = ? WHERE id = ?').run(
+            updateId,
+            presetNumber,
+            preset.id
+          )
+        }
+
+        const das = db.prepare('DELETE FROM avatarStorage WHERE avatarId = ?')
+        das.run(avatarId)
+      }
     }
 
     if (result.changes === 0) {

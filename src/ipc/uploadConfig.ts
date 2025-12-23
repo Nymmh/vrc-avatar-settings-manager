@@ -16,7 +16,7 @@ export async function uploadConfig(
   if (config.type && config.type !== 'config') {
     return {
       upload: false,
-      saveMessage: 'Uploaded data is not a valid avatar config'
+      saveMessage: 'Uploaded data is not a valid config'
     }
   }
 
