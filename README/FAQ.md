@@ -6,6 +6,10 @@ No, ASM is not against VRChat TOS.
 
 ASM does not modify your game in any way and uses features and data provided by VRChat. It is not a mod or cheat.
 
+## Do I need to login to my VRChat account?
+
+No, you do not have to login to your VRChat account. ASM never needs any details from your account.
+
 ## What kind of avatar settings can be saved?
 
 Any avatar parameters can be saved! GoGoLoco parameters are excluded from being saved. VRCFT settings are also excluded by default but can be enabled in ASM settings.
