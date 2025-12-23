@@ -807,10 +807,6 @@ const emit = defineEmits(['notification'])
   overflow: hidden;
   width: 100%;
 
-  :deep(.ps) {
-    height: 100%;
-  }
-
   &__content {
     align-items: center;
     display: flex;
