@@ -18,6 +18,7 @@ import { NotificationInterface } from './types/notificationInterface'
 import { savedNamesType } from './types/savedNamesInterface'
 import { appStorage } from './composables/appStorage'
 import 'overlayscrollbars/overlayscrollbars.css'
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
 
 const appStore = appStorage()
 const { notify } = useNotification()
@@ -254,86 +255,105 @@ onMounted(() => {
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
     <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
     <Settings v-if="appStore.currentView === 'Settings'" @notification="pushNotification" />
-    <div v-show="appStore.currentView === 'Main'" class="main__content">
-      <Card>
-        <div class="main__avatar-data">
-          <div class="main__avatar-data-file">
-            <p :class="['main__avatar-found', appStore.avatarFoundFile ? 'success' : 'failed']">
-              {{ appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data' }}
-            </p>
-            <Button
-              v-if="!appStore.avatarFoundFile"
-              :small="true"
-              :hero="true"
-              label="Refresh"
-              @click="refreshAviFile"
-            />
+    <div v-show="appStore.currentView === 'Main'" class="main__wrapper">
+      <div class="main__scroll">
+        <OverlayScrollbarsComponent
+          element="div"
+          defer
+          :options="{
+            scrollbars: {
+              autoHide: 'move',
+              autoHideDelay: 300
+            }
+          }"
+        >
+          <div class="main__content">
+            <Card>
+              <div class="main__avatar-data">
+                <div class="main__avatar-data-file">
+                  <p
+                    :class="['main__avatar-found', appStore.avatarFoundFile ? 'success' : 'failed']"
+                  >
+                    {{
+                      appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data'
+                    }}
+                  </p>
+                  <Button
+                    v-if="!appStore.avatarFoundFile"
+                    :small="true"
+                    :hero="true"
+                    label="Refresh"
+                    @click="refreshAviFile"
+                  />
+                </div>
+                <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
+                  Avatar ID: <span class="main__avatar-id__id">{{ appStore.avatarId }}</span>
+                </p>
+                <p v-if="avatarConfig?.name" class="main__avatar-name">
+                  Name: <span class="main__avatar-name__name">{{ avatarConfig?.name }}</span>
+                </p>
+              </div>
+            </Card>
+            <Card v-if="appStore.avatarFoundFile">
+              <div class="main__buttons">
+                <div class="main__save-wrapper">
+                  <div class="main__save">
+                    <InputText
+                      id="config-name-input"
+                      label="Save Name: "
+                      :error="saveNameError"
+                      :model-value="saveName"
+                      @update:model-value="handleInputUpdate"
+                    />
+                    <InputCheckbox
+                      id="config-nsfw"
+                      label="NSFW"
+                      :error="NSFWError"
+                      :model-value="NSFWValue"
+                      @update:model-value="handleInputUpdate"
+                    />
+                    <Button label="Save Config" :hero="true" @click="handleSave" />
+                  </div>
+                  <div v-if="saveMessage" class="main__file-saved">
+                    <p :class="['main__file-saved', saveSuccess ? 'success' : 'failed']">
+                      {{ saveMessage }}
+                    </p>
+                  </div>
+                </div>
+                <div v-if="configSelectOptions.length" class="main__saved-wrapper">
+                  <div class="main__saved-current-avi">
+                    <InputSelect
+                      id="select-config"
+                      label="Saved Configs: "
+                      :model-value="configSelectValue"
+                      :options="configSelectOptions"
+                      @update:model-value="handleInputUpdate"
+                    />
+                  </div>
+                  <div v-if="configSelectValue" class="main__apply-buttons">
+                    <Button label="Apply" tooltip="Apply selected config" @click="handleApply" />
+                    <Button
+                      label="Update"
+                      tooltip="Update selected config with current avatar settings"
+                      :warning="true"
+                      @click="handleSavedUpdated"
+                    />
+                    <Button
+                      label="Delete"
+                      tooltip="Delete selected config"
+                      :error="true"
+                      @click="handleDelete"
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+            <Card v-if="appStore.avatarFoundFile">
+              <LoadFile :avatar-config="avatarConfig" @notification="pushNotification" />
+            </Card>
           </div>
-          <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
-            Avatar ID: <span class="main__avatar-id__id">{{ appStore.avatarId }}</span>
-          </p>
-          <p v-if="avatarConfig?.name" class="main__avatar-name">
-            Name: <span class="main__avatar-name__name">{{ avatarConfig?.name }}</span>
-          </p>
-        </div>
-      </Card>
-      <Card v-if="appStore.avatarFoundFile">
-        <div class="main__buttons">
-          <div class="main__save-wrapper">
-            <div class="main__save">
-              <InputText
-                id="config-name-input"
-                label="Save Name: "
-                :error="saveNameError"
-                :model-value="saveName"
-                @update:model-value="handleInputUpdate"
-              />
-              <InputCheckbox
-                id="config-nsfw"
-                label="NSFW"
-                :error="NSFWError"
-                :model-value="NSFWValue"
-                @update:model-value="handleInputUpdate"
-              />
-              <Button label="Save Config" :hero="true" @click="handleSave" />
-            </div>
-            <div v-if="saveMessage" class="main__file-saved">
-              <p :class="['main__file-saved', saveSuccess ? 'success' : 'failed']">
-                {{ saveMessage }}
-              </p>
-            </div>
-          </div>
-          <div v-if="configSelectOptions.length" class="main__saved-wrapper">
-            <div class="main__saved-current-avi">
-              <InputSelect
-                id="select-config"
-                label="Saved Configs: "
-                :model-value="configSelectValue"
-                :options="configSelectOptions"
-                @update:model-value="handleInputUpdate"
-              />
-            </div>
-            <div v-if="configSelectValue" class="main__apply-buttons">
-              <Button label="Apply" tooltip="Apply selected config" @click="handleApply" />
-              <Button
-                label="Update"
-                tooltip="Update selected config with current avatar settings"
-                :warning="true"
-                @click="handleSavedUpdated"
-              />
-              <Button
-                label="Delete"
-                tooltip="Delete selected config"
-                :error="true"
-                @click="handleDelete"
-              />
-            </div>
-          </div>
-        </div>
-      </Card>
-      <Card v-if="appStore.avatarFoundFile">
-        <LoadFile :avatar-config="avatarConfig" @notification="pushNotification" />
-      </Card>
+        </OverlayScrollbarsComponent>
+      </div>
     </div>
   </div>
   <Footer @notification="pushNotification" />
@@ -352,6 +372,21 @@ onMounted(() => {
   overflow: hidden;
   padding-left: 16px;
   padding-right: 16px;
+
+  &__wrapper {
+    height: 100%;
+    width: 100%;
+  }
+
+  &__scroll {
+    display: flex;
+    flex-flow: column;
+    gap: 28px;
+    height: 100%;
+    justify-content: center;
+    overflow: hidden;
+    width: 100%;
+  }
 
   &__content {
     align-items: center;
@@ -406,6 +441,10 @@ onMounted(() => {
     flex-direction: column;
     gap: 18px;
     width: 100%;
+  }
+
+  &__save {
+    white-space: nowrap;
   }
 
   &__save,
