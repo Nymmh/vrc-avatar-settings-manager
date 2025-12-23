@@ -37,7 +37,7 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "@vueuse/core": "^14.1.0",
     "electron": "^38.1.2",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.0.12",
     "electron-vite": "^4.0.1",
     "eslint": "^9.36.0",
     "eslint-plugin-vue": "^10.4.0",
