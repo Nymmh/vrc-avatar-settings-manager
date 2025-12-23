@@ -2,6 +2,7 @@ import path from 'path'
 import fs from 'fs'
 import Database from 'better-sqlite3'
 import { BrowserWindow } from 'electron'
+import { Logger } from 'electron-log'
 import { formatConfig } from './formatConfig'
 import { lookForConfig } from '../file/lookForConfig'
 import { lookForCache } from '../file/lookForCache'
@@ -14,15 +15,20 @@ export function avatarConfig(
   db: Database,
   avatarId: string,
   mainWindow: BrowserWindow,
-  pendingChanges: Map<string, unknown>
+  pendingChanges: Map<string, unknown>,
+  log: Logger
 ): avatarDBInterface | void {
-  if (!avatarId)
+  if (!avatarId) {
+    log.warn('No avatarId provided to avatarConfig')
     return mainWindow.webContents.send('foundAvatarFile', {
       success: false
     })
+  }
 
-  const aviConfig = lookForConfig(avatarId, vrcPath)
-  const aviCache = lookForCache(avatarId, vrcPath)
+  log.info('Fetching avatar config for avatarId: ', avatarId)
+
+  const aviConfig = lookForConfig(avatarId, vrcPath, log)
+  const aviCache = lookForCache(avatarId, vrcPath, log)
 
   if (!aviConfig || !aviCache)
     return mainWindow.webContents.send('foundAvatarFile', {
@@ -34,12 +40,14 @@ export function avatarConfig(
     fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
   )
 
-  const formattedDataConfig = formatConfig(db, aviConfigData, aviCacheData, pendingChanges)
+  const formattedDataConfig = formatConfig(db, aviConfigData, aviCacheData, pendingChanges, log)
 
   mainWindow.webContents.send('foundAvatarFile', {
     success: true
   })
   mainWindow.webContents.send('avatarConfig', formattedDataConfig)
+
+  log.info('Successfully fetched avatar config for avatarId: ', avatarId)
 
   return formattedDataConfig
 }

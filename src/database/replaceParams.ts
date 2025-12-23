@@ -11,7 +11,11 @@ export async function replaceParams(
   id: number
 ): Promise<replaceParamsInterface> {
   try {
-    if (!id || id <= 0) return { success: false, message: 'Invalid ID' }
+    log.info(`Replacing parameters...`)
+    if (!id || id <= 0) {
+      log.error('Invalid ID')
+      return { success: false, message: 'Invalid ID' }
+    }
 
     const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
@@ -21,11 +25,17 @@ export async function replaceParams(
       mainWindow
     )
 
-    if (userResponse.response !== 0) return { success: false, message: 'Replace cancelled' }
+    if (userResponse.response !== 0) {
+      log.info('Replace cancelled by user')
+      return { success: false, message: 'Replace cancelled' }
+    }
 
     const parsedConfig = await loadConfig(log, mainWindow)
 
-    if (!parsedConfig) return { success: false, message: 'No file data' }
+    if (!parsedConfig) {
+      log.error('No file data')
+      return { success: false, message: 'No file data' }
+    }
 
     const q = db.prepare('SELECT avatarId FROM avatars WHERE id = ? LIMIT 1').get(id) as
       | {
@@ -33,7 +43,10 @@ export async function replaceParams(
         }
       | undefined
 
-    if (!q) return { success: false, message: 'No saved config found with that ID' }
+    if (!q) {
+      log.error('No saved config found with that ID')
+      return { success: false, message: 'No saved config found with that ID' }
+    }
 
     if (parsedConfig?.avatarId?.trim() && parsedConfig.avatarId.trim() !== q.avatarId) {
       const userResponse = await showDialogNoSound(
@@ -44,7 +57,10 @@ export async function replaceParams(
         mainWindow
       )
 
-      if (userResponse.response !== 0) return { success: false, message: 'Cancelled' }
+      if (userResponse.response !== 0) {
+        log.error('Avatar ID mismatch, cancelled by user')
+        return { success: false, message: 'Cancelled' }
+      }
     }
 
     if (parsedConfig.nsfw) {
@@ -56,7 +72,10 @@ export async function replaceParams(
         mainWindow
       )
 
-      if (userResponse.response !== 0) return { success: false, message: 'Cancelled' }
+      if (userResponse.response !== 0) {
+        log.error('NSFW config, cancelled by user')
+        return { success: false, message: 'Cancelled' }
+      }
     }
 
     db.prepare('UPDATE avatars SET parameters = ?, fromFile = 1 WHERE id = ?').run(
@@ -64,9 +83,10 @@ export async function replaceParams(
       id
     )
 
+    log.info('Parameters replaced successfully')
     return { success: true, message: 'Parameters replaced' }
   } catch (e) {
-    log.info('Error replacing parameters:', e)
+    log.error('Error replacing parameters:', e)
     return { success: false, message: 'Error replacing parameters' }
   }
 }

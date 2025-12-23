@@ -73,7 +73,7 @@ async function setupOSC(): Promise<void> {
     OSC_CLIENT = await oscClient(log)
 
     if (!mainWindow || !asmStorage || !OSC_CLIENT) {
-      log.info('Required dependencies not initialized')
+      log.error('Required dependencies not initialized')
       throw new Error('Required dependencies not initialized')
     }
 
@@ -83,7 +83,7 @@ async function setupOSC(): Promise<void> {
 
     log.info('OSC setup complete')
   } catch (e) {
-    log.info('Error setting up OSC: ', e)
+    log.error('Error setting up OSC: ', e)
     app.quit()
   }
 }
@@ -137,9 +137,9 @@ app.on('window-all-closed', () => {
 })
 
 process.on('uncaughtException', (e) => {
-  log.info('Uncaught Exception:', e)
+  log.error('Uncaught Exception:', e)
 })
 
 process.on('unhandledRejection', (e) => {
-  log.info('Unhandled Promise Rejection:', e)
+  log.error('Unhandled Promise Rejection:', e)
 })

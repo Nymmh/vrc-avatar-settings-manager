@@ -11,7 +11,7 @@ export function syncAllAvatarNames(log: Logger, db: Database): boolean {
     }>
 
     if (!allAvatars || allAvatars.length === 0) {
-      log.info('No avatars found in avatarStorage')
+      log.error('No avatars found in avatarStorage')
       return false
     }
 
@@ -28,7 +28,7 @@ export function syncAllAvatarNames(log: Logger, db: Database): boolean {
 
     return true
   } catch (e) {
-    log.info('Error syncing avatar names: ', e)
+    log.error('Error syncing avatar names: ', e)
     return false
   }
 }

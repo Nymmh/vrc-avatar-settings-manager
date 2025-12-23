@@ -20,10 +20,10 @@ export function deleteOldLog(log: Logger, folderPath: string): void {
         fs.unlinkSync(filePath)
         log.info(`Deleted old log file: ${file}`)
       } catch (error) {
-        log.info(`Failed to delete old log file ${file}:`, error)
+        log.error(`Failed to delete old log file ${file}:`, error)
       }
     })
   } catch (error) {
-    log.info('Error reading folder for old log files:', error)
+    log.error('Error reading folder for old log files:', error)
   }
 }

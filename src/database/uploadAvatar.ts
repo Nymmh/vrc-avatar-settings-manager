@@ -16,16 +16,23 @@ export async function uploadAvatar(
   mainWindow: BrowserWindow
 ): Promise<uploadAvatarConfigInterface> {
   try {
+    log.info('Starting avatar upload process')
     let loadedType: 'avatar' | 'config' = 'avatar'
     let loadedConfig: avatarDBInterface = {}
     let parsedContent: avatarDBInterface[] = []
     let configParams: string = '[]'
 
-    if (!loadedJson.avatarId) return { success: false, message: 'Invalid avatarId' }
+    if (!loadedJson.avatarId) {
+      log.error('Invalid avatarId')
+      return { success: false, message: 'Invalid avatarId' }
+    }
 
     if (loadedJson.type === 'avatar' || loadedJson?.configs) loadedType = 'avatar'
     else if (loadedJson.type === 'config' || loadedJson?.valuedParams) loadedType = 'config'
-    else return { success: false, message: 'Malformed config' }
+    else {
+      log.error('Malformed config')
+      return { success: false, message: 'Malformed config' }
+    }
 
     if (loadedType === 'avatar') {
       parsedContent =
@@ -46,6 +53,7 @@ export async function uploadAvatar(
     }
 
     if (loadedType === 'avatar') {
+      log.info('Type Avatar')
       for (const config of parsedContent) {
         if (!config?.uqid) {
           config.uqid = generateUniqueUqid(db)
@@ -73,9 +81,9 @@ export async function uploadAvatar(
         if (config.parameters && typeof config.parameters !== 'string')
           config.parameters = JSON.stringify(config.parameters)
 
-        insertConfig(db, config, loadedJson.name || 'Unknown', config.parameters || '[]')
+        insertConfig(db, config, loadedJson.name || 'Unknown', config.parameters || '[]', log)
         if (config.isPreset)
-          insertPreset(db, config, loadedJson.avatarId, loadedJson.name || 'Unknown')
+          insertPreset(db, config, loadedJson.avatarId, loadedJson.name || 'Unknown', log)
       }
     } else {
       if (!loadedConfig.uqid) {
@@ -85,18 +93,28 @@ export async function uploadAvatar(
 
       const conflictResult = await handleConfigConflict(db, loadedConfig, mainWindow)
 
-      if (!conflictResult.continue) return { success: false, message: 'Upload cancelled' }
+      if (!conflictResult.continue) {
+        log.info('User cancelled upload due to conflict')
+        return { success: false, message: 'Upload cancelled' }
+      }
 
       loadedConfig = conflictResult.config
 
-      insertConfig(db, loadedConfig, loadedConfig.avatarName || 'Unknown', configParams)
+      insertConfig(db, loadedConfig, loadedConfig.avatarName || 'Unknown', configParams, log)
       if (loadedConfig.isPreset)
-        insertPreset(db, loadedConfig, loadedJson.avatarId, loadedConfig.avatarName || 'Unknown')
+        insertPreset(
+          db,
+          loadedConfig,
+          loadedJson.avatarId,
+          loadedConfig.avatarName || 'Unknown',
+          log
+        )
     }
 
+    log.info('Avatar upload process completed successfully')
     return { success: true, message: 'Saved' }
   } catch (e) {
-    log.info('Saving Error: ', e)
+    log.error('Saving Error: ', e)
     return { success: false, message: 'Database error' }
   }
 }

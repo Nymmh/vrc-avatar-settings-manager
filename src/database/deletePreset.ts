@@ -21,6 +21,7 @@ export async function deletePreset(
       .get(id) as { forUqid: string } | undefined
 
     if (!existing?.forUqid) {
+      log.error('Preset not found')
       return { success: false, message: 'Preset not found' }
     }
 
@@ -32,7 +33,10 @@ export async function deletePreset(
       mainWindow
     )
 
-    if (userResponse.response !== 0) return { success: false, message: 'Delete cancelled' }
+    if (userResponse.response !== 0) {
+      log.info('User cancelled preset deletion')
+      return { success: false, message: 'Delete cancelled' }
+    }
 
     db.prepare(
       `UPDATE avatars
@@ -42,9 +46,10 @@ export async function deletePreset(
 
     db.prepare('DELETE FROM presets WHERE id = ?').run(id)
 
+    log.info('Preset deleted successfully')
     return { success: true, message: 'Preset deleted successfully.' }
   } catch (e) {
-    log.info('Error deleting preset:', e)
+    log.error('Error deleting preset:', e)
     return { success: false, message: 'Error deleting preset' }
   }
 }

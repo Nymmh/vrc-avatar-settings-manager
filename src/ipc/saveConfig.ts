@@ -21,12 +21,18 @@ export async function saveConfig(
 ): Promise<saveConfigInterface> {
   try {
     saveName = saveName.trim()
-    if (!saveName) return { success: false, message: 'Invalid config name' }
+    if (!saveName) {
+      log.error('Invalid config name')
+      return { success: false, message: 'Invalid config name' }
+    }
 
     const parsedContent: avatarDBInterface =
       typeof content === 'string' ? JSON.parse(content) : content
 
-    if (!parsedContent?.avatarId) return { success: false, message: 'Invalid config' }
+    if (!parsedContent?.avatarId) {
+      log.error('Invalid config data')
+      return { success: false, message: 'Invalid config' }
+    }
 
     const parametersJson =
       typeof parsedContent.valuedParams === 'string'
@@ -36,6 +42,7 @@ export async function saveConfig(
     let uploadedPresets = false
 
     if (!fromFile && parsedContent.avatarId.trim()) {
+      log.info('Saving config from non-file source')
       const existing = checkIfExistByNameAndAvatarId(db, saveName, parsedContent.avatarId)
 
       if (existing) {
@@ -47,7 +54,10 @@ export async function saveConfig(
           mainWindow
         )
 
-        if (userResponse.response !== 0) return { success: false, message: 'Save cancelled' }
+        if (userResponse.response !== 0) {
+          log.info('Save cancelled by user')
+          return { success: false, message: 'Save cancelled' }
+        }
 
         db.prepare(
           `
@@ -57,10 +67,12 @@ export async function saveConfig(
       `
         ).run(nsfw ? 1 : 0, parametersJson, saveName, parsedContent.avatarId)
 
+        log.info('Config overwritten successfully')
         return { success: true, message: 'Saved' }
       }
     } else if (fromFile && parsedContent.uqid?.trim()) {
       if (checkIfExist(db, parsedContent.uqid)) {
+        log.info('Config with uqid exists, prompting for overwrite')
         const userResponse = await showDialogNoSound(
           ['Yes', 'No', 'Cancel Upload'],
           0,
@@ -69,21 +81,29 @@ export async function saveConfig(
           mainWindow
         )
 
-        if (userResponse.response === 2) return { success: false, message: 'Save cancelled' }
+        if (userResponse.response === 2) {
+          log.info('Save cancelled by user')
+          return { success: false, message: 'Save cancelled' }
+        }
+
         if (userResponse.response === 0) {
+          log.info('User chose to overwrite existing config')
           let presetSave = parsedContent.isPreset
 
           if (parsedContent.isPreset && parsedContent?.presets?.avatarId) {
+            log.info('Uploading associated presets')
             presetSave = await uploadAvatarPresets(
               db,
               parsedContent,
               mainWindow,
               parsedContent.uqid,
-              true
+              true,
+              log
             )
             uploadedPresets = true
           }
 
+          log.info('Updating existing config in database')
           db.prepare(
             `
         UPDATE avatars
@@ -98,6 +118,7 @@ export async function saveConfig(
             parsedContent.uqid
           )
 
+          log.info('Config overwritten successfully')
           return { success: true, message: 'Saved' }
         }
 
@@ -108,6 +129,7 @@ export async function saveConfig(
       return { success: false, message: 'Internal error' }
     }
 
+    log.info('Inserting new config into database')
     const existingConfig = db
       .prepare(
         `
@@ -130,7 +152,8 @@ export async function saveConfig(
         parsedContent,
         mainWindow,
         parsedContent.uqid || uqid,
-        false
+        false,
+        log
       )
     }
 
@@ -169,6 +192,7 @@ export async function saveConfig(
      ON CONFLICT(avatarId) DO NOTHING`
     ).run(parsedContent.avatarId, avatarName)
 
+    log.info('Config saved successfully')
     return { success: true, message: 'Saved' }
   } catch (e) {
     log.info('Saving Error: ', e)

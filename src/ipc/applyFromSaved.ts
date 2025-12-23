@@ -21,7 +21,7 @@ export async function applyFromSaved(
       .get(id) as applyFromSavedInterface | undefined
 
     if (!q) {
-      log.info(`Config not found: ${id}`)
+      log.error(`Config not found: ${id}`)
       return false
     }
 
@@ -30,7 +30,7 @@ export async function applyFromSaved(
     try {
       parameters = JSON.parse(q.parameters)
     } catch {
-      log.info('Error parsing JSON:')
+      log.error('Error parsing JSON:')
       return false
     }
 
@@ -46,6 +46,7 @@ export async function applyFromSaved(
       )
 
       if (userResponse.response !== 0) {
+        log.info('User cancelled avatar mismatch')
         return false
       }
     }
@@ -60,13 +61,14 @@ export async function applyFromSaved(
       )
 
       if (userResponse.response !== 0) {
+        log.info('User cancelled NSFW')
         return false
       }
     }
 
     return await applyConfig(log, parameters, OSC_CLIENT)
   } catch (e) {
-    log.info('Error applying config from saved:', e)
+    log.error('Error applying config from saved:', e)
     return false
   }
 }

@@ -2,15 +2,18 @@ import Database from 'better-sqlite3'
 import { BrowserWindow } from 'electron'
 import { generateNextPresetNumber } from './helpers/generateNextPresetNumber'
 import { showDialogNoSound } from '../services/showDialogNoSound'
+import { Logger } from 'electron-log'
 
 export async function uploadAvatarPresets(
   db: Database,
   avatarConfig: avatarDBInterface,
   mainWindow: BrowserWindow,
   uqid: string,
-  update: boolean
+  update: boolean,
+  log: Logger
 ): Promise<number> {
   try {
+    log.info('Uploading avatar presets')
     const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
       0,
@@ -19,11 +22,10 @@ export async function uploadAvatarPresets(
       mainWindow
     )
 
-    if (userResponse.response !== 0) {
-      return 0
-    }
+    if (userResponse.response !== 0) return 0
 
     if (update) {
+      log.info('Updating existing presets')
       db.prepare(
         `
           INSERT INTO presets (forUqid, avatarId, name, unityParameter)
@@ -40,6 +42,7 @@ export async function uploadAvatarPresets(
         avatarConfig.presets?.unityParameter
       )
     } else {
+      log.info('Uploading new presets')
       const existingCheck = db
         .prepare(`SELECT id FROM presets WHERE avatarId = ? AND unityParameter = ? LIMIT 1`)
         .get(avatarConfig.presets?.avatarId, avatarConfig.presets?.unityParameter)

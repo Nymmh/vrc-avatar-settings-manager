@@ -15,6 +15,8 @@ export async function applyPreset(
   nsfwCheck: boolean = false
 ): Promise<boolean> {
   try {
+    log.info(`Applying preset ID ${presetId} for avatar ID ${avatarId}`)
+
     const preset = db
       .prepare(
         `
@@ -26,7 +28,7 @@ export async function applyPreset(
       .get(avatarId, presetId) as { forUqid: string } | undefined
 
     if (!preset) {
-      log.info('No preset found')
+      log.warn('No preset found')
       return false
     }
 
@@ -41,11 +43,12 @@ export async function applyPreset(
       .get(preset.forUqid) as { parameters: string; nsfw: boolean } | undefined
 
     if (!avatarData) {
-      log.info('No avatar config found')
+      log.warn('No avatar config found')
       return false
     }
 
     if (nsfwCheck && avatarData.nsfw) {
+      log.info('NSFW avatar detected, waiting user input')
       const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
         0,
@@ -54,14 +57,17 @@ export async function applyPreset(
         mainWindow
       )
 
-      if (userResponse.response !== 0) return false
+      if (userResponse.response !== 0) {
+        log.info('User cancelled preset application due to NSFW avatar')
+        return false
+      }
     }
 
     const parameters = JSON.parse(avatarData.parameters)
 
     return await applyConfig(log, parameters, OSC_CLIENT)
   } catch (e) {
-    log.info('Error applying preset:', e)
+    log.error('Error applying preset:', e)
     return false
   }
 }

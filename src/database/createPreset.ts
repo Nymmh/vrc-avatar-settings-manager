@@ -15,7 +15,8 @@ export async function createPreset(
   name?: string | undefined
 ): Promise<void> {
   try {
-    const existing = checkIfPresetExists(db, avatarId, presetId)
+    log.info('Trying to create preset...')
+    const existing = checkIfPresetExists(db, avatarId, presetId, log)
     let uqid: string
 
     if (existing) {
@@ -24,7 +25,7 @@ export async function createPreset(
       uqid = generateUqid(avatarId)
     }
 
-    const aviData = await avatarConfig(db, avatarId, mainWindow, pendingChanges)
+    const aviData = await avatarConfig(db, avatarId, mainWindow, pendingChanges, log)
 
     db.prepare(
       `
@@ -73,6 +74,6 @@ export async function createPreset(
 
     log.info('Preset created/updated successfully')
   } catch (e) {
-    log.info('Error creating/updating preset:', e)
+    log.error('Error creating/updating preset:', e)
   }
 }

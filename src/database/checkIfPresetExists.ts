@@ -1,11 +1,14 @@
 import Database from 'better-sqlite3'
+import { Logger } from 'electron-log'
 
 export function checkIfPresetExists(
   db: Database,
   avatarId: string,
-  unityParameter: number
+  unityParameter: number,
+  log: Logger
 ): string | undefined {
   try {
+    log.info(`Checking if preset exists...`)
     const existing = db
       .prepare(
         `
@@ -19,6 +22,7 @@ export function checkIfPresetExists(
     if (existing?.forUqid) return existing.forUqid
     else return undefined
   } catch {
+    log.error(`Error checking if preset exists`)
     return undefined
   }
 }

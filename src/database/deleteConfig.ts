@@ -10,13 +10,20 @@ export async function deleteConfig(
   id: number
 ): Promise<deleteConfigInterface> {
   try {
-    if (!id || id <= 0) return { success: false, message: 'Invalid ID' }
+    log.info(`Deleting config`)
+    if (!id || id <= 0) {
+      log.error('Invalid ID')
+      return { success: false, message: 'Invalid ID' }
+    }
 
     const q = db.prepare('SELECT name, uqid FROM avatars WHERE id = ? LIMIT 1').get(id) as
       | { name: string; uqid: string }
       | undefined
 
-    if (!q) return { success: false, message: 'No saved config found with that ID' }
+    if (!q) {
+      log.error('No saved config found with that ID')
+      return { success: false, message: 'No saved config found with that ID' }
+    }
 
     const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
@@ -26,17 +33,24 @@ export async function deleteConfig(
       mainWindow
     )
 
-    if (userResponse.response !== 0) return { success: false, message: 'Delete cancelled' }
+    if (userResponse.response !== 0) {
+      log.info('Delete cancelled by user')
+      return { success: false, message: 'Delete cancelled' }
+    }
 
     const deleteResult = db.prepare('DELETE FROM avatars WHERE id = ?').run(id)
 
-    if (deleteResult.changes === 0) return { success: false, message: 'Failed to delete config' }
+    if (deleteResult.changes === 0) {
+      log.error('Failed to delete config')
+      return { success: false, message: 'Failed to delete config' }
+    }
 
     db.prepare('DELETE FROM presets WHERE forUqid = ?').run(q.uqid)
 
+    log.info('Configuration deleted successfully')
     return { success: true, message: 'Configuration deleted successfully' }
   } catch (e) {
-    log.info('Error deleting config:', e)
+    log.error('Error deleting config:', e)
     return { success: false, message: 'Error deleting config' }
   }
 }

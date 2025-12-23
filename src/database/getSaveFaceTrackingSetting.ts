@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
+import { Logger } from 'electron-log'
 
-export function getSaveFaceTrackingSetting(db: Database): boolean {
+export function getSaveFaceTrackingSetting(db: Database, log: Logger): boolean {
   try {
     const faceTrackingSetting = db
       .prepare('SELECT value FROM settings WHERE key = ?')
@@ -11,7 +12,8 @@ export function getSaveFaceTrackingSetting(db: Database): boolean {
     } else {
       return false
     }
-  } catch {
+  } catch (e) {
+    log.error('Error getting save face tracking setting', e)
     return false
   }
 }

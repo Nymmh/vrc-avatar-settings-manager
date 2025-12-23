@@ -28,10 +28,12 @@ interface appHandlersContext {
 export function appHandlers(context: appHandlersContext): void {
   const { avatarDB, getMainWindow, dataFolder } = context
   ipcMain.handle('appVersion', () => {
+    context.log.info('Fetching app version...')
     return app.getVersion()
   })
 
   ipcMain.handle('getLogFileSize', async () => {
+    context.log.info('Fetching log file size...')
     const logFilePath = path.join(dataFolder.folderPath, 'meow.log')
 
     try {
@@ -39,17 +41,24 @@ export function appHandlers(context: appHandlersContext): void {
       const fileSizeInBytes = stats.size
       const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2)
       return `${fileSizeInMB} MB`
-    } catch {
+    } catch (e) {
+      context.log.error('Error fetching log file size', e)
       return '0 MB'
     }
   })
 
   ipcMain.handle('openLogFile', () => {
-    const logFilePath = path.join(dataFolder.folderPath)
-    shell.openPath(logFilePath)
+    try {
+      context.log.info('Opening log file location...')
+      const logFilePath = path.join(dataFolder.folderPath)
+      shell.openPath(logFilePath)
+    } catch (e) {
+      context.log.error('Error opening log file location', e)
+    }
   })
 
   ipcMain.handle('deleteLogFile', async () => {
+    context.log.info('Delete log file...')
     const logFilePath = path.join(dataFolder.folderPath, 'meow.log')
 
     try {
@@ -61,21 +70,26 @@ export function appHandlers(context: appHandlersContext): void {
         getMainWindow()!
       )
 
-      if (userResponse.response !== 0) return false
+      if (userResponse.response !== 0) {
+        context.log.info('User cancelled log file deletion')
+        return false
+      }
 
       await fs.promises.unlink(logFilePath)
       await fs.promises.writeFile(logFilePath, '', 'utf-8')
+      context.log.info('Log file deleted successfully')
       return true
-    } catch {
+    } catch (e) {
+      context.log.error('Error deleting log file', e)
       return false
     }
   })
 
   ipcMain.handle('getSaveFaceTrackingSetting', async () => {
-    return getSaveFaceTrackingSetting(avatarDB)
+    return getSaveFaceTrackingSetting(avatarDB, context.log)
   })
 
   ipcMain.handle('setSaveFaceTrackingSetting', async (_, value: boolean) => {
-    return setSaveFaceTrackingSetting(avatarDB, value)
+    return setSaveFaceTrackingSetting(avatarDB, value, context.log)
   })
 }

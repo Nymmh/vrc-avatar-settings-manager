@@ -63,6 +63,7 @@ export function avatarDatabase(log: Logger): DBType {
   }
 
   if (version === 1) {
+    log.info('Upgrading Meow Storage to version 2...')
     db.transaction(() => {
       db.prepare(
         `CREATE INDEX IF NOT EXISTS idx_avatarsStorage_avatarId ON avatarStorage (avatarId)`
@@ -76,6 +77,8 @@ export function avatarDatabase(log: Logger): DBType {
   }
 
   if (version === 2) {
+    log.info('Upgrading Meow Storage to version 3...')
+
     db.transaction(() => {
       db.prepare(
         `CREATE TABLE IF NOT EXISTS settings (

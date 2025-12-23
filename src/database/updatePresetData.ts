@@ -11,6 +11,7 @@ export async function updatePresetData(
   saveName: string,
   parameter: number
 ): Promise<updatePresetInterface> {
+  log.info('Update preset data...')
   const userResponse = await showDialogNoSound(
     ['Yes', 'No'],
     0,
@@ -19,7 +20,10 @@ export async function updatePresetData(
     mainWindow
   )
 
-  if (userResponse.response !== 0) return { success: false, message: 'Update cancelled' }
+  if (userResponse.response !== 0) {
+    log.info('User cancelled preset update')
+    return { success: false, message: 'Update cancelled' }
+  }
 
   const existing = db
     .prepare(
@@ -32,6 +36,7 @@ export async function updatePresetData(
     .get(id) as { forUqid: string; name: string; avatarId: string } | undefined
 
   if (!existing?.forUqid) {
+    log.error('Preset not found')
     return { success: false, message: 'Preset not found' }
   }
 
@@ -46,6 +51,7 @@ export async function updatePresetData(
     .get(parameter, existing.avatarId)
 
   if (presetNumberExists && presetNumberExists.id !== id) {
+    log.info('Preset with this parameter already exists')
     return {
       success: false,
       message: `Preset with parameter ${parameter} already exists`
@@ -84,9 +90,10 @@ export async function updatePresetData(
       `
     ).run(saveName, parameter, id)
 
+    log.info('Preset updated successfully')
     return { success: true, message: 'Preset updated' }
   } catch (e) {
-    log.info('Error updating preset data:', e)
+    log.error('Error updating preset data:', e)
     return { success: false, message: 'Error updating preset' }
   }
 }

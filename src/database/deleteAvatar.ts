@@ -19,6 +19,7 @@ export async function deleteAvatar(
     )
 
     if (userResponse.response !== 0) {
+      log.info('User cancelled avatar deletion')
       return {
         success: false,
         message: 'User cancelled.'
@@ -42,7 +43,7 @@ export async function deleteAvatar(
       }
     }
   } catch {
-    log.info(`Error deleting avatar`)
+    log.error(`Error deleting avatar`)
     return {
       success: false,
       message: 'Failed to delete avatar.'
