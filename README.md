@@ -1,6 +1,6 @@
 # Avatar Settings Manager
 
-Avatar Settings Manager(ASM) is a free comprehensive lightweight VRChat utility designed to preserve, manage, and share avatar parameter configurations. Never lose your avatar settings again, whether from accidental resets, avatar updates, or switching between variations.
+Avatar Settings Manager(ASM) is a free comprehensive lightweight VRChat utility designed to preserve, manage, and share avatar parameter configurations. Never lose your avatar settings again, whether from accidental resets, avatar updates, or switching between variations. All without logging into your VRChat account.
 
 With ASM, you can save complete parameter snapshots, create reusable presets for quick configuration changes, and seamlessly transfer settings between avatar variations. Share your configurations with friends through exported files, allowing them to instantly replicate your setup.
 
