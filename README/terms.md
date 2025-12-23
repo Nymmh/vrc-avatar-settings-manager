@@ -1,6 +1,6 @@
 # End-User License Agreement (EULA) for Avatar Settings Manager
 
-**Last Updated:** December 11, 2025
+**Last Updated:** December 23, 2025
 
 ## 1. Acceptance of Terms
 

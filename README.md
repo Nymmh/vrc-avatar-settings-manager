@@ -58,4 +58,4 @@ Avatar creators are welcome to include ASM-exported configurations and presets w
 - Crediting Avatar Settings Manager in your documentation or credits
 - Linking to the ASM download page: https://github.com/Nymmh/vrc-avatar-settings-manager/releases
 
-This allows your customers to easily load and use the configurations you've created. For more details, see Section 3.2 of the [EULA](./README/terms.md).
+This allows your customers to easily load and use the configurations you've created. For more details, see Section 3.2 of the [EULA](./README/terms.md#32-commercial-use-of-exported-configurations).
