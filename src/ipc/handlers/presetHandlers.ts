@@ -22,17 +22,23 @@ export function presetHandlers(context: PresetHandlerContext): void {
   const { log, avatarDB, storage, getMainWindow, getOSCClient } = context
 
   ipcMain.handle('getAllPresets', async () => {
+    log.info('Get all presets...')
     return await getAllPresets(log, avatarDB)
   })
 
   ipcMain.handle('getPresetsByUqid', async (_event, uqid: string) => {
+    log.info('Get all presets by uqid...')
     return await getAllPresets(log, avatarDB, uqid)
   })
 
   ipcMain.handle('applyPresetFromApp', async (_event, avatarId: string, unityParameter: number) => {
+    log.info('Apply preset from app...')
     const mainWindow = getMainWindow()
     const oscClient = getOSCClient()
-    if (!mainWindow || !oscClient) return { success: false }
+    if (!mainWindow || !oscClient) {
+      log.error('Required dependencies not found')
+      return { success: false }
+    }
 
     return await applyPreset(log, mainWindow, avatarDB, avatarId, unityParameter, oscClient, true)
   })
@@ -40,26 +46,39 @@ export function presetHandlers(context: PresetHandlerContext): void {
   ipcMain.handle(
     'updatePresetFromApp',
     async (_event, id: number, saveName: string, parameter: number) => {
+      log.info('Update preset from app...')
       const mainWindow = getMainWindow()
-      if (!mainWindow) return { success: false }
+      if (!mainWindow) {
+        log.error('Dependency not found')
+        return { success: false }
+      }
 
       return await updatePresetData(log, avatarDB, mainWindow, id, saveName, parameter)
     }
   )
 
   ipcMain.handle('deletePresetFromApp', async (_event, id: number) => {
+    log.info('Delete preset from app...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
+    }
 
     const del = await deletePreset(log, mainWindow, avatarDB, id)
     const currentAviId = storage.getCurrentAvatarId()
     getNames(log, avatarDB, mainWindow, currentAviId)
+    log.info('Deleted preset from app, process finished')
     return del
   })
 
   ipcMain.handle('createPresetFromApp', async (_event, id: number) => {
+    log.info('Create preset from app...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
+    }
 
     return await createPresetFromApp(log, avatarDB, id)
   })

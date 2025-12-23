@@ -13,7 +13,9 @@ export async function exportAvatar(
   avatarId: string
 ): Promise<exportAvatarInterface> {
   try {
+    log.info('Starting avatar export process')
     if (!avatarId || typeof avatarId !== 'string' || avatarId.trim() === '') {
+      log.error('Invalid Avatar ID provided')
       return { success: false, message: 'Invalid Avatar ID provided' }
     }
 
@@ -21,7 +23,10 @@ export async function exportAvatar(
       .prepare('SELECT avatarId,name FROM avatarStorage WHERE avatarId = ? LIMIT 1')
       .get(avatarId) as avatarStorageDBInterface | undefined
 
-    if (!q) return { success: false, message: 'No avatar found' }
+    if (!q) {
+      log.error('No avatar found with the provided ID')
+      return { success: false, message: 'No avatar found' }
+    }
 
     const { avatarData } = checkDataFolder()
 
@@ -45,7 +50,10 @@ export async function exportAvatar(
       )
       .all(avatarId) as avatarDBInterface[] | undefined
 
-    if (!a) return { success: false, message: 'No avatar configuration found' }
+    if (!a) {
+      log.error('No avatar configuration found for the provided ID')
+      return { success: false, message: 'No avatar configuration found' }
+    }
 
     for (const av of a) {
       const p = db
@@ -69,9 +77,10 @@ export async function exportAvatar(
 
     await fs.promises.writeFile(filePath, JSON.stringify(exportData), 'utf-8')
 
+    log.info('Avatar exported successfully')
     return { success: true, message: 'Config exported' }
   } catch (e) {
-    log.info('Error exporting avatar:', e)
+    log.error('Error exporting avatar:', e)
     return { success: false, message: 'Error exporting avatar' }
   }
 }

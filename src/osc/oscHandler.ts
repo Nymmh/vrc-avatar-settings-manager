@@ -80,7 +80,7 @@ export class OSCHandler {
     this.storage.setCurrentAvatarId(avatarId)
     this.mainWindow.webContents.send('avatarId', { id: avatarId })
 
-    await avatarConfig(this.avatarDB, avatarId, this.mainWindow, new Map())
+    await avatarConfig(this.avatarDB, avatarId, this.mainWindow, new Map(), this.log)
     getNames(this.log, this.avatarDB, this.mainWindow, avatarId)
   }
 
@@ -123,7 +123,8 @@ export class OSCHandler {
         this.avatarDB,
         this.storage.getCurrentAvatarId(),
         this.mainWindow,
-        new Map()
+        new Map(),
+        this.log
       )
       this.storage.setPendingState(false)
       getNames(this.log, this.avatarDB, this.mainWindow, this.storage.getCurrentAvatarId())

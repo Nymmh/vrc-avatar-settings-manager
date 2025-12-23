@@ -22,7 +22,7 @@ export async function loadConfig(
   })
 
   if (canceled || filePaths.length === 0) {
-    log.info('Load configuration canceled or no file selected')
+    log.warn('Load configuration canceled or no file selected')
     return null
   }
 
@@ -30,7 +30,7 @@ export async function loadConfig(
     const data = await fs.readFileSync(filePaths[0], 'utf-8')
     return JSON.parse(data) as avatarDBInterface
   } catch (e) {
-    log.info('Failed to load configuration file', e)
+    log.error('Failed to load configuration file', e)
     return null
   }
 }

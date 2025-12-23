@@ -7,6 +7,8 @@ export function getAllSaved(
   uqid?: string | undefined
 ): avatarDBInterface[] | null {
   try {
+    log.info('Getting all saved configs')
+
     if (uqid) {
       const q = db.prepare(
         'SELECT id,uqid,avatarId,name,avatarName,nsfw,fromFile,isPreset FROM avatars WHERE uqid = ? LIMIT 1'
@@ -19,7 +21,7 @@ export function getAllSaved(
       return q.all() as avatarDBInterface[]
     }
   } catch (e) {
-    log.info('Error getting all saved configs:', e)
+    log.error('Error getting all saved configs:', e)
     return null
   }
 }

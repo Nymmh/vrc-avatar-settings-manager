@@ -12,11 +12,13 @@ export async function exportAllConfigs(
   dialog: Dialog
 ): Promise<exportAllConfigsPromiseInterface> {
   try {
+    log.info('Starting export of all avatar configs...')
     const a = db
       .prepare(`SELECT avatarId, name FROM avatarStorage`)
       .all() as exportAllConfigsInterface[]
 
     if (a.length === 0) {
+      log.error('No avatars found to export')
       return { success: false, message: 'No avatars found to export.' }
     }
 
@@ -66,9 +68,10 @@ export async function exportAllConfigs(
 
     await fs.promises.writeFile(filePath, JSON.stringify(a), 'utf-8')
 
+    log.info('All avatar configs exported successfully')
     return { success: true, message: 'Config exported' }
   } catch (e) {
-    log.info('Error exporting all configs:', e)
+    log.error('Error exporting all configs:', e)
     return { success: false, message: 'An error occurred during export.' }
   }
 }

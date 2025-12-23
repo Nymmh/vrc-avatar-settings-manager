@@ -10,6 +10,7 @@ export async function createPresetFromApp(
     const avatarData = db.prepare('SELECT uqid,avatarId,name FROM avatars WHERE id = ?').get(id)
 
     if (!avatarData?.uqid) {
+      log.error('Avatar config not found')
       return { success: false, message: 'Avatar config not found' }
     }
 
@@ -18,6 +19,7 @@ export async function createPresetFromApp(
       .get(avatarData.uqid)
 
     if (presetExisting) {
+      log.error('Preset already exists')
       return { success: false, message: 'Preset already exists' }
     }
 
@@ -56,7 +58,7 @@ export async function createPresetFromApp(
     log.info('Preset created from app successfully')
     return { success: true, message: 'Preset created successfully' }
   } catch (e) {
-    log.info('Error creating preset from app:', e)
+    log.error('Error creating preset from app:', e)
     return { success: false, message: 'Error creating preset' }
   }
 }

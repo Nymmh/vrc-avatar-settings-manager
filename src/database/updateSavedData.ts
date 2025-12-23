@@ -14,12 +14,17 @@ export async function updateSavedConfigData(
   nsfw: boolean | undefined
 ): Promise<updateConfigInterface> {
   try {
+    log.info(`Updating saved config data`)
     saveName = saveName.trim()
-    if (!saveName) return { success: false, message: 'Save name is required' }
+    if (!saveName) {
+      log.error('Save name is required')
+      return { success: false, message: 'Save name is required' }
+    }
 
     const existing = checkIfExistById(db, id)
 
     if (!existing) {
+      log.error(`No config found`)
       return { success: false, message: `No config found` }
     }
 
@@ -32,6 +37,7 @@ export async function updateSavedConfigData(
     )
 
     if (userResponse.response !== 0) {
+      log.info('Update cancelled by user')
       return {
         success: false,
         message: 'Update cancelled'
@@ -40,6 +46,7 @@ export async function updateSavedConfigData(
 
     avatarId = avatarId.trim() || 'Unknown'
 
+    log.info(`Checking for name conflicts`)
     const currentConfig = db
       .prepare(
         `
@@ -95,12 +102,14 @@ export async function updateSavedConfigData(
       `
     ).run(avatarId, currentConfig?.uqid)
 
+    log.info(`Config ${saveName} updated`)
+
     return {
       success: true,
       message: `Config ${saveName} updated`
     }
   } catch (error) {
-    log.info('Error updating config:', error)
+    log.error('Error updating config:', error)
     return { success: false, message: 'Error updating config' }
   }
 }

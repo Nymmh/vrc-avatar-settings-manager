@@ -30,16 +30,21 @@ export function configHandlers(context: ConfigHandlerContext): void {
   const { log, avatarDB, storage, getMainWindow, getOSCClient } = context
 
   ipcMain.handle('saveConfig', async (_event, { content, saveName, nsfw }) => {
+    log.info('Save config...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
+    }
 
     const currentAviId = storage.getCurrentAvatarId()
     const pendingChanges = storage.getPendingChanges()
 
-    content = await avatarConfig(avatarDB, currentAviId, mainWindow, pendingChanges)
+    content = await avatarConfig(avatarDB, currentAviId, mainWindow, pendingChanges, log)
 
     if (!content) {
-      return { success: false, message: 'Failed to get avatar configuration' }
+      log.info('Failed to get avatar config')
+      return { success: false, message: 'Failed to get avatar config' }
     }
 
     const savedConfig = await saveConfig(log, avatarDB, content, saveName, nsfw, false, mainWindow)
@@ -48,21 +53,27 @@ export function configHandlers(context: ConfigHandlerContext): void {
   })
 
   ipcMain.handle('loadConfig', async () => {
+    log.info('Loading config...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return
+    }
 
     const dataParsedConfig = await loadConfig(log, mainWindow)
 
     if (!dataParsedConfig) {
-      log.info('No file data')
+      log.warn('No file data')
       return { name: '', match: false, error: 'No file data' }
     }
 
     if (!dataParsedConfig.avatarId) {
+      log.warn('Loaded config is missing ID')
       return { name: '', match: false, error: 'Loaded config is missing ID' }
     }
 
     if (!dataParsedConfig.name) {
+      log.warn('Loaded config is missing name')
       return { name: '', match: false, error: 'Loaded config is missing name' }
     }
 
@@ -71,27 +82,42 @@ export function configHandlers(context: ConfigHandlerContext): void {
     storage.setLoadedJson(dataParsedConfig)
     const currentAviId = storage.getCurrentAvatarId()
 
+    log.info('Config loaded successfully')
     return { name: avatarName, match: dataParsedConfig.avatarId === currentAviId, error: '' }
   })
 
   ipcMain.handle('applyConfig', async (_event, id: number) => {
+    log.info(`Applying config...`)
+
     const mainWindow = getMainWindow()
     const oscClient = getOSCClient()
-    if (!mainWindow || !oscClient) return { success: false }
+    if (!mainWindow || !oscClient) {
+      log.error('Required dependencies not found')
+      return { success: false }
+    }
 
     const currentAviId = storage.getCurrentAvatarId()
-    if (!currentAviId) return { success: false }
+    if (!currentAviId) {
+      log.error('No avatar currently loaded')
+      return { success: false }
+    }
 
     const res = await applyFromSaved(log, avatarDB, id, currentAviId, oscClient, mainWindow)
+    log.info(`Config applied`)
     return { success: !!res }
   })
 
   ipcMain.handle(
     'uploadConfigAndApply',
     async (_event, saveName: string | '', saveOption: boolean, avatarName: string | 'Unknown') => {
+      log.info('Uploading config and applying...')
+
       const mainWindow = getMainWindow()
       const oscClient = getOSCClient()
-      if (!mainWindow || !oscClient) return { success: false }
+      if (!mainWindow || !oscClient) {
+        log.error('Required dependencies not found')
+        return { success: false }
+      }
 
       const loadedJson = storage.getLoadedJson()
       const currentAviId = storage.getCurrentAvatarId()
@@ -113,6 +139,8 @@ export function configHandlers(context: ConfigHandlerContext): void {
         mainWindow
       )
       getNames(log, avatarDB, mainWindow, currentAviId)
+
+      log.info('Upload and apply process completed')
       return uploadingResult
     }
   )
@@ -120,8 +148,12 @@ export function configHandlers(context: ConfigHandlerContext): void {
   ipcMain.handle(
     'uploadConfig',
     async (_event, saveName: string | '', nsfw: boolean, avatarId: string | '') => {
+      log.info('Uploading configuration...')
       const mainWindow = getMainWindow()
-      if (!mainWindow) return { success: false }
+      if (!mainWindow) {
+        log.error('Dependency not found')
+        return { success: false }
+      }
 
       const loadedJson = storage.getLoadedJson()
       if (!loadedJson) {
@@ -141,19 +173,27 @@ export function configHandlers(context: ConfigHandlerContext): void {
         mainWindow
       )
       getNames(log, avatarDB, mainWindow, currentAviId)
+
+      log.info('Upload process completed')
       return res
     }
   )
 
   ipcMain.handle('refreshAvatarFile', async () => {
+    log.info('Refreshing avatar config...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
+    }
 
     const currentAviId = storage.getCurrentAvatarId()
     storage.setLoadedJson(null)
 
-    avatarConfig(avatarDB, currentAviId, mainWindow, new Map())
+    avatarConfig(avatarDB, currentAviId, mainWindow, new Map(), log)
     getNames(log, avatarDB, mainWindow, currentAviId)
+    log.info('Avatar config refreshed')
     return { success: true }
   })
 
@@ -166,8 +206,12 @@ export function configHandlers(context: ConfigHandlerContext): void {
   })
 
   ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName) => {
+    log.info('Update config...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
+    }
 
     const userResponse = await showDialogNoSound(
       ['Yes', 'No'],
@@ -178,6 +222,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     )
 
     if (userResponse.response !== 0) {
+      log.info('Update cancelled by user')
       return {
         success: false,
         message: 'Update cancelled by user'
@@ -199,44 +244,66 @@ export function configHandlers(context: ConfigHandlerContext): void {
     )
 
     getNames(log, avatarDB, mainWindow, currentAviId)
+
+    log.info('Config update process completed')
     return res
   })
 
   ipcMain.handle('updateConfigData', async (_event, id, avatarId, saveName, nsfw) => {
+    log.info('Updating config data...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
+    }
 
     const res = await updateSavedConfigData(log, avatarDB, mainWindow, id, avatarId, saveName, nsfw)
     const currentAviId = storage.getCurrentAvatarId()
 
     getNames(log, avatarDB, mainWindow, currentAviId)
+
+    log.info('Update config data process completed')
     return res
   })
 
   ipcMain.handle('replaceParams', async (_event, id: number) => {
+    log.info('Replacing parameters...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false, message: 'Internal Error' }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false, message: 'Internal Error' }
+    }
 
     return await replaceParams(log, avatarDB, mainWindow, id)
   })
 
   ipcMain.handle('deleteConfig', async (_event, id: number) => {
+    log.info('Delete config...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false, message: 'Internal Error' }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false, message: 'Internal Error' }
+    }
 
     const del = await deleteConfig(log, avatarDB, mainWindow, id)
     const currentAviId = storage.getCurrentAvatarId()
     getNames(log, avatarDB, mainWindow, currentAviId)
+    log.info('Delete config process completed')
     return del
   })
 
   ipcMain.handle('getConfigById', async (_event, avatarId: string) => {
+    log.info('Get config by Id....')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return null
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return null
+    }
 
     const q = avatarDB.prepare('SELECT * FROM avatars WHERE avatarId = ?')
     const config = q.all(avatarId)
 
+    log.info('Fetch config process completed')
     return config || null
   })
 }

@@ -21,24 +21,37 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
   const { log, avatarDB, storage, getMainWindow } = context
 
   ipcMain.handle('loadAvatarConfig', async () => {
+    log.info('Load avatar config...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return
+    }
 
     const loadedAvatarJson = await loadAvatarConfig(log, mainWindow)
     storage.setLoadedAvatarJson(loadedAvatarJson)
+    log.info('Avatar config loaded')
     return loadedAvatarJson
   })
 
   ipcMain.handle('uploadAvatarConfig', async () => {
+    log.info('Upload avatar config...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { upload: false }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { upload: false }
+    }
 
     const loadedAvatarJson = storage.getLoadedAvatarJson()
-    if (!loadedAvatarJson) return { upload: false }
+    if (!loadedAvatarJson) {
+      log.error('No avatar config loaded')
+      return { upload: false }
+    }
 
     const res = await uploadAvatarConfig(log, avatarDB, loadedAvatarJson, mainWindow)
     const currentAviId = storage.getCurrentAvatarId()
     getNames(log, avatarDB, mainWindow, currentAviId)
+    log.info('Upload avatar config completed')
     return res
   })
 
@@ -47,18 +60,27 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
   })
 
   ipcMain.handle('deleteAvatar', async (_event, avatarId: string) => {
+    log.info('Delete avatar...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
+    }
 
     const del = await deleteAvatar(log, avatarDB, mainWindow, avatarId)
     const currentAviId = storage.getCurrentAvatarId()
     getNames(log, avatarDB, mainWindow, currentAviId)
+    log.info('Delete avatar process completed')
     return del
   })
 
   ipcMain.handle('exportAvatar', async (_event, avatarId: string) => {
+    log.info('Export avatar...')
     const mainWindow = getMainWindow()
-    if (!mainWindow) return { success: false }
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
+    }
 
     return await exportAvatar(log, avatarDB, dialog, mainWindow, avatarId)
   })
@@ -66,12 +88,17 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
   ipcMain.handle(
     'updateAvatarData',
     async (_event, avatarId: string, name: string, updateId: string) => {
+      log.info('Update avatar data...')
       const mainWindow = getMainWindow()
-      if (!mainWindow) return { success: false }
+      if (!mainWindow) {
+        log.error('Dependency not found')
+        return { success: false }
+      }
 
       const res = await updateAvatarData(log, avatarDB, mainWindow, avatarId, name, updateId)
       const currentAviId = storage.getCurrentAvatarId()
       getNames(log, avatarDB, mainWindow, currentAviId)
+      log.info('Update avatar data completed')
       return res
     }
   )

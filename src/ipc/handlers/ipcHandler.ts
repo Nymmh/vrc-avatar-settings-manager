@@ -26,6 +26,7 @@ interface HandlerContext {
 }
 
 export function ipcHandlers(context: HandlerContext): void {
+  context.log.info('Setting up IPC handlers...')
   appHandlers(context)
   configHandlers(context)
   presetHandlers(context)

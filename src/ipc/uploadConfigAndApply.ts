@@ -17,7 +17,9 @@ export async function uploadConfigAndApply(
   avatarName: string,
   mainWindow: BrowserWindow
 ): Promise<uploadConfigAndApplyTypeInterface> {
+  log.info('Uploading configuration and applying...')
   if (loadedJson.type && loadedJson.type !== 'config') {
+    log.error('Uploaded data is not a valid config')
     return {
       upload: false,
       saveMessage: 'Uploaded data is not a valid config'
@@ -36,6 +38,7 @@ export async function uploadConfigAndApply(
     )
 
     if (userResponse.response !== 0) {
+      log.info('Upload cancelled by user due to avatar ID mismatch')
       return {
         upload: false,
         saveMessage: 'Upload cancelled by user'
@@ -61,6 +64,7 @@ export async function uploadConfigAndApply(
   if (nsfwResponse === 0) {
     upload = uploadConfig(log, loadedJson, OSC_CLIENT)
   } else {
+    log.info('Upload cancelled by user due to NSFW warning')
     upload = false
   }
 
@@ -74,20 +78,30 @@ export async function uploadConfigAndApply(
   avatarName = avatarName?.trim()
   saveName = saveName?.trim()
 
-  if (!currentAviId)
+  if (!currentAviId) {
+    log.error('Invalid avatar ID in file')
+
     return {
       upload: (await upload) as boolean,
       save: false,
       saveMessage: 'Invalid avatar ID in file'
     }
-  if (!avatarName)
+  }
+
+  if (!avatarName) {
+    log.error('Invalid avatar name in file')
+
     return {
       upload: (await upload) as boolean,
       save: false,
       saveMessage: 'Invalid avatar name in file'
     }
-  if (!saveName)
+  }
+
+  if (!saveName) {
+    log.error('Invalid save name')
     return { upload: (await upload) as boolean, save: false, saveMessage: 'Invalid save name' }
+  }
 
   loadedJson.avatarId = currentAviId
   loadedJson.name = avatarName

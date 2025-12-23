@@ -49,7 +49,7 @@ export async function uploadConfig(
     log.info('Config upload complete')
     return true
   } catch (e) {
-    log.info('Error during config upload:', e)
+    log.error('Error during config upload:', e)
     return false
   }
 }

@@ -14,7 +14,9 @@ export async function updateAvatarData(
   updateId: string
 ): Promise<updateAvatarDataInterface> {
   try {
+    log.info('Starting avatar data update process')
     if (!avatarId || !avatarName || !updateId) {
+      log.error('Avatar ID and name are required')
       return { success: false, message: 'Avatar ID and name are required' }
     }
 
@@ -26,7 +28,10 @@ export async function updateAvatarData(
       mainWindow
     )
 
-    if (userResponse.response !== 0) return { success: false, message: 'Update cancelled' }
+    if (userResponse.response !== 0) {
+      log.info('User cancelled avatar update')
+      return { success: false, message: 'Update cancelled' }
+    }
 
     const q = db.prepare('UPDATE avatarStorage SET name = ? WHERE avatarId = ?')
     const result = q.run(avatarName, avatarId)
@@ -72,14 +77,17 @@ export async function updateAvatarData(
     }
 
     if (result.changes === 0) {
+      log.error('No avatar found with the provided ID')
       return { success: false, message: 'No avatar found with the provided ID' }
     }
 
     syncAvatarNames(log, db, avatarId)
 
+    log.info('Avatar data updated successfully')
+
     return { success: true }
   } catch (e) {
-    log.info('Error updating avatar data:', e)
+    log.error('Error updating avatar data:', e)
     return { success: false, message: 'Error updating avatar data' }
   }
 }

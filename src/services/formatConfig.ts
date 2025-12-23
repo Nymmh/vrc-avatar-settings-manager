@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3'
 import { getSaveFaceTrackingSetting } from '../database/getSaveFaceTrackingSetting'
+import { Logger } from 'electron-log'
 
 const EXCLUDED_NAMES = new Set([
   'VRCEmote',
@@ -114,8 +115,10 @@ export function formatConfig(
   db: Database,
   aviData: string,
   aviCache: string,
-  pendingChanges: Map<string, unknown>
+  pendingChanges: Map<string, unknown>,
+  log: Logger
 ): avatarDBInterface {
+  log.info('Formatting config data')
   const parsedConfig = JSON.parse(aviData)
   const parsedCache = JSON.parse(aviCache)
 
@@ -207,5 +210,6 @@ export function formatConfig(
     })
   }
 
+  log.info('Finished formatting config data')
   return formattedData
 }

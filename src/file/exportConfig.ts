@@ -14,8 +14,11 @@ export async function exportConfig(
   id: number
 ): Promise<exportConfigInterface> {
   try {
-    if (!id || typeof id !== 'number' || id <= 0)
+    log.info(`Starting export for config ID: ${id}`)
+    if (!id || typeof id !== 'number' || id <= 0) {
+      log.error('Invalid ID provided for export')
       return { success: false, message: 'Invalid ID provided' }
+    }
 
     const q = db
       .prepare(
@@ -23,7 +26,10 @@ export async function exportConfig(
       )
       .get(id) as avatarDBInterface | undefined
 
-    if (!q) return { success: false, message: 'No config found' }
+    if (!q) {
+      log.error('No configuration found')
+      return { success: false, message: 'No config found' }
+    }
 
     const { avatarConfigData } = checkDataFolder()
 
@@ -74,7 +80,7 @@ export async function exportConfig(
     try {
       parsed = JSON.parse(q.parameters || '[]') || []
     } catch {
-      log.warn('Invalid JSON')
+      log.error('Invalid JSON')
     }
 
     const exportData = {
@@ -91,9 +97,10 @@ export async function exportConfig(
 
     await fs.promises.writeFile(filePath, JSON.stringify(exportData), 'utf-8')
 
+    log.info(`Config exported successfully`)
     return { success: true, message: 'Config exported' }
   } catch (error) {
-    log.info('Error exporting config:', error)
+    log.error('Error exporting config:', error)
     return { success: false, message: 'Error exporting config' }
   }
 }

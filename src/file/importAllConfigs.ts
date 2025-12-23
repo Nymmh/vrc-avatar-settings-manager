@@ -11,6 +11,7 @@ export async function importAllConfigs(
   dialog: Dialog
 ): Promise<importAllConfigsInterface> {
   try {
+    log.info('Import All Configs...')
     const dataFolder = checkDataFolder()
 
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
@@ -67,12 +68,14 @@ export async function importAllConfigs(
       }
     }
 
+    log.info('Import completed successfully')
+
     return {
       success: true,
       message: 'Import completed successfully'
     }
   } catch (e) {
-    log.info('Import All Configs Error: ', e)
+    log.error('Import All Configs Error: ', e)
     return { success: false, message: 'Import All Configs Error' }
   }
 }

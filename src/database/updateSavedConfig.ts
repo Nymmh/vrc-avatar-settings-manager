@@ -15,12 +15,17 @@ export function updateSavedConfig(
   pendingChanges: Map<string, unknown>
 ): updateConfigInterface {
   try {
+    log.info(`Updating saved config`)
     saveName = saveName.trim()
-    if (!saveName) return { success: false, message: 'Save name is required' }
+    if (!saveName) {
+      log.error('Save name is required')
+      return { success: false, message: 'Save name is required' }
+    }
 
     const existing = checkIfExistById(db, id)
 
     if (!existing) {
+      log.error(`No config found`)
       return { success: false, message: `No config found` }
     }
 
@@ -35,10 +40,10 @@ export function updateSavedConfig(
       )
       .get(id) as { name: string; avatarId: string; uqid: string } | undefined
 
-    const avatarConfigResult = avatarConfig(db, avatarId, mainWindow, pendingChanges)
+    const avatarConfigResult = avatarConfig(db, avatarId, mainWindow, pendingChanges, log)
 
     if (!avatarConfigResult) {
-      log.info('Failed to get avatar config')
+      log.error('Failed to get avatar config')
       return { success: false, message: 'Failed to get avatar config' }
     }
 
@@ -56,12 +61,13 @@ export function updateSavedConfig(
     `
     ).run(JSON.stringify(config), id)
 
+    log.info(`Config ${saveName} updated`)
     return {
       success: true,
       message: `Config ${saveName} updated`
     }
   } catch (error) {
-    log.info('Error updating config:', error)
+    log.error('Error updating config:', error)
     return { success: false, message: 'Error updating config' }
   }
 }

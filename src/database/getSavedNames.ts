@@ -9,6 +9,7 @@ export function getNames(
   avatarId: string
 ): void {
   try {
+    log.info(`Fetching saved names for avatarId: ${avatarId}`)
     const names = db.prepare('SELECT id,name FROM avatars WHERE avatarId = ?').all(avatarId) as {
       id: number
       name: string
@@ -16,6 +17,6 @@ export function getNames(
 
     mainWindow.webContents.send('savedNames', names)
   } catch (e) {
-    log.info('Error getting saved names:', e)
+    log.error('Error getting saved names:', e)
   }
 }

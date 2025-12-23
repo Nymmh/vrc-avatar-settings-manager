@@ -13,6 +13,7 @@ export async function uploadConfig(
   config: avatarDBInterface,
   mainWindow: BrowserWindow
 ): Promise<uploadConfigInterface> {
+  log.info('Uploading configuration...')
   if (config.type && config.type !== 'config') {
     return {
       upload: false,

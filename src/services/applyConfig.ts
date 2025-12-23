@@ -10,7 +10,7 @@ export async function applyConfig(
     log.info('Starting config upload...')
 
     if (!content?.length) {
-      log.info('Nothing to upload')
+      log.warn('Nothing to upload')
       return false
     }
 
@@ -47,7 +47,7 @@ export async function applyConfig(
     log.info('Config apply completed')
     return true
   } catch (e) {
-    log.info('Error during config apply:', e)
+    log.error('Error during config apply:', e)
     return false
   }
 }

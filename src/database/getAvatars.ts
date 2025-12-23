@@ -7,7 +7,7 @@ export function getAvatars(log: Logger, avatarDB: Database): getAllAvatarsInterf
 
     return q
   } catch (e) {
-    log.info('Error getting loaded avatars:', e)
+    log.error('Error getting loaded avatars:', e)
     return null
   }
 }
