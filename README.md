@@ -51,7 +51,7 @@ ASM does not modify your game in anyway and uses features and data provided by V
 
 ASM is proprietary software with source available for reference. By using ASM, you agree to the [End-User License Agreement (EULA)](./README/terms.md).
 
-### For Avatar Creators
+## For Avatar Creators
 
 Avatar creators are welcome to include ASM-exported configurations and presets with their commercial avatar products. When doing so, please provide attribution by:
 
