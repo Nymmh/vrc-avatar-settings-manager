@@ -26,7 +26,7 @@ const dataFolder = checkDataFolder()
 log.initialize()
 log.transports.file.resolvePathFn = () => path.join(dataFolder.folderPath, 'meow.log')
 log.transports.file.fileName = 'meow.log'
-log.transports.file.format = '[{y}-{m}-{d} {h}:{i}] [{level}] {text}'
+log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
 log.transports.file.maxSize = 5 * 1024 * 1024 // 5 MB
 log.transports.file.level = 'info'
 deleteOldLog(log, dataFolder.folderPath)
@@ -118,6 +118,7 @@ app.on('activate', function () {
 
 app.on('will-quit', () => {
   log.info('Meow Meow is shutting down...')
+  log.info('---------------------------------------')
   asmStorage?.cleanState()
   avatarDB.close()
   OSC_CLIENT.close(OSC_CLIENT)
