@@ -26,11 +26,19 @@ export async function uploadAvatarPresets(
     if (update) {
       db.prepare(
         `
-        UPDATE presets
-        SET avatarId = ?, name = ?, unityParameter = ?
-        WHERE forUqid = ?
-      `
-      ).run(avatarConfig.presets?.avatarId, avatarConfig.presets?.name, uqid)
+          INSERT INTO presets (forUqid, avatarId, name, unityParameter)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(forUqid) DO UPDATE SET
+            avatarId = excluded.avatarId,
+            name = excluded.name,
+            unityParameter = excluded.unityParameter 
+        `
+      ).run(
+        uqid,
+        avatarConfig.presets?.avatarId,
+        avatarConfig.presets?.name,
+        avatarConfig.presets?.unityParameter
+      )
     } else {
       const existingCheck = db
         .prepare(`SELECT id FROM presets WHERE avatarId = ? AND unityParameter = ? LIMIT 1`)
