@@ -167,7 +167,7 @@ export function formatConfig(
     )
       return ap
 
-    if (getSaveFaceTrackingSetting(db) === false) {
+    if (getSaveFaceTrackingSetting(db, log) === false) {
       if (FT_EXCLUDED_NAMES.has(c.name) || /^VF[ _]\d+(?:\.\d+)*$/.test(c.name)) {
         return ap
       }
