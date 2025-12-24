@@ -39,7 +39,7 @@ For common questions, see the [FAQ](./README/FAQ.md).
 
 ## Bug Reports & Feature Requests
 
-- Bug reports & feature requests can be created as a [Github Issue](https://github.com/Nymmh/vrc-avatar-settings-manager/issues) or in the [Discord](https://discord.gg/rcCCkbDsY3). When making a bug report please include the Meow.log
+- Bug reports & feature requests can be created as a [Github Issue](https://github.com/Nymmh/vrc-avatar-settings-manager/issues) or in the [Discord](https://discord.gg/rcCCkbDsY3). When making a bug report please include the `meow.log`
 
 ## Is ASM against VRChat TOS?
 
@@ -50,6 +50,21 @@ ASM does not modify your game in anyway and uses features and data provided by V
 ## License
 
 ASM is proprietary software with source available for reference. By using ASM, you agree to the [End-User License Agreement (EULA)](./README/terms.md).
+
+## Privacy
+
+ASM is committed to protecting your privacy. All avatar configurations, presets, and settings are stored locally on your computer. ASM does not collect, transmit, or share your personal data. The only external network request made is to check for software updates from the [official GitHub repo](https://github.com/Nymmh/vrc-avatar-settings-manager/).
+
+**Key Privacy Features:**
+
+- ✅ All data stored locally on your device
+- ✅ No external data transmission (except update checks)
+- ✅ No analytics or tracking
+- ✅ Complete user control over all data
+- ✅ No account creation or login required
+- ✅ Source code available for transparency
+
+For complete details, see our [Privacy Policy](./README/privacy-policy.md).
 
 ## For Avatar Creators
 
