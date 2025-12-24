@@ -39,6 +39,8 @@ nsis:
   oneClick: false
   perMachine: true
   license: README/terms.txt
+  installerSidebar: build/sidebar.bmp
+  uninstallerSidebar: build/sidebar.bmp
   installerLanguages:
     - en-US
   deleteAppDataOnUninstall: true
