@@ -4,6 +4,7 @@
   "description": "",
   "main": "./out/main/index.js",
   "author": "Nymh",
+  "homepage": "https://github.com/Nymmh/vrc-avatar-settings-manager",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",

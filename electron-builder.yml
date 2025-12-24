@@ -35,13 +35,14 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: false
-  allowToChangeInstallationDirectory: true
+  allowToChangeInstallationDirectory: false
   oneClick: false
   perMachine: true
   license: README/terms.txt
   installerLanguages:
     - en-US
   deleteAppDataOnUninstall: true
+  include: build/installer.nsh
 linux:
   target:
     - AppImage
