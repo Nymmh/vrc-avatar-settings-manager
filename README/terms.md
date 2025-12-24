@@ -10,6 +10,8 @@ By downloading, installing, or using Avatar Settings Manager ("ASM", "the Softwa
 
 Subject to the terms of this Agreement, Nymh grants you a limited, non-exclusive, non-transferable, revocable license to use ASM for personal use. Commercial use of exported configurations and presets is permitted under the conditions specified in Section 3.2.
 
+By using ASM, you confirm that you are at least 13 years of age. If you are under 13 years old, you may not use this Software. This age requirement is consistent with VRChat's Terms of Service.
+
 ## 3. Permitted Use
 
 ### 3.1 Personal Use
@@ -59,7 +61,7 @@ If you wish to improve the Software:
 
 - All configuration data, avatar settings, and presets are stored locally on your device
 - ASM creates a SQLite database on your system
-- Log files are generated and stored locally for troubleshooting purposes
+- Log files are generated and stored locally for troubleshooting purposes. These log files may include your Windows username in file paths
 
 ### 5.2 Data Transmission
 
@@ -148,7 +150,7 @@ TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL NYMH BE LIABLE FOR ANY
 - Continued use of the Software after changes constitutes acceptance of the updated terms
 - Material changes will be communicated through the GitHub repository
 
-## 12. Open Source and Attribution
+## 12. Source Code and Dependencies
 
 ### 12.1 Third-Party Libraries
 
@@ -182,7 +184,7 @@ This Software is provided globally, but you are responsible for compliance with 
 
 - Support is provided on a volunteer basis through GitHub Issues and Discord
 - No guaranteed response time or resolution is promised
-- Log files (Meow.log) may be required for troubleshooting
+- Log files (meow.log) may be required for troubleshooting. Be aware that these log files may contain your Windows username in file paths
 
 ### 15.2 No Service Level Agreement
 

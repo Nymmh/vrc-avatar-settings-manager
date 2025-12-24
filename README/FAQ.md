@@ -20,7 +20,12 @@ Yes! ASM works with all avatars, including cloned avatars.
 
 ## Where is the data stored?
 
-All of ASM's data is stored locally on your computer and will only transmit data to your VRChat client. None of your data is sent anywhere externally.
+All of ASM's data is stored locally on your computer in:
+
+- **Database**: `%APPDATA%\Roaming\vrc-avatar-settings-manager\Meow Storage\meow.db`
+- **Log Files**: `%USERPROFILE%\Documents\VRCAvatarSettingsManager\meow.log`
+
+ASM only transmits data to your local VRChat client. The only external network request is to check for software updates from the official GitHub repository. No user data, configurations, or personal information is transmitted externally.
 
 ## Do I need anything special to run ASM?
 
@@ -48,7 +53,7 @@ This could be caused by several issues:
 - OSC is not enabled in VRChat
 - The avatar has no parameters
 
-If the issue persists, please ask in the [Discord](https://discord.gg/rcCCkbDsY3) and include a copy of `Meow.log`.
+If the issue persists, please ask in the [Discord](https://discord.gg/rcCCkbDsY3) and include a copy of `meow.log`.
 
 ## Can I include ASM configs with my commercial avatars?
 
