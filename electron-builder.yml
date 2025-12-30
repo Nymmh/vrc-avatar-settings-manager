@@ -35,7 +35,7 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: false
-  allowToChangeInstallationDirectory: false
+  allowToChangeInstallationDirectory: true
   oneClick: false
   perMachine: true
   license: README/terms.txt
