@@ -189,9 +189,9 @@ export function configHandlers(context: ConfigHandlerContext): void {
     }
 
     const currentAviId = storage.getCurrentAvatarId()
-    storage.setLoadedJson(null)
+    storage.clearLoadedJson()
 
-    avatarConfig(avatarDB, currentAviId, mainWindow, new Map(), log)
+    await avatarConfig(avatarDB, currentAviId, mainWindow, new Map(), log)
     getNames(log, avatarDB, mainWindow, currentAviId)
     log.info('Avatar config refreshed')
     return { success: true }
