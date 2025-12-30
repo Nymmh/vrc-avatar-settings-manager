@@ -278,13 +278,9 @@ onMounted(() => {
                       appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data'
                     }}
                   </p>
-                  <Button
-                    v-if="!appStore.avatarFoundFile"
-                    :small="true"
-                    :hero="true"
-                    label="Refresh"
-                    @click="refreshAviFile"
-                  />
+                  <div v-if="!appStore.avatarFoundFile">
+                    <p>Change out of the current avatar to another avatar, then back.</p>
+                  </div>
                 </div>
                 <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
                   Avatar ID: <span class="main__avatar-id__id">{{ appStore.avatarId }}</span>
@@ -411,6 +407,7 @@ onMounted(() => {
   &__avatar-data-file {
     align-items: center;
     display: flex;
+    flex-flow: column;
     gap: 16px;
   }
 
