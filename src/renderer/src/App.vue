@@ -89,23 +89,6 @@ const aviFileUpdate = (): void => {
   })
 }
 
-const refreshAviFile = async (): Promise<void> => {
-  appStore.value.avatarFoundFile = false
-  showAvatarFoundFileMsg.value = false
-  if (!holdSaveName.value) saveName.value = ''
-
-  const res = await window.avatarApi.refreshAvatarFile()
-  appStore.value.avatarFoundFile = res.success
-  showAvatarFoundFileMsg.value = true
-
-  if (!res.success) {
-    pushNotification({
-      type: 'error',
-      title: 'Refresh Failed'
-    })
-  }
-}
-
 const aviConfig = (): void => {
   window.avatarApi.avatarConfig((data) => {
     resetVars()
