@@ -22,7 +22,7 @@ const failedPresetUpdates = ref<FailedOperation[]>([])
 const allAvatars = ref<Awaited<ReturnType<typeof window.avatarApi.getAllAvatars>>>([])
 const allConfigs = ref<Awaited<ReturnType<typeof window.avatarApi.getConfigById>>>([])
 const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getPresetsByUqid>>>([])
-const expandedAvatarRow = ref<number | null>(null)
+const expandedAvatarRow = ref<string | null>(null)
 const expandedConfigRow = ref<number | null>(null)
 const searchAvatar = ref('')
 const scrollContainer = ref<{ osInstance: () => OverlayScrollbars | null } | null>(null)
@@ -116,15 +116,16 @@ const getPresetsByConfig = async (idx: number): Promise<void> => {
   allPresets.value = await window.avatarApi.getPresetsByUqid(uqid)
 }
 
-const isAvatarExpanded = (idx: number): boolean => expandedAvatarRow.value === idx
+const isAvatarExpanded = (aviId: string): boolean => expandedAvatarRow.value === aviId
 const isConfigExpanded = (idx: number): boolean => expandedConfigRow.value === idx
-const toggleAvatar = (idx: number): void => {
-  if (expandedAvatarRow.value === idx) {
+const toggleAvatar = (aviId: string, idx: number): void => {
+  console.log(aviId)
+  if (expandedAvatarRow.value === aviId) {
     expandedAvatarRow.value = null
     allConfigs.value = []
   } else {
-    expandedAvatarRow.value = idx
-    getConfigsByAvatar(allAvatars.value[idx].avatarId)
+    expandedAvatarRow.value = aviId
+    getConfigsByAvatar(expandedAvatarRow.value)
 
     setTimeout(() => {
       const el = avatarRefs.value[idx]
@@ -525,9 +526,9 @@ const emit = defineEmits(['notification'])
                   v-if="a.avatarId"
                   :class="[
                     'data-table__expand-button',
-                    { 'data-table__expand-button--expanded': isAvatarExpanded(idx) }
+                    { 'data-table__expand-button--expanded': isAvatarExpanded(a.avatarId) }
                   ]"
-                  @click="toggleAvatar(idx)"
+                  @click="toggleAvatar(a.avatarId, idx)"
                 >
                   <svg
                     width="23"
@@ -594,7 +595,8 @@ const emit = defineEmits(['notification'])
                 />
               </div>
             </div>
-            <div v-if="isAvatarExpanded(idx) && hasConfigs" class="data-table__configs">
+            {{ a.avatarId }}
+            <div v-if="isAvatarExpanded(a.avatarId) && hasConfigs" class="data-table__configs">
               <Card v-for="(config, cIdx) in allConfigs" :key="cIdx">
                 <div
                   :ref="(el) => (configRefs[cIdx] = el as HTMLElement)"
