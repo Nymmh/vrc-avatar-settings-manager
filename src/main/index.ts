@@ -83,7 +83,7 @@ async function setupOSC(): Promise<void> {
 
     log.info('OSC setup complete')
   } catch (e) {
-    log.error('Error setting up OSC: ', e)
+    log.error('Error setting up OSC:', e)
     app.quit()
   }
 }

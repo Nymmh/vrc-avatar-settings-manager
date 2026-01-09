@@ -25,7 +25,7 @@ export function avatarConfig(
     })
   }
 
-  log.info('Fetching avatar config for avatarId: ', avatarId)
+  log.info('Fetching avatar config for avatarId:', avatarId)
 
   const aviConfig = lookForConfig(avatarId, vrcPath, log)
   const aviCache = lookForCache(avatarId, vrcPath, log)
@@ -47,7 +47,7 @@ export function avatarConfig(
   })
   mainWindow.webContents.send('avatarConfig', formattedDataConfig)
 
-  log.info('Successfully fetched avatar config for avatarId: ', avatarId)
+  log.info('Successfully fetched avatar config for avatarId:', avatarId)
 
   return formattedDataConfig
 }

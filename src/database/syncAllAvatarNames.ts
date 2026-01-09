@@ -28,7 +28,7 @@ export function syncAllAvatarNames(log: Logger, db: Database): boolean {
 
     return true
   } catch (e) {
-    log.error('Error syncing avatar names: ', e)
+    log.error('Error syncing avatar names:', e)
     return false
   }
 }

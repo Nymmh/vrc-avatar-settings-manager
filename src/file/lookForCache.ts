@@ -4,7 +4,7 @@ import { Logger } from 'electron-log'
 
 export function lookForCache(avatarId: string, vrcPath: string, log: Logger): string | undefined {
   try {
-    log.info('Looking for cache for avatarId: ', avatarId)
+    log.info('Looking for cache for avatarId:', avatarId)
     const avatarData = path.join(vrcPath, 'LocalAvatarData')
     const folders = fs.readdirSync(avatarData, { withFileTypes: true })
 
@@ -22,7 +22,7 @@ export function lookForCache(avatarId: string, vrcPath: string, log: Logger): st
 
     return undefined
   } catch {
-    log.error('Error finding cache for avatarId: ', avatarId)
+    log.error('Error finding cache for avatarId:', avatarId)
     return undefined
   }
 }

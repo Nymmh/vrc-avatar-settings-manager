@@ -114,7 +114,7 @@ export async function uploadAvatar(
     log.info('Avatar upload process completed successfully')
     return { success: true, message: 'Saved' }
   } catch (e) {
-    log.error('Saving Error: ', e)
+    log.error('Saving Error:', e)
     return { success: false, message: 'Database error' }
   }
 }

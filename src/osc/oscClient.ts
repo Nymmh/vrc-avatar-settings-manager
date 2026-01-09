@@ -6,6 +6,6 @@ export function oscClient(log: Logger): Client {
 
   const OSC_CLIENT = new Client('127.0.0.1', 9000)
 
-  log.info('Client listening on port: ', 9000)
+  log.info('Client listening on port:', 9000)
   return OSC_CLIENT
 }
