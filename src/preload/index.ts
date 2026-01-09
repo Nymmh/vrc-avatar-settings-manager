@@ -8,6 +8,9 @@ const appApi = {
   openLogFile: (): void => {
     ipcRenderer.invoke('openLogFile')
   },
+  openExportDirectory: (): void => {
+    ipcRenderer.invoke('openExportDirectory')
+  },
   deleteLogFile: (): Promise<boolean> => {
     return ipcRenderer.invoke('deleteLogFile')
   },
@@ -21,6 +24,12 @@ const appApi = {
     ipcRenderer.on('parameterRateUpdate', (_event: IpcRendererEvent, data: string): void =>
       meowback(data)
     )
+  },
+  getCopyForDiscordSetting: (): Promise<boolean> => {
+    return ipcRenderer.invoke('getCopyForDiscordSetting')
+  },
+  setCopyForDiscordSetting: (value: boolean): Promise<boolean> => {
+    return ipcRenderer.invoke('setCopyForDiscordSetting', value)
   }
 }
 
@@ -145,7 +154,10 @@ const avatarApi = {
     ipcRenderer.invoke('getConfigById', avatarId),
   dataTableRefresh: (meowback: () => void): void => {
     ipcRenderer.on('dataTableRefresh', (): void => meowback())
-  }
+  },
+  copyConfigCode: async (id: number): Promise<exportConfigInterface> =>
+    ipcRenderer.invoke('copyConfigCode', id),
+  applyCopiedCode: async (): Promise<exportConfigInterface> => ipcRenderer.invoke('applyCopiedCode')
 }
 
 if (process.contextIsolated) {

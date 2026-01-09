@@ -6,11 +6,9 @@ import { Logger } from 'electron-log'
 import { formatConfig } from './formatConfig'
 import { lookForConfig } from '../file/lookForConfig'
 import { lookForCache } from '../file/lookForCache'
+import { cleanJson } from '../helpers/cleanJson'
 
 const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
-const BOM_REGEX = /^\uFEFF/
-const JUNK_REGEX = /^[^{\[]+/
-
 export function avatarConfig(
   db: Database,
   avatarId: string,
@@ -50,8 +48,4 @@ export function avatarConfig(
   log.info('Successfully fetched avatar config for avatarId:', avatarId)
 
   return formattedDataConfig
-}
-
-function cleanJson(data: string): string {
-  return data.replace(BOM_REGEX, '').replace(JUNK_REGEX, '').trim()
 }

@@ -119,7 +119,6 @@ const getPresetsByConfig = async (idx: number): Promise<void> => {
 const isAvatarExpanded = (aviId: string): boolean => expandedAvatarRow.value === aviId
 const isConfigExpanded = (idx: number): boolean => expandedConfigRow.value === idx
 const toggleAvatar = (aviId: string, idx: number): void => {
-  console.log(aviId)
   if (expandedAvatarRow.value === aviId) {
     expandedAvatarRow.value = null
     allConfigs.value = []

@@ -111,14 +111,14 @@ const FT_EXCLUDED_NAMES = new Set([
   'FT/EyeSyncMix'
 ])
 
-export function formatConfig(
+export function formatConfigPasteCode(
   db: Database,
   aviData: string,
   aviCache: string,
-  pendingChanges: Map<string, unknown>,
+  pendingChanges: Map<string, { value: number | string; type: string }>,
   log: Logger
 ): avatarDBInterface {
-  log.info('Formatting config data')
+  log.info('Formatting config paste code')
   const parsedConfig = JSON.parse(aviData)
   const parsedCache = JSON.parse(aviCache)
 
@@ -172,6 +172,7 @@ export function formatConfig(
         return ap
       }
     }
+    value = 0
 
     const type = parameterMap.get(c.name)
 
@@ -182,12 +183,9 @@ export function formatConfig(
     if (hasPendingChanges) {
       if (pendingChanges.has(formattedName)) {
         const pendingValue = pendingChanges.get(formattedName)
-        value =
-          typeof pendingValue === 'boolean'
-            ? pendingValue
-              ? 1
-              : 0
-            : (pendingValue as number | string)
+        if (pendingValue !== undefined) {
+          value = pendingValue.value as number | string
+        }
       } else {
         const stripVFPrefixes = (str: string): string => {
           return str.replace(/^(?:VF\d+_)+/, '')
@@ -200,22 +198,12 @@ export function formatConfig(
             log.warn(
               `Applying pending change for ${formattedName} (matched ${key} via suffix ${nameWithoutPrefixes})`
             )
-            value = typeof val === 'boolean' ? (val ? 1 : 0) : (val as number | string)
+            value = val.value as number | string
             break
           }
         }
       }
     }
-
-    // if (hasPendingChanges && pendingChanges.has(formattedName)) {
-    //   const pendingValue = pendingChanges.get(formattedName)
-    //   value =
-    //     typeof pendingValue === 'boolean'
-    //       ? pendingValue
-    //         ? 1
-    //         : 0
-    //       : (pendingValue as number | string)
-    // }
 
     ap.push({
       name: formattedName,

@@ -8,6 +8,8 @@ import path from 'path'
 import { showDialogNoSound } from '../../services/showDialogNoSound'
 import { getSaveFaceTrackingSetting } from '../../database/getSaveFaceTrackingSetting'
 import { setSaveFaceTrackingSetting } from '../../database/setSaveFaceTrackingSetting'
+import { getCopyForDiscordSetting } from '../../database/getCopyForDiscordSetting'
+import { setCopyForDiscordSetting } from '../../database/setCopyForDiscordSetting'
 
 interface DataFolder {
   folderPath: string
@@ -57,6 +59,17 @@ export function appHandlers(context: appHandlersContext): void {
     }
   })
 
+  ipcMain.handle('openExportDirectory', () => {
+    try {
+      context.log.info('Opening export directory...')
+      const exportPath = path.join(dataFolder.folderPath, 'exports')
+      fs.mkdirSync(exportPath, { recursive: true })
+      shell.openPath(exportPath)
+    } catch (e) {
+      context.log.error('Error opening export directory', e)
+    }
+  })
+
   ipcMain.handle('deleteLogFile', async () => {
     context.log.info('Delete log file...')
     const logFilePath = path.join(dataFolder.folderPath, 'meow.log')
@@ -91,5 +104,13 @@ export function appHandlers(context: appHandlersContext): void {
 
   ipcMain.handle('setSaveFaceTrackingSetting', async (_, value: boolean) => {
     return setSaveFaceTrackingSetting(avatarDB, value, context.log)
+  })
+
+  ipcMain.handle('getCopyForDiscordSetting', async () => {
+    return getCopyForDiscordSetting(avatarDB, context.log)
+  })
+
+  ipcMain.handle('setCopyForDiscordSetting', async (_, value: boolean) => {
+    return setCopyForDiscordSetting(avatarDB, value, context.log)
   })
 }

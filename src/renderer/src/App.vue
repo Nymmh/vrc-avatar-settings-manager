@@ -10,6 +10,7 @@ import LoadFile from './components/LoadFile.vue'
 import Menu from './components/Menu.vue'
 import Waiting from './components/Waiting.vue'
 import Card from './components/Card.vue'
+import PasteCode from './components/PasteCode.vue'
 import AllData from './views/AllData.vue'
 import Settings from './views/Settings.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
@@ -165,6 +166,16 @@ const handleApply = async (): Promise<void> => {
   })
 }
 
+const handleCopyCode = async (): Promise<void> => {
+  const res = await window.avatarApi.copyConfigCode(Number(configSelectValue.value))
+
+  pushNotification({
+    type: res?.success ? 'success' : 'error',
+    title: res?.success ? 'Copy Successful' : 'Copy Failed',
+    text: res?.message || ''
+  })
+}
+
 const handleSavedUpdated = async (): Promise<void> => {
   const res = await window.avatarApi.updateConfig(
     Number(configSelectValue.value),
@@ -312,6 +323,11 @@ onMounted(() => {
                   <div v-if="configSelectValue" class="main__apply-buttons">
                     <Button label="Apply" tooltip="Apply selected config" @click="handleApply" />
                     <Button
+                      label="Copy Share Code"
+                      tooltip="Copy config share code for these settings"
+                      @click="handleCopyCode"
+                    />
+                    <Button
                       label="Update"
                       tooltip="Update selected config with current avatar settings"
                       :warning="true"
@@ -328,6 +344,7 @@ onMounted(() => {
               </div>
             </Card>
             <Card v-if="appStore.avatarFoundFile">
+              <PasteCode @notification="pushNotification" />
               <LoadFile :avatar-config="avatarConfig" @notification="pushNotification" />
             </Card>
           </div>
