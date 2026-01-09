@@ -63,6 +63,8 @@ export interface avatarApi {
   getConfigById: (avatarId: string) => Promise<avatarDBInterface[] | null>
   dataTableRefresh: (meowback: () => void) => void
   getLogFileSize: () => Promise<string>
+  copyConfigCode: (id: number) => exportConfigInterface
+  applyCopiedCode: () => exportConfigInterface
 }
 
 export interface appApi {
@@ -73,6 +75,9 @@ export interface appApi {
   getSaveFaceTrackingSetting: () => Promise<boolean>
   setSaveFaceTrackingSetting: (value: boolean) => Promise<boolean>
   parameterRateUpdate: (meowback: (rate: string) => void) => void
+  openExportDirectory: () => void
+  getCopyForDiscordSetting: () => Promise<boolean>
+  setCopyForDiscordSetting: (value: boolean) => Promise<boolean>
 }
 
 declare global {

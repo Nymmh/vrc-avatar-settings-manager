@@ -47,8 +47,8 @@ export async function deleteConfig(
 
     db.prepare('DELETE FROM presets WHERE forUqid = ?').run(q.uqid)
 
-    log.info('Configuration deleted successfully')
-    return { success: true, message: 'Configuration deleted successfully' }
+    log.info('Config deleted successfully')
+    return { success: true, message: 'Config deleted successfully' }
   } catch (e) {
     log.error('Error deleting config:', e)
     return { success: false, message: 'Error deleting config' }

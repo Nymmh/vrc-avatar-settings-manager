@@ -36,9 +36,6 @@ export async function updateAvatarData(
     const q = db.prepare('UPDATE avatarStorage SET name = ? WHERE avatarId = ?')
     const result = q.run(avatarName, avatarId)
 
-    console.log(updateId)
-    console.log(avatarId)
-
     if (updateId !== avatarId) {
       const avatarStorageSearch = db.prepare(
         'SELECT avatarId FROM avatarStorage WHERE avatarId = ? LIMIT 1'
