@@ -25,7 +25,16 @@ export async function applyConfigCode(
   OSC_CLIENT: Client
 ): Promise<exportConfigInterface> {
   try {
-    const clipboardText = clipboard.readText().trim()
+    let clipboardText = clipboard.readText().trim()
+
+    // For if the person exported with Discord formatting but was pasted raw
+    if (clipboardText.startsWith('```')) {
+      clipboardText = clipboardText.slice(3)
+      if (clipboardText.endsWith('```')) {
+        clipboardText = clipboardText.slice(0, -3)
+      }
+      clipboardText = clipboardText.trim()
+    }
 
     if (!clipboardText || !clipboardText.startsWith('ASM:v')) {
       log.error('Invalid config code in clipboard')
