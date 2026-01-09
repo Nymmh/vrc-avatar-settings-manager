@@ -120,7 +120,7 @@ export async function copyConfigCode(
     const encoded = toBase91(compressed)
     const sum = checksum(encoded)
 
-    let shareCode = `ASM:v${checksumVersion}:${sum}${encoded}`
+    let shareCode = `ASM:v${checksumVersion}:${sum}:${encoded}`
 
     const copyToDiscord = getCopyForDiscordSetting(db, log)
 

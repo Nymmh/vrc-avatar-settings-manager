@@ -1,6 +1,6 @@
 export function toBase91(buffer: Buffer): string {
   const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./:;<=>?@[]^_`{|}~"'
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./;<=>?@[]^_`{|}~"'
   let result = ''
   let ebq = 0
   let en = 0
