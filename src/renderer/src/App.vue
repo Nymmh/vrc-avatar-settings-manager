@@ -13,6 +13,8 @@ import Card from './components/Card.vue'
 import PasteCode from './components/PasteCode.vue'
 import AllData from './views/AllData.vue'
 import Settings from './views/Settings.vue'
+import Privacy from './views/Privacy.vue'
+import Terms from './views/Terms.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
 import type { avatarConfigType } from '../../types/avatarConfigType'
 import { NotificationInterface } from './types/notificationInterface'
@@ -249,6 +251,8 @@ onMounted(() => {
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
     <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
     <Settings v-if="appStore.currentView === 'Settings'" @notification="pushNotification" />
+    <Privacy v-if="appStore.currentView === 'Privacy'" />
+    <Terms v-if="appStore.currentView === 'Terms'" />
     <div v-show="appStore.currentView === 'Main'" class="main__wrapper">
       <div class="main__scroll">
         <OverlayScrollbarsComponent
