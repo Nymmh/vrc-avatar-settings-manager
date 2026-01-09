@@ -42,16 +42,14 @@ export async function applyConfigCode(
     }
 
     const parts = clipboardText.split(':')
-    if (parts.length < 3) {
+    if (parts.length !== 4) {
       log.error('Invalid config code format')
       return { success: false, message: 'Invalid config code format' }
     }
 
     // const version = parts[1].substring(1)
-    const checksumAndData = parts.slice(2).join(':')
-
-    const sum = checksumAndData.substring(0, 6)
-    const encoded = checksumAndData.substring(6)
+    const sum = parts[2]
+    const encoded = parts[3]
 
     const calculatedSum = checksum(encoded)
     if (sum !== calculatedSum) {

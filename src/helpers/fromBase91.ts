@@ -1,6 +1,6 @@
 export function fromBase91(str: string): Buffer {
   const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./:;<=>?@[]^_`{|}~"'
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./;<=>?@[]^_`{|}~"'
   const result: number[] = []
   let dbq = 0
   let dn = 0
