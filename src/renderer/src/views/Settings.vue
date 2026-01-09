@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Button from '../components/Button.vue'
 import Card from '../components/Card.vue'
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
+import { handleChangeView } from '@renderer/composables/changeView'
 
 const logFileSize = ref('0MB')
 const saveFaceTracking = ref(false)
@@ -183,6 +184,17 @@ const emit = defineEmits(['notification'])
                 :error="copyForDiscord"
                 @click="setCopyForDiscordSetting"
               />
+            </div>
+          </div>
+        </Card>
+        <Card>
+          <div class="settings__content">
+            <h2 class="settings__title">Terms & Information</h2>
+            <div class="settings__card-content">
+              <div class="settings__card-button-group">
+                <Button label="Terms of Service" :small="true" @click="handleChangeView('Terms')" />
+                <Button label="Privacy Policy" :small="true" @click="handleChangeView('Privacy')" />
+              </div>
             </div>
           </div>
         </Card>
