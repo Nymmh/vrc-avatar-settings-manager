@@ -195,7 +195,7 @@ export async function saveConfig(
     log.info('Config saved successfully')
     return { success: true, message: 'Saved' }
   } catch (e) {
-    log.info('Saving Error: ', e)
+    log.info('Saving Error:', e)
     return { success: false, message: 'Database error' }
   }
 }

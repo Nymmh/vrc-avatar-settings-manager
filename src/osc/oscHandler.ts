@@ -91,7 +91,7 @@ export class OSCHandler {
     const match = cleanAddress.match(/\/(\d+)\//)
 
     if (!match) {
-      this.log.warn('Invalid preset address format: ', address)
+      this.log.warn('Invalid preset address format:', address)
       return
     }
 
@@ -129,7 +129,7 @@ export class OSCHandler {
       this.storage.setPendingState(false)
       getNames(this.log, this.avatarDB, this.mainWindow, this.storage.getCurrentAvatarId())
     } else {
-      this.log.warn('Unknown preset address: ', address)
+      this.log.warn('Unknown preset address:', address)
       this.storage.setPendingState(false)
     }
   }

@@ -8,7 +8,7 @@ export function lookForConfig(
   log: Logger
 ): string | undefined {
   try {
-    log.info('Looking for config for avatarId: ', avatarId)
+    log.info('Looking for config for avatarId:', avatarId)
     const vrcPath = path.join(vrcOscPath, 'OSC')
     const avatarFile = `${avatarId}.json`
     const folder = fs.readdirSync(vrcPath, { withFileTypes: true })
@@ -26,7 +26,7 @@ export function lookForConfig(
 
     return undefined
   } catch {
-    log.error('Error finding config for avatarId: ', avatarId)
+    log.error('Error finding config for avatarId:', avatarId)
     return undefined
   }
 }

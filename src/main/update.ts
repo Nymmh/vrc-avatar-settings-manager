@@ -14,7 +14,7 @@ export async function update(log: Logger): Promise<void> {
 
   autoUpdater.on('error', (e) => {
     const errorMessage = e == null ? 'unknown' : (e.stack || e).toString()
-    log.info('Update error: ', errorMessage)
+    log.info('Update error:', errorMessage)
     dialog.showErrorBox('Error ', errorMessage)
   })
 
