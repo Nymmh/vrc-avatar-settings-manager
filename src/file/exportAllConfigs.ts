@@ -4,6 +4,7 @@ import Database from 'better-sqlite3'
 import { checkDataFolder } from './checkDataFolder'
 import path from 'path'
 import fs from 'fs'
+import { getExportVersion } from '../database/getExportVersion'
 
 export async function exportAllConfigs(
   log: Logger,
@@ -13,6 +14,10 @@ export async function exportAllConfigs(
 ): Promise<exportAllConfigsPromiseInterface> {
   try {
     log.info('Starting export of all avatar configs...')
+    const exportData: exportAllDataInterface = {
+      version: '',
+      avatars: [] as exportAllConfigsInterface[]
+    }
     const a = db
       .prepare(`SELECT avatarId, name FROM avatarStorage`)
       .all() as exportAllConfigsInterface[]
@@ -27,6 +32,15 @@ export async function exportAllConfigs(
     const now = new Date()
     const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`
     const fileName = `asm-export-${timestamp}`
+    const exportVersion = getExportVersion(db, log)
+
+    if (exportVersion === undefined) {
+      log.error('Could not get export version ')
+      return { success: false, message: 'Could not get export version.' }
+    }
+
+    log.info(`Export version: ${exportVersion}`)
+    exportData.version = exportVersion
 
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Config',
@@ -66,7 +80,9 @@ export async function exportAllConfigs(
       }
     }
 
-    await fs.promises.writeFile(filePath, JSON.stringify(a), 'utf-8')
+    exportData.avatars = a
+
+    await fs.promises.writeFile(filePath, JSON.stringify(exportData), 'utf-8')
 
     log.info('All avatar configs exported successfully')
     return { success: true, message: 'Config exported' }

@@ -30,6 +30,7 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
 
     const loadedAvatarJson = await loadAvatarConfig(log, mainWindow)
     storage.setLoadedAvatarJson(loadedAvatarJson)
+    log.info(`Config version: ${loadedAvatarJson?.version || 'unknown'}`)
     log.info('Avatar config loaded')
     return loadedAvatarJson
   })

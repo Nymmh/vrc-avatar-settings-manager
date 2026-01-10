@@ -22,6 +22,8 @@ export async function uploadAvatar(
     let parsedContent: avatarDBInterface[] = []
     let configParams: string = '[]'
 
+    log.info(`Config version: ${loadedJson.version || 'unknown'}`)
+
     if (!loadedJson.avatarId) {
       log.error('Invalid avatarId')
       return { success: false, message: 'Invalid avatarId' }

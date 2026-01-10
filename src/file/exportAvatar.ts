@@ -4,6 +4,7 @@ import Database from 'better-sqlite3'
 import path from 'path'
 import fs from 'fs'
 import { checkDataFolder } from './checkDataFolder'
+import { getExportVersion } from '../database/getExportVersion'
 
 export async function exportAvatar(
   log: Logger,
@@ -68,8 +69,18 @@ export async function exportAvatar(
       }
     }
 
+    const exportVersion = getExportVersion(db, log)
+
+    if (exportVersion === undefined) {
+      log.error('Could not get export version ')
+      return { success: false, message: 'Could not get export version.' }
+    }
+
+    log.info(`Export version: ${exportVersion}`)
+
     const exportData = {
       type: 'avatar',
+      version: exportVersion,
       avatarId: q.avatarId,
       name: q.name,
       configs: a
