@@ -104,7 +104,7 @@ export function avatarDatabase(log: Logger): DBType {
 
     db.transaction(() => {
       db.prepare(
-        `INSERT OR IGNORE INTO settings (key, value) VALUES ('checksumVersion', '1'), ('copyForDiscord', 'true')`
+        `INSERT OR IGNORE INTO settings (key, value) VALUES ('checksumVersion', '1'), ('copyForDiscord', 'true'), ('exportVersion', '1')`
       ).run()
 
       db.pragma('user_version = 4')
