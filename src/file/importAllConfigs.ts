@@ -32,9 +32,20 @@ export async function importAllConfigs(
     }
 
     const data = await fs.readFileSync(filePaths[0], 'utf-8')
-    const parsedData = JSON.parse(data) as exportAllConfigsInterface[]
+    let parsedData = JSON.parse(data) as exportAllDataInterface
 
-    for (const avatar of parsedData) {
+    if (!parsedData.avatars || !Array.isArray(parsedData.avatars) || !parsedData.version) {
+      log.warn('Import All file is missing required data. Trying legacy support...')
+      const legacySupport = parsedData as unknown as exportAllConfigsInterface[]
+      parsedData = { version: 'legacy', avatars: legacySupport }
+
+      if (!legacySupport || !Array.isArray(legacySupport)) {
+        log.error('Invalid import file format')
+        return { success: false, message: 'Invalid import file format' }
+      }
+    }
+
+    for (const avatar of parsedData.avatars) {
       db.prepare(
         `INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?) ON CONFLICT(avatarId) DO NOTHING`
       ).run(avatar.avatarId, avatar.name)

@@ -5,6 +5,7 @@ import path from 'path'
 import fs from 'fs'
 import { checkDataFolder } from './checkDataFolder'
 import { showDialogNoSound } from '../services/showDialogNoSound'
+import { getExportVersion } from '../database/getExportVersion'
 
 export async function exportConfig(
   log: Logger,
@@ -35,7 +36,7 @@ export async function exportConfig(
 
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Config',
-      defaultPath: `${path.join(avatarConfigData, `config_${q.name || ''}`)}.json`,
+      defaultPath: `${path.join(avatarConfigData, `config_${q.avatarName}_${q.name || ''}`)}.json`,
       filters: [
         { name: 'JSON', extensions: ['json'] },
         { name: 'All Files', extensions: ['*'] }
@@ -83,8 +84,18 @@ export async function exportConfig(
       log.error('Invalid JSON')
     }
 
+    const exportVersion = getExportVersion(db, log)
+
+    if (exportVersion === undefined) {
+      log.error('Could not get export version ')
+      return { success: false, message: 'Could not get export version.' }
+    }
+
+    log.info(`Export version: ${exportVersion}`)
+
     const exportData = {
       type: 'config',
+      version: exportVersion,
       avatarId: q.avatarId || 'Unknown',
       uqid: q.uqid || '',
       name: q.name || new Date().toISOString(),

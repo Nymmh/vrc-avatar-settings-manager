@@ -33,6 +33,12 @@ interface exportAllConfig {
   name?: string
   configs?: avatarDB[]
   valuedParams?: valuedParams[] | string
+  version?: string
+}
+
+interface exportedFullData {
+  version: string
+  avatars: exportAllConfig[]
 }
 
 interface avatarStorageDB {
@@ -138,6 +144,7 @@ interface applyFromSaved {
 
 declare global {
   interface exportAllConfigsInterface extends exportAllConfig {}
+  interface exportAllDataInterface extends exportedFullData {}
   interface avatarDBInterface extends avatarDB {}
   interface avatarStorageDBInterface extends avatarStorageDB {}
   interface exportAllConfigsPromiseInterface extends exportAllConfigsPromise {}
