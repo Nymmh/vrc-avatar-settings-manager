@@ -30,6 +30,9 @@ const appApi = {
   },
   setCopyForDiscordSetting: (value: boolean): Promise<boolean> => {
     return ipcRenderer.invoke('setCopyForDiscordSetting', value)
+  },
+  deleteDatabase: (): Promise<boolean> => {
+    return ipcRenderer.invoke('deleteDatabase')
   }
 }
 

@@ -78,6 +78,7 @@ export interface appApi {
   openExportDirectory: () => void
   getCopyForDiscordSetting: () => Promise<boolean>
   setCopyForDiscordSetting: (value: boolean) => Promise<boolean>
+  deleteDatabase: () => Promise<boolean>
 }
 
 declare global {
