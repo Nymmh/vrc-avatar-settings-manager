@@ -349,7 +349,11 @@ onMounted(() => {
             </Card>
             <Card v-if="appStore.avatarFoundFile">
               <PasteCode @notification="pushNotification" />
-              <LoadFile :avatar-config="avatarConfig" @notification="pushNotification" />
+              <LoadFile
+                :avatar-config="avatarConfig"
+                :show-id-mismatch="false"
+                @notification="pushNotification"
+              />
             </Card>
           </div>
         </OverlayScrollbarsComponent>

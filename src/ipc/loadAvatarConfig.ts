@@ -6,16 +6,28 @@ import { checkDataFolder } from '../file/checkDataFolder'
 export async function loadAvatarConfig(
   log: Logger,
   mainWindow: BrowserWindow
-): Promise<exportAllConfigsInterface | null> {
+): Promise<exportAllConfigsInterface | string | null> {
   const dataFolder = checkDataFolder()
 
   const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: 'Select an Avatar JSON',
+    title: 'Select an Avatar Share Code or JSON',
     defaultPath: dataFolder.avatarData,
     filters: [
       {
+        name: 'JSON, TXT Files',
+        extensions: ['json', 'txt']
+      },
+      {
         name: 'JSON Files',
         extensions: ['json']
+      },
+      {
+        name: 'Text Files',
+        extensions: ['txt']
+      },
+      {
+        name: 'All Files',
+        extensions: ['*']
       }
     ],
     properties: ['openFile']
@@ -28,7 +40,11 @@ export async function loadAvatarConfig(
 
   try {
     const data = await fs.readFileSync(filePaths[0], 'utf-8')
-    return JSON.parse(data) as exportAllConfigsInterface
+    try {
+      return JSON.parse(data) as exportAllConfigsInterface
+    } catch {
+      return data
+    }
   } catch (e) {
     log.error('Failed to load configuration file', e)
     return null

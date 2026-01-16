@@ -66,7 +66,7 @@ export function exportHandlers(context: ExportHandlerContext): void {
       return { success: false }
     }
 
-    return await copyConfigCode(log, avatarDB, mainWindow, id)
+    return await copyConfigCode(log, avatarDB, dialog, mainWindow, id)
   })
 
   ipcMain.handle('applyCopiedCode', async () => {

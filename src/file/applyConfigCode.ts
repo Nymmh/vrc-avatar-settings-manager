@@ -22,10 +22,12 @@ export async function applyConfigCode(
   avatarDB: Database,
   mainWindow: BrowserWindow,
   currentAviId: string,
-  OSC_CLIENT: Client
-): Promise<exportConfigInterface> {
+  OSC_CLIENT: Client,
+  fileData: string | undefined = undefined,
+  skipUpload: boolean = false
+): Promise<exportConfigInterface | avatarDBInterface> {
   try {
-    let clipboardText = clipboard.readText().trim()
+    let clipboardText = fileData ? fileData.trim() : clipboard.readText().trim()
 
     // For if the person exported with Discord formatting but was pasted raw
     if (clipboardText.startsWith('```')) {
@@ -73,6 +75,11 @@ export async function applyConfigCode(
 
     log.info('Copied config is valid')
     const data = JSON.parse(jsonString)
+
+    if (data?.type && data.type === 'avatar') {
+      data.valuedParams = data.configs
+      return data
+    }
 
     const fullParams = data.p.map((param: [string, number | null | undefined, string?]) => {
       const [name, value, type] = param
@@ -127,6 +134,16 @@ export async function applyConfigCode(
     let nsfwResponse = 0
     let upload: unknown
     let saveResponse = 0
+
+    if (skipUpload) {
+      formattedDataConfig.uqid = config.uqid || ''
+      formattedDataConfig.name = config.name || new Date().toISOString()
+      formattedDataConfig.avatarName = config.avatarName || 'Unknown'
+      formattedDataConfig.nsfw = config.nsfw ? 1 : 0
+      formattedDataConfig.isPreset = config.isPreset ? 1 : 0
+      formattedDataConfig.presets = config.presets || {}
+      return formattedDataConfig
+    }
 
     if (currentAviId !== config.avatarId) {
       const userResponse = await showDialogNoSound(

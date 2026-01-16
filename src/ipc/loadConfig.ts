@@ -6,16 +6,28 @@ import { checkDataFolder } from '../file/checkDataFolder'
 export async function loadConfig(
   log: Logger,
   mainWindow: BrowserWindow
-): Promise<avatarDBInterface | null> {
+): Promise<avatarDBInterface | string | null> {
   const dataFolder = checkDataFolder()
 
   const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: 'Select an Avatar JSON',
+    title: 'Select a config',
     defaultPath: dataFolder.avatarConfigData,
     filters: [
       {
+        name: 'JSON, TXT Files',
+        extensions: ['json', 'txt']
+      },
+      {
         name: 'JSON Files',
         extensions: ['json']
+      },
+      {
+        name: 'Text Files',
+        extensions: ['txt']
+      },
+      {
+        name: 'All Files',
+        extensions: ['*']
       }
     ],
     properties: ['openFile']
@@ -28,7 +40,12 @@ export async function loadConfig(
 
   try {
     const data = await fs.readFileSync(filePaths[0], 'utf-8')
-    return JSON.parse(data) as avatarDBInterface
+    try {
+      const parsed = JSON.parse(data)
+      return parsed as avatarDBInterface
+    } catch {
+      return data
+    }
   } catch (e) {
     log.error('Failed to load configuration file', e)
     return null

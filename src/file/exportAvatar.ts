@@ -5,6 +5,8 @@ import path from 'path'
 import fs from 'fs'
 import { checkDataFolder } from './checkDataFolder'
 import { getExportVersion } from '../database/getExportVersion'
+import { showDialogNoSound } from '../services/showDialogNoSound'
+import { exportAvatarShareCode } from './exportAvatarShareCode'
 
 export async function exportAvatar(
   log: Logger,
@@ -31,18 +33,44 @@ export async function exportAvatar(
 
     const { avatarData } = checkDataFolder()
 
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Export Avatar',
-      defaultPath: `${path.join(avatarData, `avatar_${q.name || ''}`)}.json`,
-      filters: [
-        { name: 'JSON', extensions: ['json'] },
-        { name: 'All Files', extensions: ['*'] }
-      ]
-    })
+    const exportTypeResponse = await showDialogNoSound(
+      ['Share Code', 'JSON', 'Cancel'],
+      0,
+      'Export Type',
+      `What type of file would you like to export?`,
+      mainWindow
+    )
 
-    if (canceled || !filePath) {
-      log.info('Export configuration canceled or no file path specified')
-      return { success: false, message: 'Export configuration canceled or no file path specified' }
+    if (exportTypeResponse.response === 2) {
+      log.info('User cancelled exporting share')
+      return { success: false, message: 'Cancelled exporting' }
+    }
+
+    let exportShareCode = false
+    let filePath = ''
+
+    if (exportTypeResponse.response === 0) {
+      exportShareCode = true
+      // return await copyConfigCode(log, db, dialog, mainWindow, 0, true, true)
+    } else {
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: 'Export Avatar',
+        defaultPath: `${path.join(avatarData, `avatar_${q.name || ''}`)}.json`,
+        filters: [
+          { name: 'JSON', extensions: ['json'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      })
+
+      if (result.canceled || !result.filePath) {
+        log.info('Export configuration canceled or no file path specified')
+        return {
+          success: false,
+          message: 'Export configuration canceled or no file path specified'
+        }
+      }
+
+      filePath = result.filePath
     }
 
     const a = db
@@ -86,10 +114,14 @@ export async function exportAvatar(
       configs: a
     }
 
-    await fs.promises.writeFile(filePath, JSON.stringify(exportData), 'utf-8')
+    if (!exportShareCode) {
+      await fs.promises.writeFile(filePath, JSON.stringify(exportData), 'utf-8')
 
-    log.info('Avatar exported successfully')
-    return { success: true, message: 'Config exported' }
+      log.info('Avatar exported successfully')
+      return { success: true, message: 'Config exported' }
+    } else {
+      return await exportAvatarShareCode(log, db, dialog, mainWindow, exportData)
+    }
   } catch (e) {
     log.error('Error exporting avatar:', e)
     return { success: false, message: 'Error exporting avatar' }
