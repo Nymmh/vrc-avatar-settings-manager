@@ -33,6 +33,9 @@ const appApi = {
   },
   deleteDatabase: (): Promise<boolean> => {
     return ipcRenderer.invoke('deleteDatabase')
+  },
+  getExportedFileCount: (): Promise<exportedFileCountInterface> => {
+    return ipcRenderer.invoke('getExportedFileCount')
   }
 }
 

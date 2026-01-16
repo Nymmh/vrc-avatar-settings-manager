@@ -79,6 +79,7 @@ export interface appApi {
   getCopyForDiscordSetting: () => Promise<boolean>
   setCopyForDiscordSetting: (value: boolean) => Promise<boolean>
   deleteDatabase: () => Promise<boolean>
+  getExportedFileCount: () => Promise<exportedFileCountInterface>
 }
 
 declare global {

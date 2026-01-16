@@ -10,6 +10,17 @@ const saveFaceTracking = ref(false)
 const copyForDiscord = ref(false)
 const updateRate = ref('0 params/sec')
 let intervalLogUpdate: number | null = null
+const exportedFiles = ref<{
+  fullExports: number
+  avatarExports: number
+  configExports: number
+  totalSize: string
+}>({
+  fullExports: 0,
+  avatarExports: 0,
+  configExports: 0,
+  totalSize: '0MB'
+})
 
 const getLogFileSize = async (): Promise<void> => {
   window.appApi.getLogFileSize().then((size: string) => {
@@ -103,11 +114,20 @@ const deleteDatabase = (): void => {
   })
 }
 
+const getExportedFileCount = async (): Promise<void> => {
+  const res = await window.appApi.getExportedFileCount()
+  exportedFiles.value.fullExports = res.fullExports
+  exportedFiles.value.avatarExports = res.avatarExports
+  exportedFiles.value.configExports = res.configExports
+  exportedFiles.value.totalSize = res.totalSize
+}
+
 onMounted(() => {
   getLogFileSize()
   getSaveFaceTrackingSetting()
   getCopyForDiscordSetting()
   paramUpdateRate()
+  getExportedFileCount()
   intervalLogUpdate = window.setInterval(() => {
     getLogFileSize()
   }, 10000)
@@ -141,8 +161,8 @@ const emit = defineEmits(['notification'])
             Incoming: <span>{{ updateRate }}</span>
           </h2>
         </Card>
-        <div class="settings__cards-row">
-          <Card>
+        <div class="settings__cards-row settings__card-row--fit">
+          <Card additional-class="card--fit">
             <div class="settings__content">
               <h2 class="settings__title">Log</h2>
               <div class="settings__card-content">
@@ -166,6 +186,10 @@ const emit = defineEmits(['notification'])
             <div class="settings__content">
               <h2 class="settings__title">Export Location</h2>
               <div class="settings__card-content">
+                <p>Full Exports: {{ exportedFiles.fullExports }}</p>
+                <p>Exported Avatars: {{ exportedFiles.avatarExports }}</p>
+                <p>Exported Configs: {{ exportedFiles.configExports }}</p>
+                <p>Total Size: {{ exportedFiles.totalSize }}</p>
                 <div class="settings__card-button-group">
                   <Button
                     label="Open Export Directory"
@@ -257,6 +281,10 @@ const emit = defineEmits(['notification'])
     gap: 28px;
     justify-content: center;
     width: 100%;
+
+    &--fit {
+      height: fit-content;
+    }
   }
 
   &__card-content {
