@@ -142,6 +142,13 @@ interface applyFromSaved {
   parameters: string
 }
 
+interface exportedFileCount {
+  fullExports: number
+  avatarExports: number
+  configExports: number
+  totalSize: string
+}
+
 declare global {
   interface exportAllConfigsInterface extends exportAllConfig {}
   interface exportAllDataInterface extends exportedFullData {}
@@ -168,6 +175,7 @@ declare global {
   interface updateAvatarDataInterface extends updateAvatarData {}
   interface valuedParamsInterface extends valuedParams {}
   interface applyFromSavedInterface extends applyFromSaved {}
+  interface exportedFileCountInterface extends exportedFileCount {}
 }
 
 export {}

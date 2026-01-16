@@ -7,6 +7,7 @@ defineProps<{
   hoverable?: boolean
   clickable?: boolean
   variant?: 'default' | 'outlined' | 'filled'
+  additionalClass?: string
 }>()
 
 defineEmits<{
@@ -15,7 +16,7 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="card">
+  <div :class="['card', additionalClass]">
     <slot />
   </div>
 </template>
@@ -35,6 +36,10 @@ defineEmits<{
   position: relative;
   transition: box-shadow 0.35s ease-in-out;
   width: fit-content;
+
+  &--fit {
+    height: fit-content;
+  }
 
   &::before {
     backdrop-filter: blur(4px);

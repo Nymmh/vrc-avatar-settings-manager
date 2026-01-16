@@ -11,6 +11,7 @@ import { setSaveFaceTrackingSetting } from '../../database/setSaveFaceTrackingSe
 import { getCopyForDiscordSetting } from '../../database/getCopyForDiscordSetting'
 import { setCopyForDiscordSetting } from '../../database/setCopyForDiscordSetting'
 import { deleteDatabase } from '../../database/deleteDatabase'
+import { getExportedFileCount } from '../../file/getExportedFileCount'
 
 interface DataFolder {
   folderPath: string
@@ -122,5 +123,9 @@ export function appHandlers(context: appHandlersContext): void {
     }
 
     return deleteDatabase(context.log, avatarDB, getMainWindow()!)
+  })
+
+  ipcMain.handle('getExportedFileCount', async () => {
+    return await getExportedFileCount(context.log, dataFolder)
   })
 }
