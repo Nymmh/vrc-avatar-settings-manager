@@ -94,6 +94,15 @@ const paramUpdateRate = (): void => {
   })
 }
 
+const deleteDatabase = (): void => {
+  window.appApi.deleteDatabase().then((success: boolean) => {
+    emit('notification', {
+      type: success ? 'success' : 'error',
+      title: success ? 'Database Deleted' : 'Database Deletion Failed'
+    })
+  })
+}
+
 onMounted(() => {
   getLogFileSize()
   getSaveFaceTrackingSetting()
@@ -132,40 +141,46 @@ const emit = defineEmits(['notification'])
             Incoming: <span>{{ updateRate }}</span>
           </h2>
         </Card>
-        <Card>
-          <div class="settings__content">
-            <h2 class="settings__title">Log</h2>
-            <div class="settings__card-content">
-              <p>
-                Log file size: <span>{{ logFileSize }}</span>
-              </p>
-              <div class="settings__card-button-group">
-                <Button label="Open Log Directory" :small="true" @click="openLogDirectory" />
-                <Button
-                  label="Delete"
-                  :small="true"
-                  :error="true"
-                  tooltip="Delete Log"
-                  @click="deleteLogFile"
-                />
+        <div class="settings__cards-row">
+          <Card>
+            <div class="settings__content">
+              <h2 class="settings__title">Log</h2>
+              <div class="settings__card-content">
+                <p>
+                  Log file size: <span>{{ logFileSize }}</span>
+                </p>
+                <div class="settings__card-button-group">
+                  <Button label="Open Log Directory" :small="true" @click="openLogDirectory" />
+                  <Button
+                    label="Delete"
+                    :small="true"
+                    :error="true"
+                    tooltip="Delete Log"
+                    @click="deleteLogFile"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-        <Card>
-          <div class="settings__content">
-            <h2 class="settings__title">Export Location</h2>
-            <div class="settings__card-content">
-              <div class="settings__card-button-group">
-                <Button label="Open Export Directory" :small="true" @click="openExportDirectory" />
+          </Card>
+          <Card>
+            <div class="settings__content">
+              <h2 class="settings__title">Export Location</h2>
+              <div class="settings__card-content">
+                <div class="settings__card-button-group">
+                  <Button
+                    label="Open Export Directory"
+                    :small="true"
+                    @click="openExportDirectory"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
         <Card>
           <div class="settings__content">
             <h2 class="settings__title">Database</h2>
-            <div class="settings__card-content">
+            <div class="settings__card-content settings__card-content--buttons">
               <Button
                 :label="
                   saveFaceTracking ? 'Disable Save Face Tracking' : 'Enable Save Face Tracking'
@@ -184,6 +199,7 @@ const emit = defineEmits(['notification'])
                 :error="copyForDiscord"
                 @click="setCopyForDiscordSetting"
               />
+              <Button label="Delete Database" :small="true" :error="true" @click="deleteDatabase" />
             </div>
           </div>
         </Card>
@@ -235,10 +251,22 @@ const emit = defineEmits(['notification'])
     margin: 0;
   }
 
+  &__cards-row {
+    display: flex;
+    flex-flow: row;
+    gap: 28px;
+    justify-content: center;
+    width: 100%;
+  }
+
   &__card-content {
     display: flex;
     flex-flow: column;
     gap: 16px;
+
+    &--buttons {
+      align-items: center;
+    }
   }
 
   &__card-button-group {

@@ -10,6 +10,7 @@ import { getSaveFaceTrackingSetting } from '../../database/getSaveFaceTrackingSe
 import { setSaveFaceTrackingSetting } from '../../database/setSaveFaceTrackingSetting'
 import { getCopyForDiscordSetting } from '../../database/getCopyForDiscordSetting'
 import { setCopyForDiscordSetting } from '../../database/setCopyForDiscordSetting'
+import { deleteDatabase } from '../../database/deleteDatabase'
 
 interface DataFolder {
   folderPath: string
@@ -112,5 +113,14 @@ export function appHandlers(context: appHandlersContext): void {
 
   ipcMain.handle('setCopyForDiscordSetting', async (_, value: boolean) => {
     return setCopyForDiscordSetting(avatarDB, value, context.log)
+  })
+
+  ipcMain.handle('deleteDatabase', async () => {
+    if (!getMainWindow()) {
+      context.log.error('Dependency not found')
+      return false
+    }
+
+    return deleteDatabase(context.log, avatarDB, getMainWindow()!)
   })
 }
