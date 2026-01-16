@@ -17,6 +17,7 @@ import { updateSavedConfigData } from '../../database/updateSavedData'
 import { replaceParams } from '../../database/replaceParams'
 import { deleteConfig } from '../../database/deleteConfig'
 import { showDialogNoSound } from '../../services/showDialogNoSound'
+import { applyConfigCode } from '../../file/applyConfigCode'
 
 interface ConfigHandlerContext {
   log: Logger
@@ -67,6 +68,22 @@ export function configHandlers(context: ConfigHandlerContext): void {
       return { name: '', match: false, error: 'No file data' }
     }
 
+    if (typeof dataParsedConfig === 'string' || dataParsedConfig.toString().startsWith('ASM:')) {
+      const res = await applyConfigCode(
+        log,
+        avatarDB,
+        mainWindow,
+        storage.getCurrentAvatarId() || '',
+        getOSCClient()!,
+        dataParsedConfig.toString()
+      )
+
+      if (res && 'success' in res && res.success) {
+        return { error: '' }
+      } else {
+        return { error: 'Failed to apply share code' }
+      }
+    }
     if (!dataParsedConfig.avatarId) {
       log.warn('Loaded config is missing ID')
       return { name: '', match: false, error: 'Loaded config is missing ID' }

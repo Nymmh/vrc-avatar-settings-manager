@@ -1,11 +1,13 @@
 import { brotliCompressSync, deflateSync, constants } from 'node:zlib'
-import { BrowserWindow, clipboard } from 'electron'
+import { BrowserWindow, clipboard, Dialog } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { showDialogNoSound } from '../services/showDialogNoSound'
 import { checksum } from '../helpers/checksum'
 import { toBase91 } from '../helpers/toBase91'
 import { getCopyForDiscordSetting } from '../database/getCopyForDiscordSetting'
+import { exportConfig } from './exportConfig'
+import { exportShareCode } from './exportShareCode'
 
 interface ExportDataInterface {
   t: string
@@ -19,11 +21,53 @@ interface ExportDataInterface {
   pr?: Partial<avatarPresetsInterface>
 }
 
+function copyShareCode(shareCode: string, log: Logger): exportConfigInterface {
+  clipboard.writeText(shareCode)
+  log.info('Share Code copied to clipboard')
+
+  return { success: true, message: 'Share Code copied to clipboard' }
+}
+
+async function startExport(
+  log: Logger,
+  db: Database,
+  dialog: Dialog,
+  mainWindow: BrowserWindow,
+  data: string,
+  avatarName: string,
+  name: string,
+  id: number
+): Promise<exportConfigInterface> {
+  const shareCodeExportToFileResponse = await showDialogNoSound(
+    ['Share Code', 'JSON', 'Cancel'],
+    0,
+    'How would you like to export the config?',
+    `Share Code can be pasted into the app directly, while JSON can be imported via file.`,
+    mainWindow
+  )
+
+  if (shareCodeExportToFileResponse.response === 0) {
+    return await exportShareCode(log, dialog, mainWindow, data, avatarName, name)
+  } else if (shareCodeExportToFileResponse.response === 1) {
+    return await exportConfig(log, db, dialog, mainWindow, id)
+  } else {
+    log.info('User cancelled exporting config')
+    return { success: false, message: 'Cancelled exporting config' }
+  }
+}
+
+function cancelCopy(log: Logger): exportConfigInterface {
+  log.info('User cancelled copying config code')
+  return { success: false, message: 'Cancelled copying config code' }
+}
+
 export async function copyConfigCode(
   log: Logger,
   db: Database,
+  dialog: Dialog,
   mainWindow: BrowserWindow,
-  id: number
+  id: number | string,
+  directExport = false
 ): Promise<exportConfigInterface> {
   try {
     if (!id || typeof id !== 'number' || id <= 0) {
@@ -44,7 +88,7 @@ export async function copyConfigCode(
 
     let savePresets = 0
 
-    if (q.isPreset) {
+    if (q?.isPreset) {
       const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
         0,
@@ -121,6 +165,18 @@ export async function copyConfigCode(
     const sum = checksum(encoded)
 
     let shareCode = `ASM:v${checksumVersion}:${sum}:${encoded}`
+    const shareCodeStored = shareCode
+
+    if (directExport) {
+      return exportShareCode(
+        log,
+        dialog,
+        mainWindow,
+        shareCodeStored,
+        q.avatarName || 'Unknown',
+        q.name || 'Unknown'
+      )
+    }
 
     const copyToDiscord = getCopyForDiscordSetting(db, log)
 
@@ -128,18 +184,65 @@ export async function copyConfigCode(
       shareCode = `\`\`\`${shareCode}\`\`\``
     }
 
-    if (shareCode.length >= 2000) {
-      log.error('Exported config code is too long to copy')
-      return {
-        success: false,
-        message: 'Exported config code is too long to copy, please export the file.'
+    if (shareCode.length >= 4000) {
+      log.error(`Exported share code is too long to copy ${shareCode.length}`)
+
+      const shareCodeCopyResponse = await showDialogNoSound(
+        ['Copy', 'Export to File', 'Cancel'],
+        0,
+        'Share Code is too long to copy',
+        `The exported share code length is too long to copy to Discord. Do you want to copy it anyway?`,
+        mainWindow
+      )
+
+      if (shareCodeCopyResponse.response === 0) {
+        return copyShareCode(shareCode, log)
+      } else if (shareCodeCopyResponse.response === 1) {
+        return startExport(
+          log,
+          db,
+          dialog,
+          mainWindow,
+          shareCodeStored,
+          q.avatarName || 'Unknown',
+          q.name || 'Unknown',
+          id
+        )
+      } else {
+        return cancelCopy(log)
+      }
+    } else {
+      if (shareCode.length >= 2000) {
+        log.error(`Exported share code is too long to copy ${shareCode.length}`)
+
+        const shareCodeCopyResponse = await showDialogNoSound(
+          ['Copy', 'Export to File', 'Cancel'],
+          0,
+          'Share Code is too long to copy',
+          `The exported share code length is too long to copy to Discord without Discord Nitro. Do you want to copy it anyway?`,
+          mainWindow
+        )
+
+        if (shareCodeCopyResponse.response === 0) {
+          return copyShareCode(shareCode, log)
+        } else if (shareCodeCopyResponse.response === 1) {
+          return startExport(
+            log,
+            db,
+            dialog,
+            mainWindow,
+            shareCodeStored,
+            q.avatarName || 'Unknown',
+            q.name || 'Unknown',
+            id
+          )
+        } else {
+          return cancelCopy(log)
+        }
+      } else {
+        return copyShareCode(shareCode, log)
       }
     }
-
-    clipboard.writeText(shareCode)
-    log.info('Config code copied to clipboard')
-
-    return { success: true, message: 'Config code copied to clipboard' }
   } catch (e) {
     log.error('Error copying config code:', e)
     return { success: false, message: 'Error copying config code' }

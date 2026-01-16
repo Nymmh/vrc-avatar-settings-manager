@@ -9,6 +9,7 @@ import { deleteAvatar } from '../../database/deleteAvatar'
 import { updateAvatarData } from '../../database/updateAvatarData'
 import { exportAvatar } from '../../file/exportAvatar'
 import { getNames } from '../../database/getSavedNames'
+import { applyConfigCode } from '../../file/applyConfigCode'
 
 interface AvatarHandlerContext {
   log: Logger
@@ -29,10 +30,25 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     }
 
     const loadedAvatarJson = await loadAvatarConfig(log, mainWindow)
-    storage.setLoadedAvatarJson(loadedAvatarJson)
-    log.info(`Config version: ${loadedAvatarJson?.version || 'unknown'}`)
-    log.info('Avatar config loaded')
-    return loadedAvatarJson
+
+    if (typeof loadedAvatarJson === 'string') {
+      const convertConfig = (await applyConfigCode(
+        log,
+        avatarDB,
+        mainWindow,
+        '',
+        false,
+        loadedAvatarJson,
+        true
+      )) as exportAllConfigsInterface
+      storage.setLoadedAvatarJson(convertConfig)
+      return convertConfig
+    } else {
+      storage.setLoadedAvatarJson(loadedAvatarJson)
+      log.info(`Config version: ${loadedAvatarJson?.version || 'unknown'}`)
+      log.info('Avatar config loaded')
+      return loadedAvatarJson
+    }
   })
 
   ipcMain.handle('uploadAvatarConfig', async () => {

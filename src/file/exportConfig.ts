@@ -6,6 +6,7 @@ import fs from 'fs'
 import { checkDataFolder } from './checkDataFolder'
 import { showDialogNoSound } from '../services/showDialogNoSound'
 import { getExportVersion } from '../database/getExportVersion'
+import { copyConfigCode } from './copyConfigCode'
 
 export async function exportConfig(
   log: Logger,
@@ -28,88 +29,105 @@ export async function exportConfig(
       .get(id) as avatarDBInterface | undefined
 
     if (!q) {
-      log.error('No configuration found')
+      log.error('No config found')
       return { success: false, message: 'No config found' }
     }
 
     const { avatarConfigData } = checkDataFolder()
 
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Export Config',
-      defaultPath: `${path.join(avatarConfigData, `config_${q.avatarName}_${q.name || ''}`)}.json`,
-      filters: [
-        { name: 'JSON', extensions: ['json'] },
-        { name: 'All Files', extensions: ['*'] }
-      ]
-    })
+    const exportTypeResponse = await showDialogNoSound(
+      ['Share Code', 'JSON', 'Cancel'],
+      0,
+      'Export Type',
+      `What type of file would you like to export?`,
+      mainWindow
+    )
 
-    if (canceled || !filePath) {
-      log.info('Export configuration canceled or no file path specified')
-      return { success: false, message: 'Export configuration canceled or no file path specified' }
+    if (exportTypeResponse.response === 2) {
+      log.info('User cancelled exporting share')
+      return { success: false, message: 'Cancelled exporting' }
     }
 
-    let savePresets = 0
+    if (exportTypeResponse.response === 0) {
+      return await copyConfigCode(log, db, dialog, mainWindow, id, true)
+    } else {
+      const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+        title: 'Export Config',
+        defaultPath: `${path.join(avatarConfigData, `config_${q.avatarName}_${q.name || ''}`)}.json`,
+        filters: [
+          { name: 'JSON', extensions: ['json'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      })
 
-    if (q.isPreset) {
-      const userResponse = await showDialogNoSound(
-        ['Yes', 'No'],
-        0,
-        'Marked As Preset',
-        `This config is marked as a preset, would you like to export them too?`,
-        mainWindow
-      )
-
-      if (userResponse.response === 0) savePresets = 1
-    }
-
-    let parsed: string[] = []
-    const presets: Partial<avatarPresetsInterface> = {}
-
-    if (savePresets) {
-      const p = db
-        .prepare('SELECT avatarId, name, unityParameter FROM presets WHERE forUqid = ? LIMIT 1')
-        .get(q.uqid) as avatarPresetsInterface | undefined
-
-      if (p) {
-        presets.forUqid = q.uqid
-        presets.avatarId = p.avatarId
-        presets.name = p.name
-        presets.unityParameter = p.unityParameter
+      if (canceled || !filePath) {
+        log.info('Export config canceled or no file path specified')
+        return { success: false, message: 'Export config canceled or no file path specified' }
       }
+
+      let savePresets = 0
+
+      if (q.isPreset) {
+        const userResponse = await showDialogNoSound(
+          ['Yes', 'No'],
+          0,
+          'Marked As Preset',
+          `This config is marked as a preset, would you like to export them too?`,
+          mainWindow
+        )
+
+        if (userResponse.response === 0) savePresets = 1
+      }
+
+      let parsed: string[] = []
+      const presets: Partial<avatarPresetsInterface> = {}
+
+      if (savePresets) {
+        const p = db
+          .prepare('SELECT avatarId, name, unityParameter FROM presets WHERE forUqid = ? LIMIT 1')
+          .get(q.uqid) as avatarPresetsInterface | undefined
+
+        if (p) {
+          presets.forUqid = q.uqid
+          presets.avatarId = p.avatarId
+          presets.name = p.name
+          presets.unityParameter = p.unityParameter
+        }
+      }
+
+      try {
+        parsed = JSON.parse(q.parameters || '[]') || []
+      } catch {
+        log.error('Invalid JSON')
+      }
+
+      const exportVersion = getExportVersion(db, log)
+
+      if (exportVersion === undefined) {
+        log.error('Could not get export version ')
+        return { success: false, message: 'Could not get export version.' }
+      }
+
+      log.info(`Export version: ${exportVersion}`)
+
+      const exportData = {
+        type: 'config',
+        version: exportVersion,
+        avatarId: q.avatarId || 'Unknown',
+        uqid: q.uqid || '',
+        name: q.name || new Date().toISOString(),
+        avatarName: q.avatarName || 'Unknown',
+        nsfw: !!q.nsfw,
+        valuedParams: parsed,
+        isPreset: !!q.isPreset,
+        presets: presets
+      }
+
+      await fs.promises.writeFile(filePath, JSON.stringify(exportData), 'utf-8')
+
+      log.info(`Config exported successfully`)
+      return { success: true, message: 'Config exported' }
     }
-
-    try {
-      parsed = JSON.parse(q.parameters || '[]') || []
-    } catch {
-      log.error('Invalid JSON')
-    }
-
-    const exportVersion = getExportVersion(db, log)
-
-    if (exportVersion === undefined) {
-      log.error('Could not get export version ')
-      return { success: false, message: 'Could not get export version.' }
-    }
-
-    log.info(`Export version: ${exportVersion}`)
-
-    const exportData = {
-      type: 'config',
-      version: exportVersion,
-      avatarId: q.avatarId || 'Unknown',
-      uqid: q.uqid || '',
-      name: q.name || new Date().toISOString(),
-      avatarName: q.avatarName || 'Unknown',
-      nsfw: !!q.nsfw,
-      valuedParams: parsed,
-      isPreset: !!q.isPreset,
-      presets: presets
-    }
-
-    await fs.promises.writeFile(filePath, JSON.stringify(exportData), 'utf-8')
-
-    log.info(`Config exported successfully`)
-    return { success: true, message: 'Config exported' }
   } catch (error) {
     log.error('Error exporting config:', error)
     return { success: false, message: 'Error exporting config' }

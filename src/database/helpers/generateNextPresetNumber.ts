@@ -9,7 +9,7 @@ export function generateNextPresetNumber(db: Database, avatarId: string): number
     )
     .all(avatarId) as Array<{ unityParameter: number }>
 
-  if (allPresets.length === 0) {
+  if (allPresets.length <= 1) {
     return 1
   }
 

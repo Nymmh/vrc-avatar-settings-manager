@@ -48,7 +48,11 @@ export async function replaceParams(
       return { success: false, message: 'No saved config found with that ID' }
     }
 
-    if (parsedConfig?.avatarId?.trim() && parsedConfig.avatarId.trim() !== q.avatarId) {
+    if (
+      typeof parsedConfig === 'object' &&
+      parsedConfig?.avatarId?.trim() &&
+      parsedConfig.avatarId.trim() !== q.avatarId
+    ) {
       const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
         0,
@@ -63,7 +67,7 @@ export async function replaceParams(
       }
     }
 
-    if (parsedConfig.nsfw) {
+    if (typeof parsedConfig === 'object' && parsedConfig.nsfw) {
       const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
         0,
@@ -79,7 +83,7 @@ export async function replaceParams(
     }
 
     db.prepare('UPDATE avatars SET parameters = ?, fromFile = 1 WHERE id = ?').run(
-      JSON.stringify(parsedConfig.valuedParams) || '[]',
+      JSON.stringify(typeof parsedConfig === 'object' ? parsedConfig.valuedParams : []) || '[]',
       id
     )
 

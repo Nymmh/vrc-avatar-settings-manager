@@ -594,7 +594,6 @@ const emit = defineEmits(['notification'])
                 />
               </div>
             </div>
-            {{ a.avatarId }}
             <div v-if="isAvatarExpanded(a.avatarId) && hasConfigs" class="data-table__configs">
               <Card v-for="(config, cIdx) in allConfigs" :key="cIdx">
                 <div
