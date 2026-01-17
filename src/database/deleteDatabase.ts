@@ -37,10 +37,19 @@ export async function deleteDatabase(
       return false
     }
 
-    db.prepare('DELETE FROM avatars').run()
-    db.prepare('DELETE FROM avatarStorage').run()
-    db.prepare('DELETE FROM presets').run()
+    const deletePresets = db.prepare('DELETE FROM presets')
+    const deleteAvatarStorage = db.prepare('DELETE FROM avatarStorage')
+    const deleteAvatars = db.prepare('DELETE FROM avatars')
+    const vacuum = db.prepare('VACUUM')
 
+    const deleteAll = db.transaction(() => {
+      deletePresets.run()
+      deleteAvatarStorage.run()
+      deleteAvatars.run()
+    })
+
+    deleteAll()
+    vacuum.run()
     log.info('Database deleted successfully')
     return true
   } catch (e) {
