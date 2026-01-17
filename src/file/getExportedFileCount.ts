@@ -9,6 +9,14 @@ interface DataFolder {
   fullExport: string
 }
 
+async function getDirStats(dirPath: string, files: string[]): Promise<number> {
+  const statPromises = files.map((file) =>
+    fs.promises.stat(path.join(dirPath, file)).then((stats) => stats.size)
+  )
+  const sizes = await Promise.all(statPromises)
+  return sizes.reduce((total, size) => total + size, 0)
+}
+
 export async function getExportedFileCount(
   log: Logger,
   dataFolder: DataFolder
@@ -16,44 +24,41 @@ export async function getExportedFileCount(
   log.info('Fetching exported file count...')
 
   try {
-    let fullSize = 0
-    const fullExports = await fs.promises.readdir(dataFolder.fullExport)
-    const fullExportCount = fullExports.length | 0
-
-    for (const file of fullExports) {
-      const filePath = path.join(dataFolder.fullExport, file)
-      const stats = await fs.promises.stat(filePath)
-      fullSize += stats.size
+    const readDir = async (dirPath: string): Promise<string[]> => {
+      try {
+        return await fs.promises.readdir(dirPath)
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+          return []
+        }
+        throw err
+      }
     }
 
-    log.info('Got full export count and size')
-    const avatarExports = await fs.promises.readdir(dataFolder.avatarData)
-    const avatarExportCount = avatarExports.length | 0
+    const [fullExports, avatarExports, configExports] = await Promise.all([
+      readDir(dataFolder.fullExport),
+      readDir(dataFolder.avatarData),
+      readDir(dataFolder.avatarConfigData)
+    ])
 
-    for (const file of avatarExports) {
-      const filePath = path.join(dataFolder.avatarData, file)
-      const stats = await fs.promises.stat(filePath)
-      fullSize += stats.size
-    }
+    log.info('Got all export counts')
 
-    log.info('Got avatar export count and size')
-    const configExports = await fs.promises.readdir(dataFolder.avatarConfigData)
-    const configExportCount = configExports.length | 0
+    const [fullSize, avatarSize, configSize] = await Promise.all([
+      getDirStats(dataFolder.fullExport, fullExports),
+      getDirStats(dataFolder.avatarData, avatarExports),
+      getDirStats(dataFolder.avatarConfigData, configExports)
+    ])
 
-    for (const file of configExports) {
-      const filePath = path.join(dataFolder.avatarConfigData, file)
-      const stats = await fs.promises.stat(filePath)
-      fullSize += stats.size
-    }
+    const totalSize = fullSize + avatarSize + configSize
+    const totalSizeInMB = (totalSize / (1024 * 1024)).toFixed(2)
 
-    log.info('Got config export count and size')
-    const fullSizeInMB = (fullSize / (1024 * 1024)).toFixed(2)
+    log.info('Got all export sizes')
 
     return {
-      fullExports: fullExportCount,
-      avatarExports: avatarExportCount,
-      configExports: configExportCount,
-      totalSize: `${fullSizeInMB} MB`
+      fullExports: fullExports.length,
+      avatarExports: avatarExports.length,
+      configExports: configExports.length,
+      totalSize: `${totalSizeInMB} MB`
     }
   } catch (e) {
     log.error('Error fetching exported file count', e)
