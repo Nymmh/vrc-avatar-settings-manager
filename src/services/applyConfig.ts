@@ -32,7 +32,7 @@ export async function applyConfig(
         ]
       })
 
-      if (chunk.length === 15) {
+      if (chunk.length === 10) {
         chunks.push(chunk)
         chunk = []
       }
