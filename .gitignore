@@ -4,3 +4,4 @@ out
 .eslintcache
 *.log*
 *.heapsnapshot
+*.heapprofile
