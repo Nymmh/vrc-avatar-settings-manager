@@ -1,4 +1,4 @@
-<script lang="ts" setup>
+<script setup lang="ts">
 import DataTable from '../components/DataTable.vue'
 
 defineEmits(['notification'])
@@ -10,7 +10,7 @@ defineEmits(['notification'])
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .all-data {
   height: 100%;
   width: 100%;
