@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, dialog } from 'electron'
+import { ipcMain, BrowserWindow, dialog, clipboard } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { ASMStorage } from '../../main/ASMStorage'
@@ -119,4 +119,21 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
       return res
     }
   )
+
+  ipcMain.handle('copyAvatarId', async () => {
+    context.log.info('Copying avatar ID to clipboard...')
+    const mainWindow = getMainWindow()
+    const currentAviId = storage.getCurrentAvatarId()
+
+    if (!mainWindow || !currentAviId) {
+      context.log.error('Dependency not found')
+      return { success: false }
+    }
+
+    console.log(currentAviId)
+
+    clipboard.writeText(currentAviId)
+    context.log.info('Avatar ID copied to clipboard')
+    return { success: true }
+  })
 }

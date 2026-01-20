@@ -65,6 +65,7 @@ export interface avatarApi {
   getLogFileSize: () => Promise<string>
   copyConfigCode: (id: number) => exportConfigInterface
   applyCopiedCode: () => exportConfigInterface
+  copyAvatarId: () => Promise<boolean>
 }
 
 export interface appApi {

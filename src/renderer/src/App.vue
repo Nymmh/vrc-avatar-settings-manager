@@ -203,6 +203,16 @@ const handleSavedUpdated = async (): Promise<void> => {
   })
 }
 
+const copyAvatarId = async (): Promise<void> => {
+  const res = await window.avatarApi.copyAvatarId()
+
+  pushNotification({
+    type: res ? 'success' : 'error',
+    title: res ? 'Copy Successful' : 'Copy Failed',
+    text: ''
+  })
+}
+
 const handleDelete = async (): Promise<void> => {
   resetVars()
   saveName.value = ''
@@ -286,6 +296,9 @@ onMounted(() => {
                 <p v-if="avatarConfig?.name" class="main__avatar-name">
                   Name: <span class="main__avatar-name__name">{{ avatarConfig?.name }}</span>
                 </p>
+                <div v-if="appStore.avatarFoundFile">
+                  <Button label="Copy Avatar ID" @click="copyAvatarId" />
+                </div>
               </div>
             </Card>
             <Card v-if="appStore.avatarFoundFile">
