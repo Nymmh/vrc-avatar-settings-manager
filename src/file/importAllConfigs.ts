@@ -45,40 +45,48 @@ export async function importAllConfigs(
       }
     }
 
-    for (const avatar of parsedData.avatars) {
-      db.prepare(
-        `INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?) ON CONFLICT(avatarId) DO NOTHING`
-      ).run(avatar.avatarId, avatar.name)
+    const insertAvatar = db.prepare(
+      `INSERT INTO avatarStorage (avatarId, name) VALUES (?, ?) ON CONFLICT(avatarId) DO NOTHING`
+    )
+    const insertConfig = db.prepare(
+      `INSERT INTO avatars (uqid, avatarId, name, avatarName, nsfw, parameters, fromFile, isPreset) VALUES (?, ?, ?, ?, ?, ?, ?, ?) on CONFLICT(uqid) DO NOTHING`
+    )
+    const insertPreset = db.prepare(
+      `INSERT INTO presets (forUqid, avatarId, name, unityParameter) VALUES (?, ?, ?, ?) on CONFLICT(forUqid) DO NOTHING`
+    )
 
-      if (!avatar.configs) continue
+    const insertData = db.transaction(() => {
+      for (const avatar of parsedData.avatars) {
+        insertAvatar.run(avatar.avatarId, avatar.name)
 
-      for (const c of avatar.configs) {
-        db.prepare(
-          `INSERT INTO avatars (uqid, avatarId, name, avatarName, nsfw, parameters, fromFile, isPreset) VALUES (?, ?, ?, ?, ?, ?, ?, ?) on CONFLICT(uqid) DO NOTHING`
-        ).run(
-          c.uqid,
-          c.avatarId,
-          c.name,
-          c.avatarName,
-          c.nsfw ? 1 : 0,
-          c.parameters,
-          c.fromFile ? 1 : 0,
-          c.isPreset ? 1 : 0
-        )
+        if (!avatar.configs) continue
 
-        if (c.isPreset === 1 && c.presets) {
-          db.prepare(
-            `INSERT INTO presets (forUqid, avatarId, name, unityParameter) VALUES (?, ?, ?, ?) on CONFLICT(forUqid) DO NOTHING`
-          ).run(
-            c.presets.forUqid,
-            c.presets.avatarId,
-            c.presets.name,
-            c.presets.unityParameter || null
+        for (const c of avatar.configs) {
+          insertConfig.run(
+            c.uqid,
+            c.avatarId,
+            c.name,
+            c.avatarName,
+            c.nsfw ? 1 : 0,
+            c.parameters,
+            c.fromFile ? 1 : 0,
+            c.isPreset ? 1 : 0
           )
+
+          if (c.isPreset === 1 && c.presets) {
+            insertPreset.run(
+              c.presets.forUqid,
+              c.presets.avatarId,
+              c.presets.name,
+              c.presets.unityParameter || null
+            )
+          }
         }
       }
-    }
+    })
 
+    insertData()
+    parsedData = null as any
     log.info('Import completed successfully')
 
     return {
