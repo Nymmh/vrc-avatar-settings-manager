@@ -163,7 +163,9 @@ const avatarApi = {
   },
   copyConfigCode: async (id: number): Promise<exportConfigInterface> =>
     ipcRenderer.invoke('copyConfigCode', id),
-  applyCopiedCode: async (): Promise<exportConfigInterface> => ipcRenderer.invoke('applyCopiedCode')
+  applyCopiedCode: async (): Promise<exportConfigInterface> =>
+    ipcRenderer.invoke('applyCopiedCode'),
+  copyAvatarId: async (): Promise<{ success: boolean }> => ipcRenderer.invoke('copyAvatarId')
 }
 
 if (process.contextIsolated) {
