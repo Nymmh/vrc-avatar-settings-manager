@@ -58,14 +58,6 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  if (!is.dev) {
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-      if (input.key === 'F12' || (input.control && input.shift && input.key === 'I')) {
-        event.preventDefault()
-      }
-    })
-  }
-
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -99,9 +91,9 @@ async function setupOSC(): Promise<void> {
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.nymh.avatarsettingsmanager')
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
+  // app.on('browser-window-created', (_, window) => {
+  //   optimizer.watchWindowShortcuts(window)
+  // })
 
   asmStorage = new ASMStorage()
 
