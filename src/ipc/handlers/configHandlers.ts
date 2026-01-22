@@ -119,7 +119,15 @@ export function configHandlers(context: ConfigHandlerContext): void {
       return { success: false }
     }
 
-    const res = await applyFromSaved(log, avatarDB, id, currentAviId, oscClient, mainWindow)
+    const res = await applyFromSaved(
+      log,
+      avatarDB,
+      id,
+      currentAviId,
+      oscClient,
+      mainWindow,
+      storage
+    )
     log.info(`Config applied`)
     return { success: !!res }
   })

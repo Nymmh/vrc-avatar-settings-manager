@@ -144,7 +144,6 @@ export function formatConfigPasteCode(
 
     if (
       EXCLUDED_NAMES.has(c.name) ||
-      value === undefined ||
       /\/LastSynced$/.test(c.name) ||
       /^FT\/v2\//.test(c.name) ||
       /Nymh\/ASM\/Preset\//.test(c.name) ||
@@ -177,6 +176,7 @@ export function formatConfigPasteCode(
     const type = parameterMap.get(c.name)
 
     if (!type) return ap
+    if (!value) value = 0
 
     const formattedName = c.name.replace(/ /g, '_')
 
