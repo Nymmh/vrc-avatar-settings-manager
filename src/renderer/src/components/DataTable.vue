@@ -178,13 +178,12 @@ const validatePreset = (preset: (typeof allPresets.value)[0]): string | null => 
   return null
 }
 
-const handleAvatarUpdate = async (idx: number): Promise<void> => {
-  const avatar = allAvatars.value[idx] as unknown as {
+const handleAvatarUpdate = async (avatarId: string): Promise<void> => {
+  const avatar = allAvatars.value.find((a) => a.avatarId === avatarId) as unknown as {
     avatarId: string
     avatarIdInput?: string
     name: string
   }
-  const avatarId = avatar.avatarId
   const updatedAvatarId = avatar.avatarIdInput || avatar.avatarId
 
   clearFailed(failedAvatarUpdates.value, avatarId)
@@ -213,8 +212,7 @@ const handleAvatarUpdate = async (idx: number): Promise<void> => {
   getAvatars()
 }
 
-const handleAvatarExport = async (idx: number): Promise<void> => {
-  const avatarId = allAvatars.value[idx].avatarId
+const handleAvatarExport = async (avatarId: string): Promise<void> => {
   const res = await window.avatarApi.exportAvatar(avatarId)
   handleOperation(
     res,
@@ -226,8 +224,7 @@ const handleAvatarExport = async (idx: number): Promise<void> => {
   )
 }
 
-const handleAvatarDelete = async (idx: number): Promise<void> => {
-  const avatarId = allAvatars.value[idx].avatarId
+const handleAvatarDelete = async (avatarId: string): Promise<void> => {
   const res = await window.avatarApi.deleteAvatar(avatarId)
 
   handleOperation(
@@ -240,7 +237,7 @@ const handleAvatarDelete = async (idx: number): Promise<void> => {
   )
 
   if (res.success) {
-    allAvatars.value.splice(idx, 1)
+    allAvatars.value = allAvatars.value.filter((a) => a.avatarId !== avatarId)
   }
 }
 
@@ -268,11 +265,11 @@ const handleConfigExport = async (configId: number): Promise<void> => {
   )
 }
 
-const handleConfigUpdate = async (idx: number): Promise<void> => {
+const handleConfigUpdate = async (configId: number): Promise<void> => {
   if (!allConfigs.value) return
 
-  const config = allConfigs.value[idx]
-  const configId = config.id
+  const config = allConfigs.value.find((c) => c.id === configId)
+  if (!config) return
 
   if (!configId) {
     addFailed(failedConfigUpdates.value, 0, 'update')
@@ -301,12 +298,11 @@ const handleConfigUpdate = async (idx: number): Promise<void> => {
   )
 }
 
-const handleCreatePreset = async (idx: number): Promise<void> => {
+const handleCreatePreset = async (configId: number): Promise<void> => {
   if (!allConfigs.value) return
 
-  const config = allConfigs.value[idx]
-  const configId = config.id
-
+  const config = allConfigs.value.find((c) => c.id === configId)
+  if (!config) return
   if (!configId) {
     addFailed(failedConfigUpdates.value, 0, 'createPreset')
     emit('notification', {
@@ -332,12 +328,11 @@ const handleCreatePreset = async (idx: number): Promise<void> => {
   }
 }
 
-const handleConfigReplace = async (idx: number): Promise<void> => {
+const handleConfigReplace = async (configId: number): Promise<void> => {
   if (!allConfigs.value) return
 
-  const config = allConfigs.value[idx]
-  const configId = config.id!
-
+  const config = allConfigs.value.find((c) => c.id === configId)
+  if (!config) return
   const res = await window.avatarApi.replaceParams(configId)
   handleOperation(
     res,
@@ -353,10 +348,12 @@ const handleConfigReplace = async (idx: number): Promise<void> => {
   }
 }
 
-const handleConfigDelete = async (idx: number): Promise<void> => {
+const handleConfigDelete = async (configId: number): Promise<void> => {
   if (!allConfigs.value) return
 
-  const configId = allConfigs.value[idx].id!
+  const config = allConfigs.value.find((c) => c.id === configId)
+  if (!config) return
+
   const res = await window.avatarApi.deleteConfig(configId)
 
   handleOperation(
@@ -369,12 +366,15 @@ const handleConfigDelete = async (idx: number): Promise<void> => {
   )
 
   if (res.success) {
-    allConfigs.value.splice(idx, 1)
+    const index = allConfigs.value.findIndex((c) => c.id === configId)
+    if (index !== -1) {
+      allConfigs.value.splice(index, 1)
+    }
   }
 }
 
-const handlePresetApply = async (idx: number): Promise<void> => {
-  const preset = allPresets.value[idx]
+const handlePresetApply = async (presetId: number): Promise<void> => {
+  const preset = allPresets.value.find((p) => p.id === presetId)
   const res = await window.avatarApi.applyPresetFromApp(preset.avatarId, preset.unityParameter)
 
   handleOperation(
@@ -387,9 +387,8 @@ const handlePresetApply = async (idx: number): Promise<void> => {
   )
 }
 
-const handlePresetUpdate = async (idx: number): Promise<void> => {
-  const preset = allPresets.value[idx]
-
+const handlePresetUpdate = async (presetId: number): Promise<void> => {
+  const preset = allPresets.value.find((p) => p.id === presetId)
   clearFailed(failedPresetUpdates.value, preset.id)
 
   const validationError = validatePreset(preset)
@@ -418,8 +417,8 @@ const handlePresetUpdate = async (idx: number): Promise<void> => {
   )
 }
 
-const handlePresetDelete = async (idx: number): Promise<void> => {
-  const preset = allPresets.value[idx]
+const handlePresetDelete = async (presetId: number): Promise<void> => {
+  const preset = allPresets.value.find((p) => p.id === presetId)
   const res = await window.avatarApi.deletePresetFromApp(preset.id)
 
   handleOperation(
@@ -436,9 +435,10 @@ const handlePresetDelete = async (idx: number): Promise<void> => {
   }
 }
 
-const updateAvatarField = useDebounceFn((idx: number, field: string, value: unknown) => {
-  if (allAvatars.value[idx]) {
-    allAvatars.value[idx][field] = value
+const updateAvatarField = useDebounceFn((avatarId: string, field: string, value: unknown) => {
+  const avatar = allAvatars.value.find((a) => a.avatarId === avatarId)
+  if (avatar) {
+    avatar[field] = value
   }
 }, 300)
 
@@ -550,7 +550,9 @@ const emit = defineEmits(['notification'])
                     <InputText
                       :id="`avatarId-${idx}`"
                       :model-value="a.avatarId"
-                      @update:model-value="updateAvatarField(idx, 'avatarIdInput', $event.value)"
+                      @update:model-value="
+                        updateAvatarField(a.avatarId, 'avatarIdInput', $event.value)
+                      "
                     />
                   </div>
                 </div>
@@ -561,7 +563,7 @@ const emit = defineEmits(['notification'])
                 <InputText
                   :id="`avatarName-${idx}`"
                   :model-value="a.name"
-                  @update:model-value="updateAvatarField(idx, 'name', $event.value)"
+                  @update:model-value="updateAvatarField(a.avatarId, 'name', $event.value)"
                 />
               </div>
 
@@ -574,7 +576,7 @@ const emit = defineEmits(['notification'])
                   "
                   :warning="true"
                   tooltip="Update the Avatar ID and Name"
-                  @click="handleAvatarUpdate(idx)"
+                  @click="handleAvatarUpdate(a.avatarId)"
                 />
                 <Button
                   label="Export"
@@ -583,14 +585,14 @@ const emit = defineEmits(['notification'])
                     failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'export')
                   "
                   tooltip="Export avatar and all associated data to file"
-                  @click="handleAvatarExport(idx)"
+                  @click="handleAvatarExport(a.avatarId)"
                 />
                 <Button
                   label="Delete"
                   :small="true"
                   :error="true"
                   tooltip="Delete avatar and all associated data"
-                  @click="handleAvatarDelete(idx)"
+                  @click="handleAvatarDelete(a.avatarId)"
                 />
               </div>
             </div>
@@ -683,10 +685,10 @@ const emit = defineEmits(['notification'])
                         )
                       "
                       :warning="true"
-                      @click="handleConfigUpdate(cIdx)"
+                      @click="handleConfigUpdate(config.id)"
                     />
                     <Button
-                      v-if="!config.isPreset"
+                      v-if="!config.isPreset && config.id"
                       label="Create Preset"
                       :small="true"
                       :hero="true"
@@ -696,7 +698,7 @@ const emit = defineEmits(['notification'])
                           (fu) => fu.id === config.id && fu.action === 'createPreset'
                         )
                       "
-                      @click="handleCreatePreset(cIdx)"
+                      @click="handleCreatePreset(config.id)"
                     />
                     <Button
                       v-if="config.id"
@@ -709,7 +711,7 @@ const emit = defineEmits(['notification'])
                         )
                       "
                       :warning="true"
-                      @click="handleConfigReplace(cIdx)"
+                      @click="handleConfigReplace(config.id)"
                     />
                     <Button
                       v-if="config.id"
@@ -717,15 +719,15 @@ const emit = defineEmits(['notification'])
                       :small="true"
                       :error="true"
                       tooltip="Delete config and all associated presets"
-                      @click="handleConfigDelete(cIdx)"
+                      @click="handleConfigDelete(config.id)"
                     />
                   </div>
 
                   <div v-if="hasPresets && isConfigExpanded(cIdx)" class="data-table__presets">
                     <Card
                       v-for="(preset, pIdx) in allPresets"
-                      :key="pIdx"
                       v-show="preset.forUqid === config.uqid"
+                      :key="pIdx"
                     >
                       <div class="data-table__preset">
                         <h4 class="data-table__preset-title">Preset</h4>
@@ -763,7 +765,7 @@ const emit = defineEmits(['notification'])
                                 (fu) => fu.id === preset.id && fu.action === 'apply'
                               )
                             "
-                            @click="handlePresetApply(pIdx)"
+                            @click="handlePresetApply(preset.id)"
                           />
                           <Button
                             label="Update"
@@ -775,14 +777,14 @@ const emit = defineEmits(['notification'])
                               )
                             "
                             :warning="true"
-                            @click="handlePresetUpdate(pIdx)"
+                            @click="handlePresetUpdate(preset.id)"
                           />
                           <Button
                             label="Delete"
                             :small="true"
                             tooltip="Delete preset"
                             :error="true"
-                            @click="handlePresetDelete(pIdx)"
+                            @click="handlePresetDelete(preset.id)"
                           />
                         </div>
                       </div>
