@@ -4,6 +4,7 @@ import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
 import { applyConfig } from '../services/applyConfig'
 import { showDialogNoSound } from '../services/showDialogNoSound'
+import { ASMStorage } from '../main/ASMStorage'
 
 export async function applyFromSaved(
   log: Logger,
@@ -11,7 +12,8 @@ export async function applyFromSaved(
   id: number,
   currentAvatarId: string,
   OSC_CLIENT: Client,
-  mainWindow: BrowserWindow
+  mainWindow: BrowserWindow,
+  storage: ASMStorage
 ): Promise<boolean> {
   try {
     log.info(`Applying config: ${id}`)
@@ -65,6 +67,8 @@ export async function applyFromSaved(
         return false
       }
     }
+
+    storage.clearPendingChanges()
 
     return await applyConfig(log, parameters, OSC_CLIENT)
   } catch (e) {
