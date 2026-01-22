@@ -165,7 +165,8 @@ const avatarApi = {
     ipcRenderer.invoke('copyConfigCode', id),
   applyCopiedCode: async (): Promise<exportConfigInterface> =>
     ipcRenderer.invoke('applyCopiedCode'),
-  copyAvatarId: async (): Promise<{ success: boolean }> => ipcRenderer.invoke('copyAvatarId')
+  copyAvatarId: async (): Promise<{ success: boolean }> => ipcRenderer.invoke('copyAvatarId'),
+  randomParams: async (): Promise<{ success: boolean }> => ipcRenderer.invoke('randomParams')
 }
 
 if (process.contextIsolated) {

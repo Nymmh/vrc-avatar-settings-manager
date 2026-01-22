@@ -66,6 +66,7 @@ export interface avatarApi {
   copyConfigCode: (id: number) => exportConfigInterface
   applyCopiedCode: () => exportConfigInterface
   copyAvatarId: () => Promise<boolean>
+  randomParams: () => Promise<boolean>
 }
 
 export interface appApi {

@@ -256,7 +256,7 @@ onMounted(() => {
 
 <template>
   <notifications class="notification" position="bottom left" />
-  <Menu />
+  <Menu @notification="pushNotification" />
   <div class="main">
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
     <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
