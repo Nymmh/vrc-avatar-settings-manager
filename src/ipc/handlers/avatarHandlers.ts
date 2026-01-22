@@ -1,6 +1,7 @@
 import { ipcMain, BrowserWindow, dialog, clipboard } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
+import { Client } from 'node-osc'
 import { ASMStorage } from '../../main/ASMStorage'
 import { loadAvatarConfig } from '../loadAvatarConfig'
 import { uploadAvatarConfig } from '../../database/uploadAvatarConfig'
@@ -10,16 +11,18 @@ import { updateAvatarData } from '../../database/updateAvatarData'
 import { exportAvatar } from '../../file/exportAvatar'
 import { getNames } from '../../database/getSavedNames'
 import { applyConfigCode } from '../../file/applyConfigCode'
+import { generateRandomParams } from '../../helpers/generateRandomParams'
 
 interface AvatarHandlerContext {
   log: Logger
   avatarDB: Database
   storage: ASMStorage
   getMainWindow: () => BrowserWindow | null
+  getOSCClient: () => Client | null
 }
 
 export function avatarHandlers(context: AvatarHandlerContext): void {
-  const { log, avatarDB, storage, getMainWindow } = context
+  const { log, avatarDB, storage, getMainWindow, getOSCClient } = context
 
   ipcMain.handle('loadAvatarConfig', async () => {
     log.info('Load avatar config...')
@@ -130,10 +133,22 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
       return { success: false }
     }
 
-    console.log(currentAviId)
-
     clipboard.writeText(currentAviId)
     context.log.info('Avatar ID copied to clipboard')
     return { success: true }
+  })
+
+  ipcMain.handle('randomParams', async () => {
+    context.log.info('Generating random parameters for current avatar...')
+    const mainWindow = getMainWindow()
+    const avatarId = storage.getCurrentAvatarId()
+    const OSCClient = getOSCClient()
+
+    if (!mainWindow || !avatarId || !OSCClient) {
+      context.log.error('Dependency not found')
+      return { success: false }
+    }
+
+    return await generateRandomParams(context.log, mainWindow, avatarId, OSCClient, storage)
   })
 }

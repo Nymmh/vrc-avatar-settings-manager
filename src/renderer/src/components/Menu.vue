@@ -4,23 +4,45 @@ import Button from './Button.vue'
 import { appStorage } from '../composables/appStorage'
 
 const appStore = appStorage()
+
+const randomParams = async (): Promise<void> => {
+  const res = await window.avatarApi.randomParams()
+
+  emit('notification', {
+    type: res ? 'success' : 'error',
+    title: 'Random Changes',
+    text: res ? 'Random applied successfully.' : 'Failed to apply random.'
+  })
+}
+
+const emit = defineEmits(['notification'])
 </script>
 
 <template>
   <div class="menu">
     <nav class="menu__nav">
-      <Button
-        v-show="appStore.currentView !== 'Main' && appStore.currentView !== 'Waiting'"
-        label="Home"
-        :small="true"
-        @click="handleChangeView('Main')"
-      />
-      <Button
-        v-show="appStore.currentView !== 'AllData'"
-        label="All Data"
-        :small="true"
-        @click="handleChangeView('AllData')"
-      />
+      <div class="menu__center">
+        <Button
+          v-show="appStore.currentView !== 'Main' && appStore.currentView !== 'Waiting'"
+          label="Home"
+          :small="true"
+          @click="handleChangeView('Main')"
+        />
+        <Button
+          v-show="appStore.currentView !== 'AllData'"
+          label="All Data"
+          :small="true"
+          @click="handleChangeView('AllData')"
+        />
+      </div>
+      <div class="menu__right">
+        <Button
+          v-show="appStore.currentView !== 'Waiting' && appStore.avatarId"
+          label="Random"
+          :small="true"
+          @click="randomParams"
+        />
+      </div>
     </nav>
   </div>
 </template>
@@ -41,11 +63,29 @@ const appStore = appStorage()
   &__nav {
     align-items: center;
     display: flex;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+  }
+
+  &__center {
+    align-items: center;
+    display: flex;
     flex-flow: row wrap;
     gap: 16px;
     justify-content: center;
     margin: 0;
-    width: 100%;
+  }
+
+  &__right {
+    align-items: center;
+    display: flex;
+    flex-flow: row wrap;
+    gap: 16px;
+    margin: 0;
+    margin-left: auto;
+    position: absolute;
+    right: 0;
   }
 
   &:hover {
