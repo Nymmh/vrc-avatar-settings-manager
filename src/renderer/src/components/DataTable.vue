@@ -442,15 +442,21 @@ const updateAvatarField = useDebounceFn((avatarId: string, field: string, value:
   }
 }, 300)
 
-const updateConfigField = (idx: number, field: string, value: unknown): void => {
-  if (allConfigs.value && allConfigs.value[idx]) {
-    allConfigs.value[idx][field] = value
+const updateConfigField = (configId: number, field: string, value: unknown): void => {
+  if (allConfigs.value) {
+    const config = allConfigs.value.find((c) => c.id === configId)
+    if (config) {
+      config[field] = value
+    }
   }
 }
 
-const updatePresetField = (idx: number, field: string, value: unknown): void => {
-  if (allPresets.value[idx]) {
-    allPresets.value[idx][field] = value
+const updatePresetField = (presetId: number, field: string, value: unknown): void => {
+  if (allPresets.value) {
+    const preset = allPresets.value.find((p) => p.id === presetId)
+    if (preset) {
+      preset[field] = value
+    }
   }
 }
 
@@ -628,18 +634,20 @@ const emit = defineEmits(['notification'])
                     <div class="data-table__config-field">
                       <label class="data-table__config-label">Name: </label>
                       <InputText
+                        v-if="config.id"
                         :id="`configName-${cIdx}`"
                         :model-value="config.name"
-                        @update:model-value="updateConfigField(cIdx, 'name', $event.value)"
+                        @update:model-value="updateConfigField(config.id, 'name', $event.value)"
                       />
                     </div>
 
                     <div class="data-table__config-field">
                       <InputCheckbox
+                        v-if="config.id"
                         :id="`configNsfw-${cIdx}`"
                         :model-value="config.nsfw ? true : false"
                         label="NSFW: "
-                        @update:model-value="updateConfigField(cIdx, 'nsfw', $event.checked)"
+                        @update:model-value="updateConfigField(config.id, 'nsfw', $event.checked)"
                       />
                     </div>
 
@@ -738,7 +746,9 @@ const emit = defineEmits(['notification'])
                             <InputText
                               :id="`presetName-${pIdx}`"
                               :model-value="preset.name"
-                              @update:model-value="updatePresetField(pIdx, 'name', $event.value)"
+                              @update:model-value="
+                                updatePresetField(preset.id, 'name', $event.value)
+                              "
                             />
                           </div>
 
@@ -748,7 +758,7 @@ const emit = defineEmits(['notification'])
                               :id="`presetParameter-${pIdx}`"
                               :model-value="preset.unityParameter"
                               @update:model-value="
-                                updatePresetField(pIdx, 'unityParameter', $event.value)
+                                updatePresetField(preset.id, 'unityParameter', $event.value)
                               "
                             />
                           </div>
