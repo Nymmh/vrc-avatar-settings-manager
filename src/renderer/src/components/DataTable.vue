@@ -32,6 +32,33 @@ const configRefs = ref<(HTMLElement | null)[]>([])
 const hasConfigs = computed(() => allConfigs.value && allConfigs.value.length > 0)
 const hasPresets = computed(() => allPresets.value?.length > 0)
 
+const failedAvatarSet = computed(() => {
+  const map = new Map<string, Set<string>>()
+  failedAvatarUpdates.value.forEach((f) => {
+    if (!map.has(f.id)) map.set(f.id, new Set())
+    map.get(f.id)!.add(f.action)
+  })
+  return map
+})
+
+const failedConfigSet = computed(() => {
+  const map = new Map<string | number, Set<string>>()
+  failedConfigUpdates.value.forEach((f) => {
+    if (!map.has(f.id)) map.set(f.id, new Set())
+    map.get(f.id)!.add(f.action)
+  })
+  return map
+})
+
+const failedPresetSet = computed(() => {
+  const map = new Map<string | number, Set<string>>()
+  failedPresetUpdates.value.forEach((f) => {
+    if (!map.has(f.id)) map.set(f.id, new Set())
+    map.get(f.id)!.add(f.action)
+  })
+  return map
+})
+
 const filteredAvatars = computed(() => {
   if (!searchAvatar.value.trim()) {
     return allAvatars.value
@@ -43,6 +70,10 @@ const filteredAvatars = computed(() => {
       avatar.avatarId?.toLowerCase().includes(query) || avatar.name?.toLowerCase().includes(query)
     )
   })
+})
+
+const avatarIdWidths = computed(() => {
+  return filteredAvatars.value.map((a) => Math.min((a.avatarId?.length || 10) * 9.4 + 40, 500))
 })
 
 const clearFailed = <T,>(array: FailedOperation<T>[], id: T): void => {
@@ -549,7 +580,7 @@ const emit = defineEmits(['notification'])
                   <p class="data-table__avatar-label">Avatar ID:</p>
                   <div
                     :style="{
-                      width: `${Math.min((a.avatarId?.length || 10) * 9.4 + 40, 500)}px`,
+                      width: `${avatarIdWidths[idx]}px`,
                       maxWidth: '500px'
                     }"
                   >
@@ -577,9 +608,7 @@ const emit = defineEmits(['notification'])
                 <Button
                   label="Update"
                   :small="true"
-                  :error="
-                    failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'update')
-                  "
+                  :error="failedAvatarSet.get(a.avatarId)?.has('update') ?? false"
                   :warning="true"
                   tooltip="Update the Avatar ID and Name"
                   @click="handleAvatarUpdate(a.avatarId)"
@@ -587,9 +616,7 @@ const emit = defineEmits(['notification'])
                 <Button
                   label="Export"
                   :small="true"
-                  :error="
-                    failedAvatarUpdates.some((fu) => fu.id === a.avatarId && fu.action === 'export')
-                  "
+                  :error="failedAvatarSet.get(a.avatarId)?.has('export') ?? false"
                   tooltip="Export avatar and all associated data to file"
                   @click="handleAvatarExport(a.avatarId)"
                 />
@@ -663,11 +690,7 @@ const emit = defineEmits(['notification'])
                       label="Apply"
                       :small="true"
                       tooltip="Apply config"
-                      :error="
-                        failedConfigUpdates.some(
-                          (fu) => fu.id === config.id && fu.action === 'apply'
-                        )
-                      "
+                      :error="failedConfigSet.get(config.id)?.has('apply') ?? false"
                       @click="handleConfigApply(config.id)"
                     />
                     <Button
@@ -675,11 +698,7 @@ const emit = defineEmits(['notification'])
                       label="Export"
                       :small="true"
                       tooltip="Export config and associated preset(optional) to file"
-                      :error="
-                        failedConfigUpdates.some(
-                          (fu) => fu.id === config.id && fu.action === 'export'
-                        )
-                      "
+                      :error="failedConfigSet.get(config.id)?.has('export') ?? false"
                       @click="handleConfigExport(config.id)"
                     />
                     <Button
@@ -687,11 +706,7 @@ const emit = defineEmits(['notification'])
                       label="Update"
                       :small="true"
                       tooltip="Update config name & NSFW status"
-                      :error="
-                        failedConfigUpdates.some(
-                          (fu) => fu.id === config.id && fu.action === 'update'
-                        )
-                      "
+                      :error="failedConfigSet.get(config.id)?.has('update') ?? false"
                       :warning="true"
                       @click="handleConfigUpdate(config.id)"
                     />
@@ -701,11 +716,7 @@ const emit = defineEmits(['notification'])
                       :small="true"
                       :hero="true"
                       tooltip="Create a new preset for this config"
-                      :error="
-                        failedConfigUpdates.some(
-                          (fu) => fu.id === config.id && fu.action === 'createPreset'
-                        )
-                      "
+                      :error="failedConfigSet.get(config.id)?.has('createPreset') ?? false"
                       @click="handleCreatePreset(config.id)"
                     />
                     <Button
@@ -713,11 +724,7 @@ const emit = defineEmits(['notification'])
                       label="Replace Params"
                       :small="true"
                       tooltip="Replace config parameters with ones from a file, must be a config file not an avatar file"
-                      :error="
-                        failedConfigUpdates.some(
-                          (fu) => fu.id === config.id && fu.action === 'replace'
-                        )
-                      "
+                      :error="failedConfigSet.get(config.id)?.has('replace') ?? false"
                       :warning="true"
                       @click="handleConfigReplace(config.id)"
                     />
@@ -770,22 +777,14 @@ const emit = defineEmits(['notification'])
                             label="Apply"
                             :small="true"
                             tooltip="Apply preset"
-                            :error="
-                              failedPresetUpdates.some(
-                                (fu) => fu.id === preset.id && fu.action === 'apply'
-                              )
-                            "
+                            :error="failedPresetSet.get(preset.id)?.has('apply') ?? false"
                             @click="handlePresetApply(preset.id)"
                           />
                           <Button
                             label="Update"
                             :small="true"
                             tooltip="Update preset name & parameter"
-                            :error="
-                              failedPresetUpdates.some(
-                                (fu) => fu.id === preset.id && fu.action === 'update'
-                              )
-                            "
+                            :error="failedPresetSet.get(preset.id)?.has('update') ?? false"
                             :warning="true"
                             @click="handlePresetUpdate(preset.id)"
                           />
@@ -831,10 +830,12 @@ const emit = defineEmits(['notification'])
 
   &__avatar-wrapper {
     align-items: center;
+    contain: layout style paint;
+    content-visibility: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 16px;
+    padding-bottom: 16px;
     width: 100%;
 
     &:is(:last-child) {
@@ -1007,6 +1008,7 @@ const emit = defineEmits(['notification'])
     transform: rotate(-90deg);
     transition: transform 0.2s;
     width: 30px;
+    will-change: transform;
 
     &--expanded {
       transform: rotate(0deg);

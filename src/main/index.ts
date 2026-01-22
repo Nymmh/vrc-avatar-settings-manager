@@ -44,7 +44,8 @@ function createWindow(): void {
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: true,
-      contextIsolation: true
+      contextIsolation: true,
+      spellcheck: false
     }
   })
 
@@ -56,6 +57,14 @@ function createWindow(): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+
+  if (!is.dev) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.key === 'F12' || (input.control && input.shift && input.key === 'I')) {
+        event.preventDefault()
+      }
+    })
+  }
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
