@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useDebounceFn } from '@vueuse/core'
+
 defineProps({
   placeholder: {
     type: String,
@@ -26,7 +28,15 @@ defineProps({
   }
 })
 
-defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue'])
+
+const handleInput = useDebounceFn((event: Event) => {
+  const target = event.target as HTMLInputElement
+  emit('update:modelValue', {
+    id: target.id,
+    value: target.value
+  })
+}, 150)
 </script>
 
 <template>
@@ -39,12 +49,7 @@ defineEmits(['update:modelValue'])
         :placeholder="placeholder"
         :minlength="minSize"
         :value="modelValue"
-        @input="
-          $emit('update:modelValue', {
-            id: id,
-            value: ($event.currentTarget as HTMLInputElement)?.value
-          })
-        "
+        @input="handleInput"
       />
     </div>
     <p v-if="error" class="input-text__error failed">{{ error }}</p>

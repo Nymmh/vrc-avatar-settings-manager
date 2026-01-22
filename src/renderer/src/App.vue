@@ -271,7 +271,14 @@ onMounted(() => {
           :options="{
             scrollbars: {
               autoHide: 'move',
-              autoHideDelay: 300
+              autoHideDelay: 300,
+              clickScroll: false
+            },
+            overflow: {
+              x: 'hidden'
+            },
+            update: {
+              debounce: [0, 200]
             }
           }"
         >
@@ -293,7 +300,7 @@ onMounted(() => {
                 <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
                   Avatar ID: <span class="main__avatar-id__id">{{ appStore.avatarId }}</span>
                 </p>
-                <p v-if="avatarConfig?.name" class="main__avatar-name">
+                <p v-if="avatarConfig?.name && appStore.avatarFoundFile" class="main__avatar-name">
                   Name: <span class="main__avatar-name__name">{{ avatarConfig?.name }}</span>
                 </p>
                 <div v-if="appStore.avatarFoundFile">
@@ -381,6 +388,7 @@ onMounted(() => {
 
 .main {
   align-items: center;
+  contain: layout style;
   display: flex;
   flex-flow: column;
   gap: 16px;
@@ -389,6 +397,7 @@ onMounted(() => {
   overflow: hidden;
   padding-left: 16px;
   padding-right: 16px;
+  pointer-events: auto;
 
   &__wrapper {
     height: 100%;
@@ -396,6 +405,7 @@ onMounted(() => {
   }
 
   &__scroll {
+    contain: layout;
     display: flex;
     flex-flow: column;
     gap: 28px;

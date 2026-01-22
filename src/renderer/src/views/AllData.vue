@@ -12,6 +12,8 @@ defineEmits(['notification'])
 
 <style scoped>
 .all-data {
+  contain: layout style paint;
+  content-visibility: auto;
   height: 100%;
   width: 100%;
 }

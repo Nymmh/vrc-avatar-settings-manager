@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useDebounceFn } from '@vueuse/core'
+
 const props = defineProps({
   placeholder: {
     type: String,
@@ -26,6 +28,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['update:modelValue'])
+
 const increment = (currentValue: number, step: number = 1): void => {
   emit('update:modelValue', {
     id: props.id,
@@ -40,7 +44,13 @@ const decrement = (currentValue: number, step: number = 1): void => {
   })
 }
 
-const emit = defineEmits(['update:modelValue'])
+const handleInput = useDebounceFn((event: Event) => {
+  const target = event.target as HTMLInputElement
+  emit('update:modelValue', {
+    id: target.id,
+    value: Number(target.value)
+  })
+}, 150)
 </script>
 
 <template>
@@ -55,12 +65,7 @@ const emit = defineEmits(['update:modelValue'])
           :minlength="minSize"
           :value="modelValue"
           type="number"
-          @input="
-            $emit('update:modelValue', {
-              id: id,
-              value: Number(($event.currentTarget as HTMLInputElement)?.value)
-            })
-          "
+          @input="handleInput"
         />
         <div class="input-number__arrows">
           <button
