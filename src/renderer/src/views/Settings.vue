@@ -5,11 +5,12 @@ import Card from '../components/Card.vue'
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
 import { handleChangeView } from '@renderer/composables/changeView'
 
+let intervalLogUpdate: number | null = null
+let cleanupParameterRate: (() => void) | null = null
 const logFileSize = ref('0MB')
 const saveFaceTracking = ref(false)
 const copyForDiscord = ref(false)
 const updateRate = ref('0 params/sec')
-let intervalLogUpdate: number | null = null
 const exportedFiles = ref<{
   fullExports: number
   avatarExports: number
@@ -23,9 +24,8 @@ const exportedFiles = ref<{
 })
 
 const getLogFileSize = async (): Promise<void> => {
-  window.appApi.getLogFileSize().then((size: string) => {
-    logFileSize.value = size
-  })
+  const size = await window.appApi.getLogFileSize()
+  logFileSize.value = size
 }
 
 const openExportDirectory = (): void => {
@@ -100,17 +100,16 @@ const setCopyForDiscordSetting = async (): Promise<void> => {
 }
 
 const paramUpdateRate = (): void => {
-  window.appApi.parameterRateUpdate((rate: string) => {
+  cleanupParameterRate = window.appApi.parameterRateUpdate((rate: string) => {
     updateRate.value = rate
   })
 }
 
-const deleteDatabase = (): void => {
-  window.appApi.deleteDatabase().then((success: boolean) => {
-    emit('notification', {
-      type: success ? 'success' : 'error',
-      title: success ? 'Database Deleted' : 'Database Deletion Failed'
-    })
+const deleteDatabase = async (): Promise<void> => {
+  const success = await window.appApi.deleteDatabase()
+  emit('notification', {
+    type: success ? 'success' : 'error',
+    title: success ? 'Database Deleted' : 'Database Deletion Failed'
   })
 }
 
@@ -137,6 +136,7 @@ onUnmounted(() => {
   if (intervalLogUpdate !== null) {
     clearInterval(intervalLogUpdate)
   }
+  cleanupParameterRate?.()
 })
 
 const emit = defineEmits(['notification'])

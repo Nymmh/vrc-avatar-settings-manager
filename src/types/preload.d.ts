@@ -11,9 +11,9 @@ export interface foundAvatarFileInterface {
 }
 
 export interface avatarApi {
-  avatarId: (meowback: (data: avatarIdInterface) => void) => void
-  foundAvatarFile: (meowback: (data: foundAvatarFileInterface) => void) => void
-  avatarConfig: (meowback: (data: avatarConfigInterface) => void) => void
+  avatarId: (meowback: (data: avatarIdInterface) => void) => () => void
+  foundAvatarFile: (meowback: (data: foundAvatarFileInterface) => void) => () => void
+  avatarConfig: (meowback: (data: avatarConfigInterface) => void) => () => void
   saveConfig: (data: avatarConfigInterface, nsfw: boolean, saveName?: string) => saveConfigInterface
   loadConfig: () => loadConfigInterface
   uploadConfigAndApply: (
@@ -23,7 +23,7 @@ export interface avatarApi {
   ) => uploadConfigAndApplyTypeInterface
   uploadConfig: (saveName?: string, nsfw: boolean, avatarId?: string) => uploadConfigInterface
   refreshAvatarFile: () => { success: boolean }
-  savedNames: (meowback: (data: savedNamesInterface[]) => void) => void
+  savedNames: (meowback: (data: savedNamesInterface[]) => void) => () => void
   applyConfig: (id: number) => { success: boolean }
   getAllSaved: () => Promise<getAllSavedInterface[] | null>
   updateConfig: (
@@ -61,7 +61,7 @@ export interface avatarApi {
   exportAllConfigs: () => Promise<exportAllConfigsPromiseInterface>
   importAllConfigs: () => Promise<importAllConfigsInterface>
   getConfigById: (avatarId: string) => Promise<avatarDBInterface[] | null>
-  dataTableRefresh: (meowback: () => void) => void
+  dataTableRefresh: (meowback: () => void) => () => void
   getLogFileSize: () => Promise<string>
   copyConfigCode: (id: number) => exportConfigInterface
   applyCopiedCode: () => exportConfigInterface
@@ -76,7 +76,7 @@ export interface appApi {
   deleteLogFile: () => Promise<boolean>
   getSaveFaceTrackingSetting: () => Promise<boolean>
   setSaveFaceTrackingSetting: (value: boolean) => Promise<boolean>
-  parameterRateUpdate: (meowback: (rate: string) => void) => void
+  parameterRateUpdate: (meowback: (rate: string) => void) => () => void
   openExportDirectory: () => void
   getCopyForDiscordSetting: () => Promise<boolean>
   setCopyForDiscordSetting: (value: boolean) => Promise<boolean>

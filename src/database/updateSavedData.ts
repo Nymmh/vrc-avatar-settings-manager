@@ -61,8 +61,9 @@ export async function updateSavedConfigData(
     ) {
       let updateName = saveName
       let counter = 1
+      const maxAttempts = 1000
 
-      while (true) {
+      while (counter <= maxAttempts) {
         const dup = db
           .prepare(
             `
@@ -75,6 +76,11 @@ export async function updateSavedConfigData(
 
         updateName = `${saveName} (${counter})`
         counter++
+      }
+
+      if (counter > maxAttempts) {
+        log.error('Max attempts reached generating unique name')
+        return { success: false, message: 'Failed to generate unique name' }
       }
 
       saveName = updateName

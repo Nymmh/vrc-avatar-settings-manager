@@ -43,6 +43,12 @@ const NSFWError = ref('')
 const configSelectValue = ref('')
 const configSelectOptions = ref<InputSelectInterface[]>([])
 
+// IPC cleanup
+let cleanupAvatarId: (() => void) | null = null
+let cleanupFoundAvatarFile: (() => void) | null = null
+let cleanupAvatarConfig: (() => void) | null = null
+let cleanupSavedNames: (() => void) | null = null
+
 const resetVars = (): void => {
   saveMessage.value = ''
   saveSuccess.value = false
@@ -59,7 +65,8 @@ const pushNotification = (data: NotificationInterface): void => {
 }
 
 const getAvatarId = (): void => {
-  window.avatarApi.avatarId((data) => {
+  cleanupAvatarId?.()
+  cleanupAvatarId = window.avatarApi.avatarId((data) => {
     appStore.value.avatarId = ''
     saveName.value = ''
     holdSaveName.value = false
@@ -72,7 +79,8 @@ const getAvatarId = (): void => {
 }
 
 const savedConfigs = async (): Promise<void> => {
-  await window.avatarApi.savedNames((data: savedNamesType[]) => {
+  cleanupSavedNames?.()
+  cleanupSavedNames = await window.avatarApi.savedNames((data: savedNamesType[]) => {
     configSelectOptions.value = data.map(({ id, name }) => ({
       label: name,
       value: id
@@ -86,14 +94,16 @@ const aviFileUpdate = (): void => {
   if (!holdSaveName.value) saveName.value = ''
   resetVars()
 
-  window.avatarApi.foundAvatarFile((data) => {
+  cleanupFoundAvatarFile?.()
+  cleanupFoundAvatarFile = window.avatarApi.foundAvatarFile((data) => {
     appStore.value.avatarFoundFile = data.success
     showAvatarFoundFileMsg.value = true
   })
 }
 
 const aviConfig = (): void => {
-  window.avatarApi.avatarConfig((data) => {
+  cleanupAvatarConfig?.()
+  cleanupAvatarConfig = window.avatarApi.avatarConfig((data) => {
     resetVars()
 
     avatarConfig.value = data
@@ -261,8 +271,8 @@ onMounted(() => {
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
     <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
     <Settings v-if="appStore.currentView === 'Settings'" @notification="pushNotification" />
-    <Privacy v-if="appStore.currentView === 'Privacy'" />
-    <Terms v-if="appStore.currentView === 'Terms'" />
+    <Privacy v-show="appStore.currentView === 'Privacy'" />
+    <Terms v-show="appStore.currentView === 'Terms'" />
     <div v-show="appStore.currentView === 'Main'" class="main__wrapper">
       <div class="main__scroll">
         <OverlayScrollbarsComponent
@@ -370,7 +380,7 @@ onMounted(() => {
             <Card v-if="appStore.avatarFoundFile">
               <PasteCode @notification="pushNotification" />
               <LoadFile
-                :avatar-config="avatarConfig"
+                :avatar-name="avatarConfig?.name"
                 :show-id-mismatch="false"
                 @notification="pushNotification"
               />
