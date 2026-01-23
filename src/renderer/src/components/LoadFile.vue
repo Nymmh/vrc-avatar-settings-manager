@@ -1,14 +1,13 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import Button from './Button.vue'
 import InputCheckbox from './InputCheckbox.vue'
 import InputText from './InputText.vue'
-import type { avatarConfigType } from '../../../types/avatarConfigType'
 
 const props = defineProps({
-  avatarConfig: {
-    type: Object as () => avatarConfigType | null,
-    default: null
+  avatarName: {
+    type: String,
+    default: ''
   },
   showSave: {
     type: Boolean,
@@ -27,8 +26,6 @@ const props = defineProps({
     default: false
   }
 })
-
-const avatarName = computed(() => props.avatarConfig?.name || 'unknown')
 
 const loadedConfigName = ref('')
 const loadConfigError = ref('')
@@ -96,10 +93,20 @@ const handleUpload = async (): Promise<void> => {
       DirectUploadId.value || ''
     )
   } else {
+    if (!props.avatarName || !props.avatarName.trim()) {
+      emit('notification', {
+        type: 'error',
+        title: 'Upload Failed',
+        text: 'Avatar name is required'
+      })
+
+      return
+    }
+
     res = await window.avatarApi.uploadConfigAndApply(
       loadConfigSaveName.value,
       loadConfigSaveOption.value,
-      avatarName.value
+      props.avatarName
     )
   }
 

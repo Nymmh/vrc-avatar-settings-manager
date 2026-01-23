@@ -15,9 +15,14 @@ export function generateNextPresetNumber(db: Database, avatarId: string): number
 
   const existingNumbers = new Set<number>(allPresets.map((p) => p.unityParameter))
   let presetNumber = 1
+  const maxPresets = 1000
 
-  while (existingNumbers.has(presetNumber)) {
+  while (existingNumbers.has(presetNumber) && presetNumber < maxPresets) {
     presetNumber++
+  }
+
+  if (presetNumber >= maxPresets) {
+    throw new Error('Max preset number exceeded')
   }
 
   return presetNumber

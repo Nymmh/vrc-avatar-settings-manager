@@ -7,10 +7,12 @@ import { getNames } from '../database/getSavedNames'
 import { applyPreset } from '../database/applyPreset'
 import { updatePreset } from '../database/updatePreset'
 import { ASMStorage } from '../main/ASMStorage'
+import { isExcluded } from '../helpers/excludedParameters'
 
 export class OSCHandler {
   private parameterCount: number = 0
   private lastResetTime: number = Date.now()
+  private rateInterval: NodeJS.Timeout
 
   constructor(
     private log: Logger,
@@ -19,7 +21,7 @@ export class OSCHandler {
     private oscClient: Client,
     private storage: ASMStorage
   ) {
-    setInterval(() => {
+    this.rateInterval = setInterval(() => {
       const now = Date.now()
       const elapsed = (now - this.lastResetTime) / 1000
       const rate = Math.round(this.parameterCount / elapsed)
@@ -33,6 +35,10 @@ export class OSCHandler {
     }, 1000)
   }
 
+  cleanup(): void {
+    clearInterval(this.rateInterval)
+  }
+
   async handleMessage(data: unknown[]): Promise<void> {
     if (!data || data.length === 0) {
       this.log.warn('Received malformed OSC message')
@@ -41,27 +47,7 @@ export class OSCHandler {
 
     const [address, payload] = data as [string, unknown]
 
-    if (
-      /\/LastSynced$/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]SyncData/.test(address) ||
-      /^FT\/v2\//.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]SyncPointer$/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]TC_current/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]TC_FullControllerBuilder/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]TC_merged_trackingEyes$/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]TC_VRC[ _]Avatar[ _]Descriptor_trackingEyes$/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]timeSinceLoad$/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]counter$/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]ScaleFactor_b$/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]ScaleFactorDiff$/.test(address) ||
-      /^VF[ _]\d+(?:\.\d+)*$/.test(address) ||
-      /^VF_\d+(?:\.\d+)*[a-z]/.test(address) ||
-      /^VF_\d+(?:\.\d+)*_One$/.test(address) ||
-      /^VF_\d+(?:\.\d+)*_True$/.test(address) ||
-      /^VFH\/Version/.test(address) ||
-      /^VF[ _]?\d+(?:\.\d+)*[_/]FT\/Debug$/.test(address)
-    )
-      return
+    if (isExcluded(address)) return
 
     if (address === '/avatar/change') {
       await this.handleAvatarChange(payload as string)

@@ -28,6 +28,7 @@ const searchAvatar = ref('')
 const scrollContainer = ref<{ osInstance: () => OverlayScrollbars | null } | null>(null)
 const avatarRefs = ref<(HTMLElement | null)[]>([])
 const configRefs = ref<(HTMLElement | null)[]>([])
+let cleanupDataTableRefresh: (() => void) | null = null
 
 const hasConfigs = computed(() => allConfigs.value && allConfigs.value.length > 0)
 const hasPresets = computed(() => allPresets.value?.length > 0)
@@ -495,8 +496,8 @@ const handleSearchUpdate = ({ value }: { value: string }): void => {
   searchAvatar.value = value
 }
 
-const refreshListen = async (): Promise<void> => {
-  await window.avatarApi.dataTableRefresh(() => {
+const refreshListen = (): void => {
+  cleanupDataTableRefresh = window.avatarApi.dataTableRefresh(() => {
     getAvatars()
   })
 }
@@ -513,6 +514,7 @@ onUnmounted(() => {
   failedAvatarUpdates.value = []
   failedConfigUpdates.value = []
   failedPresetUpdates.value = []
+  cleanupDataTableRefresh?.()
 })
 
 watch(

@@ -23,8 +23,14 @@ export function getNextDuplicateNumber(db: Database, base: string): number {
   }
 
   let nextNum = 2
-  while (existingNumbers.has(nextNum)) {
+  const maxNum = 1000
+
+  while (existingNumbers.has(nextNum) && nextNum < maxNum) {
     nextNum++
+  }
+
+  if (nextNum >= maxNum) {
+    throw new Error('Max duplicate number exceeded')
   }
 
   return nextNum

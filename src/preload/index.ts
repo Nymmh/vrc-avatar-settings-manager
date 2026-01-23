@@ -20,10 +20,10 @@ const appApi = {
   setSaveFaceTrackingSetting: (value: boolean): Promise<boolean> => {
     return ipcRenderer.invoke('setSaveFaceTrackingSetting', value)
   },
-  parameterRateUpdate: (meowback: (rate: string) => void): void => {
-    ipcRenderer.on('parameterRateUpdate', (_event: IpcRendererEvent, data: string): void =>
-      meowback(data)
-    )
+  parameterRateUpdate: (meowback: (rate: string) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, data: string): void => meowback(data)
+    ipcRenderer.on('parameterRateUpdate', handler)
+    return () => ipcRenderer.removeListener('parameterRateUpdate', handler)
   },
   getCopyForDiscordSetting: (): Promise<boolean> => {
     return ipcRenderer.invoke('getCopyForDiscordSetting')
@@ -40,20 +40,20 @@ const appApi = {
 }
 
 const avatarApi = {
-  avatarId: (meowback: (data: { id: string }) => void): void => {
-    ipcRenderer.on('avatarId', (_event: IpcRendererEvent, data: { id: string }): void =>
-      meowback(data)
-    )
+  avatarId: (meowback: (data: { id: string }) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, data: { id: string }): void => meowback(data)
+    ipcRenderer.on('avatarId', handler)
+    return () => ipcRenderer.removeListener('avatarId', handler)
   },
-  foundAvatarFile: (meowback: (data: { success: boolean }) => void): void => {
-    ipcRenderer.on('foundAvatarFile', (_event: IpcRendererEvent, data: { success: boolean }) =>
-      meowback(data)
-    )
+  foundAvatarFile: (meowback: (data: { success: boolean }) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, data: { success: boolean }) => meowback(data)
+    ipcRenderer.on('foundAvatarFile', handler)
+    return () => ipcRenderer.removeListener('foundAvatarFile', handler)
   },
-  avatarConfig: (meowback: (data: avatarDBInterface) => void): void => {
-    ipcRenderer.on('avatarConfig', (_event: IpcRendererEvent, data: avatarDBInterface): void =>
-      meowback(data)
-    )
+  avatarConfig: (meowback: (data: avatarDBInterface) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, data: avatarDBInterface): void => meowback(data)
+    ipcRenderer.on('avatarConfig', handler)
+    return () => ipcRenderer.removeListener('avatarConfig', handler)
   },
   saveConfig: async (
     data: avatarDBInterface,
@@ -81,17 +81,16 @@ const avatarApi = {
   ): Promise<uploadConfigInterface> => ipcRenderer.invoke('uploadConfig', saveName, nsfw, avatarId),
   refreshAvatarFile: async (): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('refreshAvatarFile'),
-  savedNames: (meowback: (data: savedNamesInterface[]) => void): void => {
-    ipcRenderer.on(
-      'savedNames',
-      (
-        _event: IpcRendererEvent,
-        data: {
-          name: string
-          id: number
-        }[]
-      ): void => meowback(data)
-    )
+  savedNames: (meowback: (data: savedNamesInterface[]) => void): (() => void) => {
+    const handler = (
+      _event: IpcRendererEvent,
+      data: {
+        name: string
+        id: number
+      }[]
+    ): void => meowback(data)
+    ipcRenderer.on('savedNames', handler)
+    return () => ipcRenderer.removeListener('savedNames', handler)
   },
   applyConfig: async (id: number): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('applyConfig', id),
@@ -158,8 +157,10 @@ const avatarApi = {
     ipcRenderer.invoke('importAllConfigs'),
   getConfigById: async (avatarId: string): Promise<avatarDBInterface[] | null> =>
     ipcRenderer.invoke('getConfigById', avatarId),
-  dataTableRefresh: (meowback: () => void): void => {
-    ipcRenderer.on('dataTableRefresh', (): void => meowback())
+  dataTableRefresh: (meowback: () => void): (() => void) => {
+    const handler = (): void => meowback()
+    ipcRenderer.on('dataTableRefresh', handler)
+    return () => ipcRenderer.removeListener('dataTableRefresh', handler)
   },
   copyConfigCode: async (id: number): Promise<exportConfigInterface> =>
     ipcRenderer.invoke('copyConfigCode', id),

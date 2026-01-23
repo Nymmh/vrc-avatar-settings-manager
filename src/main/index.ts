@@ -120,6 +120,7 @@ app.on('activate', function () {
 app.on('will-quit', () => {
   log.info('Meow Meow is shutting down...')
   log.info('---------------------------------------')
+  oscHandler?.cleanup()
   asmStorage?.cleanState()
   avatarDB.close()
   OSC_CLIENT.close(OSC_CLIENT)
