@@ -12,6 +12,7 @@ export function generateUniqueUqid(db: Database): string {
 
   do {
     uqid = generateUqid(randomString())
+    attempts++
 
     if (attempts >= 10) {
       throw new Error(`Failed to generate uqid`)
