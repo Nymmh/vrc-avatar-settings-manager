@@ -114,6 +114,22 @@ export function avatarDatabase(log: Logger): DBType {
     log.info('Meow Storage upgraded to version 4')
   }
 
+  if (version === 4) {
+    log.info('Upgrading Meow Storage to version 5...')
+
+    db.transaction(() => {
+      db.prepare(
+        `INSERT OR IGNORE INTO settings (key, value) VALUES ('saveConfigVersion', '1')`
+      ).run()
+      db.prepare(`ALTER TABLE avatars ADD COLUMN saveVersion INTEGER DEFAULT 1 NOT NULL`).run()
+    })()
+
+    db.pragma('user_version = 5')
+
+    version = 5
+    log.info('Meow Storage upgraded to version 5')
+  }
+
   db.pragma('synchronous = NORMAL')
   db.pragma('cache_size = -7168')
   db.pragma('temp_store = MEMORY')
