@@ -826,14 +826,13 @@ const emit = defineEmits(['notification'])
     flex-flow: column;
     gap: 28px;
     height: 100%;
+    padding-bottom: 22px;
     padding-top: 22px;
     width: 100%;
   }
 
   &__avatar-wrapper {
     align-items: center;
-    contain: layout style paint;
-    content-visibility: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
