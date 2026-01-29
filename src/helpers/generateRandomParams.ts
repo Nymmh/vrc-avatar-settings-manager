@@ -25,7 +25,7 @@ export async function generateRandomParams(
       ['Yes', 'No'],
       0,
       'Are you sure?',
-      'This will apply random changes to your current avatar. \n\nIn some cases you may have to change avatars and back to stop the avatar from freaking out. You may also be forced to reset the avatar. \n\nDo you want to continue?',
+      'This will apply random changes to your current avatar. \n\nIn some cases you may have to change avatars and back to stop the avatar from freaking out. You may also be forced to reset the avatar. \n\nIt is highly recommended to create a config before proceeding. \n\nDo you want to continue?',
       mainWindow
     )
 

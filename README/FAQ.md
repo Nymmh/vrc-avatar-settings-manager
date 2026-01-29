@@ -72,6 +72,20 @@ If the issue persists, please ask in the [Discord](https://discord.gg/rcCCkbDsY3
 
 This can occur when ASM cannot locate required files, most often because the installation directory was changed. Reinstall ASM using the default installation location. If the issue persists, please ask in the [Discord](https://discord.gg/rcCCkbDsY3) and include a copy of `meow.log` if requested.
 
+## What does the Random button do?
+
+The Random button applies completely random values to all of your current avatar's parameters, excluding GoGoLoco and VRCFT parameters.
+
+**Important warnings:**
+
+- This may trigger NSFW avatar features if your avatar has them
+- Your avatar may behave erratically or "freak out"
+- You may need to switch avatars and back to stabilize the avatar
+- In some cases, you may need to reset your avatar entirely
+- It is highly recommended to save your current config before using this feature
+
+ASM will ask for confirmation twice before applying random changes to ensure you understand these risks.
+
 ## Can I include ASM configs with my commercial avatars?
 
 Yes! Avatar creators are welcome to include ASM-exported configurations and presets with their commercial avatar products. When doing so, please provide attribution by crediting Avatar Settings Manager and linking to the download page (https://github.com/Nymmh/vrc-avatar-settings-manager/releases). This allows your customers to easily load and use the configurations you've created. See Section 3.2 of the [EULA](./terms.md#32-commercial-use-of-exported-configurations) for complete details.
