@@ -1,6 +1,6 @@
 import path from 'path'
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { electronApp, is } from '@electron-toolkit/utils'
 import { Client, Server } from 'node-osc'
 import log from 'electron-log/main'
 import { avatarDatabase } from './avatarDatabase'
