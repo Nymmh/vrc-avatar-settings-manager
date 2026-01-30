@@ -1,6 +1,6 @@
 # End-User License Agreement (EULA) for Avatar Settings Manager
 
-**Last Updated:** December 23, 2025
+**Last Updated:** January, 29, 2026
 
 ## 1. Acceptance of Terms
 
@@ -28,7 +28,7 @@ You may:
 You may include configurations and presets exported from ASM in commercial avatar projects (such as avatar sales or commissions), subject to the following requirements:
 
 - You must provide clear attribution to Avatar Settings Manager
-- You must include a link to the ASM download page: https://github.com/Nymmh/vrc-avatar-settings-manager/releases
+- You must include a link to one of the ASM download pages: https://github.com/Nymmh/vrc-avatar-settings-manager/releases https://jinxxy.com/Nymh/ASM
 - Attribution must be visible to end users (e.g., in documentation, credits, or avatar description)
 - Example attribution: "Configurations created with Avatar Settings Manager (ASM) - https://github.com/Nymmh/vrc-avatar-settings-manager/releases"
 - Exported configurations may be shared as individual config files, avatar exports, or as part of batch exports as described in the [Export & Import Guide](./detailed-export-import.md)

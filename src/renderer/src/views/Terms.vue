@@ -21,7 +21,7 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
             End-User License Agreement (EULA) for Avatar Settings Manager
           </h1>
           <p class="terms__text">
-            <span class="terms__bold">Last Updated:</span> December 23, 2025
+            <span class="terms__bold">Last Updated:</span> January, 29, 2026
           </p>
         </div>
         <div class="terms__section">
@@ -64,13 +64,16 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
           <ul class="terms__list terms__text">
             <li>You must provide clear attribution to Avatar Settings Manager</li>
             <li>
-              You must include a link to the ASM download page:
+              You must include a link to one of the ASM download pages:
               <a
                 href="https://github.com/Nymmh/vrc-avatar-settings-manager/releases"
                 target="_blank"
                 class="terms__link"
               >
                 https://github.com/Nymmh/vrc-avatar-settings-manager/releases
+              </a>
+              <a href="https://jinxxy.com/Nymh/ASM" target="_blank" class="terms__link">
+                https://jinxxy.com/Nymh/ASM
               </a>
             </li>
             <li>
