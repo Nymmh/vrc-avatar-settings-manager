@@ -14,10 +14,12 @@ import { OSCHandler } from '../osc/oscHandler'
 import { ASMStorage } from './ASMStorage'
 import { ipcHandlers } from '../ipc/handlers/ipcHandler'
 import { deleteOldLog } from '../file/deleteOldLog'
+import { OSCQueryServer } from 'oscquery'
 
 let mainWindow: BrowserWindow | null = null
 let OSC_CLIENT: Client | null = null
 let OSC_SERVER: Server | null = null
+let OSC_QUERY: OSCQueryServer | null = null
 let oscHandler: OSCHandler | null = null
 let asmStorage: ASMStorage | null = null
 
@@ -30,7 +32,8 @@ log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
 log.transports.file.maxSize = 5 * 1024 * 1024 // 5 MB
 log.transports.file.level = 'info'
 deleteOldLog(log, dataFolder.folderPath)
-log.info('Meow Meow starting...')
+log.info(`Meow Meow starting...`)
+log.info(`Version: ${app.getVersion()}`)
 
 const avatarDB = avatarDatabase(log)
 
@@ -69,7 +72,8 @@ async function setupOSC(): Promise<void> {
   log.info('Setting up OSC...')
 
   try {
-    const PORT = await oscQuery(log)
+    const { port: PORT, service } = await oscQuery(log)
+    OSC_QUERY = service
     OSC_SERVER = await oscServer(log, PORT)
     OSC_CLIENT = await oscClient(log)
 
@@ -119,12 +123,14 @@ app.on('activate', function () {
 
 app.on('will-quit', () => {
   log.info('Meow Meow is shutting down...')
-  log.info('---------------------------------------')
   oscHandler?.cleanup()
   asmStorage?.cleanState()
   avatarDB.close()
-  OSC_CLIENT.close(OSC_CLIENT)
-  OSC_SERVER.close(OSC_SERVER)
+  OSC_CLIENT?.close()
+  OSC_SERVER?.close()
+  OSC_QUERY?.stop()
+  log.info('Everything cleaned up!')
+  log.info('---------------------------------------')
 })
 
 app.on('before-quit', () => {

@@ -2,7 +2,7 @@ import { OSCQAccess, OSCQueryServer, OSCTypeSimple } from 'oscquery'
 import { Logger } from 'electron-log'
 import { randomNumber } from '../helpers/randomNumber'
 
-export async function oscQuery(log: Logger): Promise<number> {
+export async function oscQuery(log: Logger): Promise<{ port: number; service: OSCQueryServer }> {
   log.info('Starting Query...')
 
   const oscPort = randomNumber()
@@ -20,7 +20,7 @@ export async function oscQuery(log: Logger): Promise<number> {
   try {
     await service.start()
     log.info(`Query is listening on port ${oscPort}`)
-    return oscPort
+    return { port: oscPort, service }
   } catch (e) {
     log.error('Failed to start Query:', e)
     throw new Error('Failed to start Query')
