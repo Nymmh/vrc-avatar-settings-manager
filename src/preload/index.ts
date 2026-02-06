@@ -46,7 +46,7 @@ const avatarApi = {
     return () => ipcRenderer.removeListener('avatarId', handler)
   },
   foundAvatarFile: (meowback: (data: { success: boolean }) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, data: { success: boolean }) => meowback(data)
+    const handler = (_event: IpcRendererEvent, data: { success: boolean }): void => meowback(data)
     ipcRenderer.on('foundAvatarFile', handler)
     return () => ipcRenderer.removeListener('foundAvatarFile', handler)
   },
