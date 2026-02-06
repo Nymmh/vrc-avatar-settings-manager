@@ -1,3 +1,5 @@
+import path from 'path'
+import fs from 'fs'
 import { Logger } from 'electron-log'
 import { Client } from 'node-osc'
 import { BrowserWindow } from 'electron'
@@ -5,6 +7,12 @@ import { Database } from 'better-sqlite3'
 import { saveConfig } from './saveConfig'
 import { uploadConfig } from '../services/uploadConfig'
 import { showDialogNoSound } from '../services/showDialogNoSound'
+import { lookForConfig } from '../file/lookForConfig'
+import { lookForCache } from '../file/lookForCache'
+import { cleanJson } from '../helpers/cleanJson'
+import { formatConfig } from '../services/formatConfig'
+
+const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
 
 export async function uploadConfigAndApply(
   log: Logger,
@@ -18,7 +26,12 @@ export async function uploadConfigAndApply(
   mainWindow: BrowserWindow
 ): Promise<uploadConfigAndApplyTypeInterface> {
   log.info('Uploading configuration and applying...')
-  if (loadedJson.type && loadedJson.type !== 'config') {
+  if (
+    (loadedJson.type && loadedJson.type !== 'config') ||
+    !loadedJson.valuedParams ||
+    !Array.isArray(loadedJson.valuedParams) ||
+    !loadedJson.avatarId
+  ) {
     log.error('Uploaded data is not a valid config')
     return {
       upload: false,
@@ -48,6 +61,31 @@ export async function uploadConfigAndApply(
 
   let nsfwResponse = 0
   let upload: unknown
+
+  const aviConfig = lookForConfig(currentAviId, vrcPath, log)
+  const aviCache = lookForCache(currentAviId, vrcPath, log)
+
+  if (aviConfig && aviCache) {
+    log.info('Found avatar config and cache files')
+
+    const aviConfigData = cleanJson(fs.readFileSync(path.join(vrcPath, 'OSC', aviConfig), 'utf-8'))
+    const aviCacheData = cleanJson(
+      fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
+    )
+
+    const paramMap = new Map<string, unknown>(
+      loadedJson.valuedParams
+        .filter(
+          (param): param is valuedParamsInterface & { name: string } =>
+            typeof param.name === 'string'
+        )
+        .map((param) => [param.name, param.value])
+    )
+
+    const formattedDataConfig = formatConfig(db, aviConfigData, aviCacheData, paramMap, log)
+    paramMap.clear()
+    loadedJson.valuedParams = formattedDataConfig.valuedParams as valuedParamsInterface[]
+  }
 
   if (loadedJson?.nsfw) {
     const userResponse = await showDialogNoSound(
