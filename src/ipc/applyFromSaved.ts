@@ -1,3 +1,5 @@
+import path from 'path'
+import fs from 'fs'
 import { Logger } from 'electron-log'
 import { BrowserWindow } from 'electron'
 import Database from 'better-sqlite3'
@@ -5,6 +7,12 @@ import { Client } from 'node-osc'
 import { applyConfig } from '../services/applyConfig'
 import { showDialogNoSound } from '../services/showDialogNoSound'
 import { ASMStorage } from '../main/ASMStorage'
+import { lookForConfig } from '../file/lookForConfig'
+import { lookForCache } from '../file/lookForCache'
+import { formatConfig } from '../services/formatConfig'
+import { cleanJson } from '../helpers/cleanJson'
+
+const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
 
 export async function applyFromSaved(
   log: Logger,
@@ -66,6 +74,33 @@ export async function applyFromSaved(
         log.info('User cancelled NSFW')
         return false
       }
+    }
+
+    const aviConfig = lookForConfig(currentAvatarId, vrcPath, log)
+    const aviCache = lookForCache(currentAvatarId, vrcPath, log)
+
+    if (aviConfig && aviCache) {
+      log.info('Found avatar config and cache files')
+
+      const aviConfigData = cleanJson(
+        fs.readFileSync(path.join(vrcPath, 'OSC', aviConfig), 'utf-8')
+      )
+      const aviCacheData = cleanJson(
+        fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
+      )
+
+      const paramMap = new Map<string, unknown>(
+        parameters
+          .filter(
+            (param): param is valuedParamsInterface & { name: string } =>
+              typeof param.name === 'string'
+          )
+          .map((param) => [param.name, param.value])
+      )
+
+      const formattedDataConfig = formatConfig(db, aviConfigData, aviCacheData, paramMap, log)
+      paramMap.clear()
+      parameters = formattedDataConfig.valuedParams as valuedParamsInterface[]
     }
 
     storage.clearPendingChanges()
