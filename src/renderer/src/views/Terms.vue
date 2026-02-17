@@ -58,19 +58,20 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
           </ul>
           <h3 class="terms__section-header">3.2 Commercial Use of Exported Configurations</h3>
           <p class="terms__text">
-            You may include configurations and presets exported from ASM in commercial avatar
-            projects (such as avatar sales or commissions), subject to the following requirements:
+            You may include ASM exported configurations and presets in commercial avatar projects
+            (such as avatar sales or commissions), and you may bundle the ASM Unity package,
+            provided you meet the following requirements:
           </p>
           <ul class="terms__list terms__text">
             <li>You must provide clear attribution to Avatar Settings Manager</li>
             <li>
               You must include a link to one of the ASM download pages:
               <a
-                href="https://github.com/Nymmh/vrc-avatar-settings-manager/releases"
+                href="https://github.com/Nymmh/vrc-avatar-settings-manager"
                 target="_blank"
                 class="terms__link"
               >
-                https://github.com/Nymmh/vrc-avatar-settings-manager/releases
+                https://github.com/Nymmh/vrc-avatar-settings-manager
               </a>
               <a href="https://jinxxy.com/Nymh/ASM" target="_blank" class="terms__link">
                 https://jinxxy.com/Nymh/ASM
@@ -83,11 +84,11 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
             <li>
               Example attribution: "Configurations created with Avatar Settings Manager (ASM) -
               <a
-                href="https://github.com/Nymmh/vrc-avatar-settings-manager/releases"
+                href="https://github.com/Nymmh/vrc-avatar-settings-manager"
                 target="_blank"
                 class="terms__link"
               >
-                https://github.com/Nymmh/vrc-avatar-settings-manager/releases </a
+                https://github.com/Nymmh/vrc-avatar-settings-manager </a
               >"
             </li>
             <li>
