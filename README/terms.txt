@@ -35,18 +35,18 @@ You may:
 
 3.2 Commercial Use of Exported Configurations
 
-You may include configurations and presets exported from ASM in commercial 
-avatar projects (such as avatar sales or commissions), subject to the 
-following requirements:
+You may include ASM exported configurations and presets in commercial 
+avatar projects (such as avatar sales or commissions), 
+and you may bundle the ASM Unity package, provided you meet the following requirements:
 
   - You must provide clear attribution to Avatar Settings Manager
   - You must include a link to one of the ASM download pages
-    https://github.com/Nymmh/vrc-avatar-settings-manager/releases 
+    https://github.com/Nymmh/vrc-avatar-settings-manager
     https://jinxxy.com/Nymh/ASM
   - Attribution must be visible to end users (e.g., in documentation, credits, 
     or avatar description)
   - Example attribution: "Configurations created with Avatar Settings Manager 
-    (ASM) - https://github.com/Nymmh/vrc-avatar-settings-manager/releases"
+    (ASM) - https://github.com/Nymmh/vrc-avatar-settings-manager"
   - Exported configurations may be shared as individual config files, avatar 
     exports, or as part of batch exports as described in the Export & Import 
     Guide
