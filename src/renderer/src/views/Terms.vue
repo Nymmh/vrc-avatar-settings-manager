@@ -21,7 +21,7 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
             End-User License Agreement (EULA) for Avatar Settings Manager
           </h1>
           <p class="terms__text">
-            <span class="terms__bold">Last Updated:</span> January, 29, 2026
+            <span class="terms__bold">Last Updated:</span> February, 17, 2026
           </p>
         </div>
         <div class="terms__section">
