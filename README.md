@@ -24,7 +24,7 @@ ASM also works with cloned avatars.
 - NSFW Filtering - Mark configs as NSFW
 - Clone Avatar Support - Works seamlessly with cloned avatars
 - Parameter Monitoring - Watches VRChat data for real-time changes
-- Random Button - Randomize avatar parameters, read more [here](./README/FAQ.md#what-does-the-random-button-do)
+- Random Button - Randomize avatar parameters, read more [here](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/FAQ#what-does-the-random-button-do)
 
 ## Getting Started
 
@@ -46,11 +46,11 @@ ASM does not contain malware; this warning appears because the installer is not 
 
 You can review the scan result on [VirusTotal](https://www.virustotal.com/gui/file/b8eda1f1ab78a4787174f0837b7524881888e491088bd396da8a4e4e51920432/detection).
 
-For common questions, see the [FAQ](./README/FAQ.md).
+For common questions, see the [FAQ](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/FAQ).
 
 ## Building from source
 
-View the doc [here](./README/build-from-source.md) to build from source
+View the doc [here](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Build-from-source) to build from source
 
 ## Bug Reports & Feature Requests
 
@@ -64,7 +64,7 @@ ASM does not modify your game in anyway and uses features and data provided by V
 
 ## License
 
-ASM is proprietary software with source available for reference. By using ASM, you agree to the [End-User License Agreement (EULA)](./README/terms.md).
+ASM is proprietary software with source available for reference. By using ASM, you agree to the [End-User License Agreement (EULA)](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms).
 
 ## Privacy
 
@@ -79,7 +79,7 @@ ASM is committed to protecting your privacy. All avatar configurations, presets,
 - ✅ No account creation or login required
 - ✅ Source code available for transparency
 
-For complete details, see our [Privacy Policy](./README/privacy-policy.md).
+For complete details, see our [Privacy Policy](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Privacy-Policy).
 
 ## For Avatar Creators
 
@@ -89,7 +89,7 @@ Avatar creators are welcome to include ASM exported configurations and presets w
 - Linking to the ASM download page: [https://github.com/Nymmh/vrc-avatar-settings-manager](https://github.com/Nymmh/vrc-avatar-settings-manager) or [https://jinxxy.com/Nymh/ASM](https://jinxxy.com/Nymh/ASM)
 - Do not distribute the ASM installer
 
-This allows your customers to easily load and use the configurations you've created. For more details, see Section 3.2 of the [EULA](./README/terms.md#32-commercial-use-of-exported-configurations).
+This allows your customers to easily load and use the configurations you've created. For more details, see Section 3.2 of the [EULA](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#32-commercial-use-of-exported-configurations).
 
 ## Screenshots
 
@@ -107,4 +107,4 @@ This allows your customers to easily load and use the configurations you've crea
 
 Thank you, [Bobatea](https://tiplink.dev/), [Warm Truffle](https://x.com/animestuffzs), [Kas3y](https://www.youtube.com/@Kas3y_OV), [bAbe](https://x.com/AbehammVR), [Tamara](https://www.twitch.tv/tamara_vr), [Crossbarrel](https://x.com/CrossbarrelVR), [CrunchyFrajs](https://jinxxy.com/CrunchyFrajs), [Remi](https://jinxxy.com/AvatarsByRemi), [Angel Dust](https://x.com/Angel_DustVR), [Vexi](https://x.com/Vexi_VR), [Omega](https://x.com/The_OmegaTV), [LynxJinx](https://x.com/LynxJinxxy), and everyone who helped me.
 
-[List of avatars used in demo video](./README/avatar-list.md).
+[List of avatars used in demo video](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Avatar-List).
