@@ -104,3 +104,7 @@ This allows your customers to easily load and use the configurations you've crea
 ### All Data
 
 ![All Data 1](./README/assets/screenshots/allData_1.png)![All Data 2](./README/assets/screenshots/allData_2.png)
+
+Thank you, [Bobatea](https://tiplink.dev/), Warm Truffle, Kas3y, [bAbe](https://x.com/AbehammVR), [Tamara](https://www.twitch.tv/tamara_vr), Crossbarrel, [CrunchyFrajs](https://jinxxy.com/CrunchyFrajs), [Angel Dust](https://x.com/Angel_DustVR), [Vexi](https://x.com/Vexi_VR), [LynxJinx](https://x.com/LynxJinxxy), [Remi](https://jinxxy.com/AvatarsByRemi),and everyone who helped me.
+
+[List of avatars used in demo video](./README/avatar-list.md).
