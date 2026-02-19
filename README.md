@@ -1,5 +1,11 @@
 # Avatar Settings Manager
 
+[Discord](https://discord.gg/rcCCkbDsY3)
+
+[Jinxxy](https://jinxxy.com/Nymh/ASM)
+
+[VirusTotal](https://www.virustotal.com/gui/file/b8eda1f1ab78a4787174f0837b7524881888e491088bd396da8a4e4e51920432/detection)
+
 Avatar Settings Manager(ASM) is a free comprehensive lightweight VRChat utility designed to preserve, manage, and share avatar parameter configurations. Never lose your avatar settings again, whether from accidental resets, avatar updates, or switching between variations. All without logging into your VRChat account.
 
 With ASM, you can save complete parameter snapshots, create reusable presets for quick configuration changes, and seamlessly transfer settings between avatar variations. Share your configurations with friends through exported files, allowing them to instantly replicate your setup.
@@ -32,15 +38,25 @@ ASM also works with cloned avatars.
 - Run ASM
 - Launch VRChat
 
+## Why am I getting "Windows protected your PC"?
+
+Windows may show a "Windows protected your PC" message because the installer is currently unsigned.
+
+To continue, click More info → Run anyway.
+
+ASM does not contain malware; this warning appears because the installer is not digitally signed.
+
+You can review the scan result on [VirusTotal](https://www.virustotal.com/gui/file/b8eda1f1ab78a4787174f0837b7524881888e491088bd396da8a4e4e51920432/detection).
+
 For common questions, see the [FAQ](./README/FAQ.md).
 
 ## Building from source
 
-- View the doc [here](./README/build-from-source.md) to build from source
+View the doc [here](./README/build-from-source.md) to build from source
 
 ## Bug Reports & Feature Requests
 
-- Bug reports & feature requests can be created as a [Github Issue](https://github.com/Nymmh/vrc-avatar-settings-manager/issues) or in the [Discord](https://discord.gg/rcCCkbDsY3).
+Bug reports & feature requests can be created as a [Github Issue](https://github.com/Nymmh/vrc-avatar-settings-manager/issues) or in the [Discord](https://discord.gg/rcCCkbDsY3).
 
 ## Is ASM against VRChat TOS?
 
@@ -72,7 +88,21 @@ For complete details, see our [Privacy Policy](./README/privacy-policy.md).
 Avatar creators are welcome to include ASM exported configurations and presets with their commercial avatar products, along with the ASM Unity package. When doing so, please provide attribution by:
 
 - Crediting Avatar Settings Manager in your documentation or credits
-- Linking to the ASM download page: https://github.com/Nymmh/vrc-avatar-settings-manager or https://jinxxy.com/Nymh/ASM
+- Linking to the ASM download page: [https://github.com/Nymmh/vrc-avatar-settings-manager](https://github.com/Nymmh/vrc-avatar-settings-manager) or [https://jinxxy.com/Nymh/ASM](https://jinxxy.com/Nymh/ASM)
 - Do not distribute the ASM installer
 
 This allows your customers to easily load and use the configurations you've created. For more details, see Section 3.2 of the [EULA](./README/terms.md#32-commercial-use-of-exported-configurations).
+
+## Screenshots
+
+### Main
+
+![Main](./README/assets/screenshots/main.png)
+
+### Settings
+
+![Settings](./README/assets/screenshots/settings.png)
+
+### All Data
+
+![All Data 1](./README/assets/screenshots/allData_1.png)![All Data 2](./README/assets/screenshots/allData_2.png)
