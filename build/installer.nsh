@@ -9,12 +9,12 @@
 !macro customUnInstall
     ReadEnvStr $0 USERPROFILE
     ${If} ${FileExists} "$0\OneDrive\Documents\VRCAvatarSettingsManager\*.*"
-        MessageBox MB_YESNO|MB_ICONQUESTION "Do you want to remove all VRC Avatar Settings Manager data? This includes all exported avatars, configurations, and presets." IDYES removeOneDrive IDNO skipRemove
+        MessageBox MB_YESNO|MB_ICONQUESTION "Do you want to keep your VRC Avatar Settings Manager data? This includes all exported avatars, configurations, and presets.$\r$\n$\r$\nClick Yes to keep your data, or No to permanently delete all data." IDYES skipRemove IDNO removeOneDrive
         removeOneDrive:
             RMDir /r "$0\OneDrive\Documents\VRCAvatarSettingsManager"
             Goto skipRemove
     ${ElseIf} ${FileExists} "$0\Documents\VRCAvatarSettingsManager\*.*"
-        MessageBox MB_YESNO|MB_ICONQUESTION "Do you want to remove all VRC Avatar Settings Manager data? This includes all exported avatars, configurations, and presets." IDYES removeRegular IDNO skipRemove
+        MessageBox MB_YESNO|MB_ICONQUESTION "Do you want to keep your VRC Avatar Settings Manager data? This includes all exported avatars, configurations, and presets.$\r$\n$\r$\nClick Yes to keep your data, or No to permanently delete all data." IDYES skipRemove IDNO removeRegular
         removeRegular:
         RMDir /r "$0\Documents\VRCAvatarSettingsManager"
     ${EndIf}
