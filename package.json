@@ -58,8 +58,9 @@
       "esbuild"
     ],
     "overrides": {
+      "@isaacs/brace-expansion": ">=5.0.1",
       "lodash": "4.17.23",
-      "tar": "^7.5.7"
+      "tar": ">=7.5.8"
     }
   }
 }
