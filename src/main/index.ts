@@ -15,6 +15,7 @@ import { ASMStorage } from './ASMStorage'
 import { ipcHandlers } from '../ipc/handlers/ipcHandler'
 import { deleteOldLog } from '../file/deleteOldLog'
 import { OSCQueryServer } from 'oscquery'
+import { update } from './update'
 
 let mainWindow: BrowserWindow | null = null
 let OSC_CLIENT: Client | null = null
@@ -113,7 +114,7 @@ app.whenReady().then(async () => {
   createWindow()
   syncAllAvatarNames(log, avatarDB)
   await setupOSC()
-  // update(log)
+  update(log)
   log.info('App is ready')
 })
 
