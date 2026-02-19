@@ -72,6 +72,13 @@ If the issue persists, please ask in the [Discord](https://discord.gg/rcCCkbDsY3
 
 This can occur when ASM cannot locate required files, most often because the installation directory was changed. Reinstall ASM using the default installation location. If the issue persists, please ask in the [Discord](https://discord.gg/rcCCkbDsY3) and include a copy of `meow.log` if requested.
 
+## Why am I getting "Windows protected your PC"?
+
+Windows may show a "Windows protected your PC" message because the installer is currently unsigned.
+To continue, click More info → Run anyway.
+ASM does not contain malware; this warning appears because the installer is not digitally signed.
+You can review the scan result on [VirusTotal](https://www.virustotal.com/gui/file/b8eda1f1ab78a4787174f0837b7524881888e491088bd396da8a4e4e51920432/detection).
+
 ## What does the Random button do?
 
 The Random button applies completely random values to all of your current avatar's parameters, excluding GoGoLoco and VRCFT parameters.
