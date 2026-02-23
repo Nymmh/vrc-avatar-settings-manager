@@ -48,6 +48,7 @@ let cleanupAvatarId: (() => void) | null = null
 let cleanupFoundAvatarFile: (() => void) | null = null
 let cleanupAvatarConfig: (() => void) | null = null
 let cleanupSavedNames: (() => void) | null = null
+let cleanupVRChatStatus: (() => void) | null = null
 
 const resetVars = (): void => {
   saveMessage.value = ''
@@ -251,6 +252,33 @@ const handleInputUpdate = ({ id, value, checked }): void => {
   }
 }
 
+const setupVRChatMonitor = (): void => {
+  cleanupVRChatStatus?.()
+  cleanupVRChatStatus = window.appApi.onVRChatStatusChanged((data) => {
+    if (!data.isRunning) {
+      appStore.value.currentView = 'Waiting'
+      appStore.value.avatarId = ''
+      appStore.value.avatarFoundFile = false
+      showAvatarFoundFileMsg.value = false
+      avatarConfig.value = null
+      saveName.value = ''
+      holdSaveName.value = false
+      configSelectValue.value = ''
+      resetVars()
+
+      pushNotification({
+        type: 'warn',
+        title: 'VRChat Closed'
+      })
+    } else {
+      pushNotification({
+        type: 'info',
+        title: 'VRChat Started'
+      })
+    }
+  })
+}
+
 onMounted(() => {
   appStore.value.avatarId = ''
   appStore.value.avatarFoundFile = false
@@ -261,6 +289,7 @@ onMounted(() => {
   aviFileUpdate()
   savedConfigs()
   aviConfig()
+  setupVRChatMonitor()
 })
 </script>
 
