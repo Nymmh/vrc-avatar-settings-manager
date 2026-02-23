@@ -82,6 +82,8 @@ export interface appApi {
   setCopyForDiscordSetting: (value: boolean) => Promise<boolean>
   deleteDatabase: () => Promise<boolean>
   getExportedFileCount: () => Promise<exportedFileCountInterface>
+  isVRChatRunning: () => Promise<boolean>
+  onVRChatStatusChanged: (meowback: (data: { isRunning: boolean }) => void) => () => void
 }
 
 declare global {
