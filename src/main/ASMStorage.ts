@@ -32,6 +32,14 @@ export class ASMStorage {
     this.pendingChanges.set(address, payload)
   }
 
+  setPendingChangesBulk(changes: Map<string, unknown>): void {
+    this.pendingChanges.clear()
+
+    for (const [address, payload] of changes) {
+      this.pendingChanges.set(address, payload)
+    }
+  }
+
   clearPendingChanges(): void {
     this.pendingChanges.clear()
   }

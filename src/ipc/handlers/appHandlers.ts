@@ -10,6 +10,8 @@ import { getSaveFaceTrackingSetting } from '../../database/getSaveFaceTrackingSe
 import { setSaveFaceTrackingSetting } from '../../database/setSaveFaceTrackingSetting'
 import { getCopyForDiscordSetting } from '../../database/getCopyForDiscordSetting'
 import { setCopyForDiscordSetting } from '../../database/setCopyForDiscordSetting'
+import { getApplyConfigBufferSetting } from '../../database/getApplyConfigBufferSetting'
+import { setApplyConfigBufferSetting } from '../../database/setApplyConfigBufferSetting'
 import { deleteDatabase } from '../../database/deleteDatabase'
 import { getExportedFileCount } from '../../file/getExportedFileCount'
 
@@ -114,6 +116,14 @@ export function appHandlers(context: appHandlersContext): void {
 
   ipcMain.handle('setCopyForDiscordSetting', async (_, value: boolean) => {
     return setCopyForDiscordSetting(avatarDB, value, context.log)
+  })
+
+  ipcMain.handle('getApplyConfigBufferSetting', async () => {
+    return getApplyConfigBufferSetting(avatarDB, context.log)
+  })
+
+  ipcMain.handle('setApplyConfigBufferSetting', async (_, value: boolean) => {
+    return setApplyConfigBufferSetting(avatarDB, value, context.log)
   })
 
   ipcMain.handle('deleteDatabase', async () => {
