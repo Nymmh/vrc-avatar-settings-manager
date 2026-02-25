@@ -36,6 +36,12 @@ const appApi = {
   },
   getExportedFileCount: (): Promise<exportedFileCountInterface> => {
     return ipcRenderer.invoke('getExportedFileCount')
+  },
+  getApplyConfigBufferSetting: (): Promise<boolean> => {
+    return ipcRenderer.invoke('getApplyConfigBufferSetting')
+  },
+  setApplyConfigBufferSetting: (value: boolean): Promise<boolean> => {
+    return ipcRenderer.invoke('setApplyConfigBufferSetting', value)
   }
 }
 

@@ -88,7 +88,7 @@ export async function generateRandomParams(
       if (!type) return ap
       if (!value) value = 0
 
-      const formattedName = c.name.replace(/ /g, '_')
+      const formattedName = c.name.replace(/ +/g, '_')
 
       if (type === 'i') {
         const samples = Array.from({ length: 5 }, () => (Math.random() < 0.5 ? 0 : 1))
