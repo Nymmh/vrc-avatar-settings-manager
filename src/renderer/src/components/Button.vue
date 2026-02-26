@@ -1,4 +1,10 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
+import { appStorage } from '../composables/appStorage'
+
+const appStore = appStorage()
+const lowPerformanceMode = computed(() => appStore.value.lowPerformanceMode)
+
 defineProps({
   small: {
     type: Boolean,
@@ -40,7 +46,8 @@ defineProps({
         'button__wrapper--alt-color': altColor,
         'button__wrapper--error': error,
         'button__wrapper--warning': warning,
-        'button__wrapper--hero': hero
+        'button__wrapper--hero': hero,
+        'button__wrapper--low-performance': lowPerformanceMode
       }
     ]"
   >
@@ -119,6 +126,58 @@ defineProps({
 
       &:hover {
         background-color: #{color.adjust(colors.$color--secondary-a1, $lightness: -20%)};
+      }
+    }
+
+    &--low-performance {
+      transition: none;
+      background: var(--color--low-button);
+
+      &:hover {
+        background: var(--color--low-button-hover) !important;
+      }
+
+      &.button__wrapper--error {
+        background: var(--color--low-error) !important;
+
+        &:hover {
+          background: var(--color--low-error-hover) !important;
+        }
+      }
+
+      &.button__wrapper--warning {
+        background: var(--color--low-warning) !important;
+
+        &:hover {
+          background: var(--color--low-warning-hover) !important;
+        }
+      }
+
+      &.button__wrapper--hero {
+        background: var(--color--low-hero) !important;
+
+        &:hover {
+          background: var(--color--low-hero-hover) !important;
+        }
+      }
+
+      &.button__wrapper--alt-color {
+        background-color: var(--color--secondary-a1) !important;
+
+        &:hover {
+          background-color: var(--color--secondary-a1) !important;
+        }
+      }
+
+      .button__tooltip {
+        backdrop-filter: none;
+        background-color: var(--color--low-card-glass-bg) !important;
+        border: 1px solid var(--color--low-card-glass-border);
+        transition: none;
+      }
+
+      &:hover .button__tooltip {
+        transition-delay: 0s;
       }
     }
 

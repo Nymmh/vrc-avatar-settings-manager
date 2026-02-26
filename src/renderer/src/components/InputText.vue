@@ -1,5 +1,10 @@
 <script lang="ts" setup>
 import { useDebounceFn } from '@vueuse/core'
+import { computed } from 'vue'
+import { appStorage } from '../composables/appStorage'
+
+const appStore = appStorage()
+const lowPerformanceMode = computed(() => appStore.value.lowPerformanceMode)
 
 defineProps({
   placeholder: {
@@ -45,7 +50,10 @@ const handleInput = useDebounceFn((event: Event) => {
       <label v-if="label" :for="id" class="input-text__label">{{ label }}</label>
       <input
         :id="id"
-        :class="['input-text', { 'input-text--failed': error }]"
+        :class="[
+          'input-text',
+          { 'input-text--failed': error, 'input-text--low-performance': lowPerformanceMode }
+        ]"
         :placeholder="placeholder"
         :minlength="minSize"
         :value="modelValue"
@@ -73,6 +81,17 @@ const handleInput = useDebounceFn((event: Event) => {
 
   &--error {
     border-bottom-color: var(--color--failed);
+  }
+
+  &--low-performance {
+    transition: none !important;
+
+    &:hover,
+    &:focus,
+    &:focus-visible {
+      border-bottom: 2px solid var(--color--primary-a4) !important;
+      border-image: none !important;
+    }
   }
 
   &:hover,

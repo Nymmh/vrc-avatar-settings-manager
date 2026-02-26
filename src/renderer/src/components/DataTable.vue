@@ -30,6 +30,17 @@ const avatarRefs = ref<(HTMLElement | null)[]>([])
 const configRefs = ref<(HTMLElement | null)[]>([])
 let cleanupDataTableRefresh: (() => void) | null = null
 
+const dataTableScrollOverlayProps = {
+  element: 'div',
+  defer: true,
+  options: {
+    scrollbars: {
+      autoHide: 'move',
+      autoHideDelay: 300
+    }
+  }
+}
+
 const hasConfigs = computed(() => allConfigs.value && allConfigs.value.length > 0)
 const hasPresets = computed(() => allPresets.value?.length > 0)
 
@@ -168,6 +179,8 @@ const toggleAvatar = (aviId: string, idx: number): void => {
         const scrollTop = viewport.scrollTop
         const targetScroll = scrollTop + elRect.top - containerRect.top - 44
         viewport.scrollTo({ top: targetScroll, behavior: 'smooth' })
+      } else if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }
     }, 100)
   }
@@ -531,17 +544,11 @@ const emit = defineEmits(['notification'])
 </script>
 
 <template>
-  <div class="data-table">
-    <OverlayScrollbarsComponent
+  <div :class="['data-table', { 'data-table--low-performance': appStore.lowPerformanceMode }]">
+    <component
+      :is="appStore.lowPerformanceMode ? 'div' : OverlayScrollbarsComponent"
       ref="scrollContainer"
-      element="div"
-      defer
-      :options="{
-        scrollbars: {
-          autoHide: 'move',
-          autoHideDelay: 300
-        }
-      }"
+      v-bind="appStore.lowPerformanceMode ? {} : dataTableScrollOverlayProps"
     >
       <div class="data-table__content">
         <Card>
@@ -807,7 +814,7 @@ const emit = defineEmits(['notification'])
           </Card>
         </div>
       </div>
-    </OverlayScrollbarsComponent>
+    </component>
   </div>
 </template>
 
@@ -819,6 +826,10 @@ const emit = defineEmits(['notification'])
   height: 100%;
   overflow: hidden;
   width: 100%;
+
+  &--low-performance {
+    overflow: auto;
+  }
 
   &__content {
     align-items: center;
