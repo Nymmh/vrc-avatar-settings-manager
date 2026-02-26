@@ -76,7 +76,7 @@ export class OSCHandler {
       await this.handleAvatarChangeTrigger(payload)
     } else if (address.includes(this.PRESET_TOKEN)) {
       await this.handlePresets(address)
-    } else if (address.includes(this.PARAM_PREFIX)) {
+    } else if (address.startsWith(this.PARAM_PREFIX)) {
       if (this.skipDupOsc(address, payload)) {
         return
       }
