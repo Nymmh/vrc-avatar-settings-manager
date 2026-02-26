@@ -49,6 +49,24 @@ let cleanupFoundAvatarFile: (() => void) | null = null
 let cleanupAvatarConfig: (() => void) | null = null
 let cleanupSavedNames: (() => void) | null = null
 
+const mainScrollOverlayProps = {
+  element: 'div',
+  defer: true,
+  options: {
+    scrollbars: {
+      autoHide: 'move',
+      autoHideDelay: 300,
+      clickScroll: false
+    },
+    overflow: {
+      x: 'hidden'
+    },
+    update: {
+      debounce: [0, 200]
+    }
+  }
+}
+
 const resetVars = (): void => {
   saveMessage.value = ''
   saveSuccess.value = false
@@ -251,7 +269,13 @@ const handleInputUpdate = ({ id, value, checked }): void => {
   }
 }
 
+const getLowPerformanceModeSetting = async (): Promise<void> => {
+  const setting = await window.appApi.getLowPerformanceModeSetting()
+  appStore.value.lowPerformanceMode = setting
+}
+
 onMounted(() => {
+  getLowPerformanceModeSetting()
   appStore.value.avatarId = ''
   appStore.value.avatarFoundFile = false
   showAvatarFoundFileMsg.value = false
@@ -267,30 +291,19 @@ onMounted(() => {
 <template>
   <notifications class="notification" position="bottom left" />
   <Menu @notification="pushNotification" />
-  <div class="main">
+  <div :class="['main', { 'main--low-performance': appStore.lowPerformanceMode }]">
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
     <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
     <Settings v-if="appStore.currentView === 'Settings'" @notification="pushNotification" />
     <Privacy v-show="appStore.currentView === 'Privacy'" />
     <Terms v-show="appStore.currentView === 'Terms'" />
     <div v-show="appStore.currentView === 'Main'" class="main__wrapper">
-      <div class="main__scroll">
-        <OverlayScrollbarsComponent
-          element="div"
-          defer
-          :options="{
-            scrollbars: {
-              autoHide: 'move',
-              autoHideDelay: 300,
-              clickScroll: false
-            },
-            overflow: {
-              x: 'hidden'
-            },
-            update: {
-              debounce: [0, 200]
-            }
-          }"
+      <div
+        :class="['main__scroll', { 'main__scroll--low-performance': appStore.lowPerformanceMode }]"
+      >
+        <component
+          :is="appStore.lowPerformanceMode ? 'div' : OverlayScrollbarsComponent"
+          v-bind="appStore.lowPerformanceMode ? {} : mainScrollOverlayProps"
         >
           <div class="main__content">
             <Card>
@@ -386,7 +399,7 @@ onMounted(() => {
               />
             </Card>
           </div>
-        </OverlayScrollbarsComponent>
+        </component>
       </div>
     </div>
   </div>
@@ -423,6 +436,11 @@ onMounted(() => {
     justify-content: center;
     overflow: hidden;
     width: 100%;
+
+    &--low-performance {
+      justify-content: flex-start !important;
+      overflow: auto !important;
+    }
   }
 
   &__content {
@@ -521,5 +539,15 @@ onMounted(() => {
     rgba(63, 81, 102, 0.7) 0%,
     rgba(47, 90, 145, 0.7) 100%
   );
+}
+
+// Overrides
+body:has(.main--low-performance) a {
+  transition: none !important;
+  will-change: unset !important;
+}
+
+body:has(.main--low-performance)::before {
+  background: none !important;
 }
 </style>

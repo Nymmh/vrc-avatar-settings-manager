@@ -1,4 +1,10 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
+import { appStorage } from '../composables/appStorage'
+
+const appStore = appStorage()
+const lowPerformanceMode = computed(() => appStore.value.lowPerformanceMode)
+
 defineProps({
   modelValue: {
     type: Boolean,
@@ -22,7 +28,12 @@ defineEmits(['update:modelValue'])
 </script>
 
 <template>
-  <div class="input-checkbox__wrapper">
+  <div
+    :class="[
+      'input-checkbox__wrapper',
+      { 'input-checkbox__wrapper--low-performance': lowPerformanceMode }
+    ]"
+  >
     <div class="input-checkbox__group">
       <input
         :id="id"
@@ -104,6 +115,14 @@ defineEmits(['update:modelValue'])
       width: 5px;
     }
   }
+
+  &__wrapper--low-performance {
+    .input-checkbox__input,
+    .input-checkbox__label,
+    .input-checkbox__checkmark {
+      transition: none !important;
+    }
+  }
 }
 
 .input-checkbox__input:checked ~ .input-checkbox__label .input-checkbox__checkmark {
@@ -125,5 +144,19 @@ defineEmits(['update:modelValue'])
 
 .input-checkbox__input ~ .input-checkbox__label:hover .input-checkbox__checkmark {
   border-color: var(--color--primary-a3);
+}
+
+.input-checkbox__wrapper--low-performance
+  .input-checkbox__input:not(:checked)
+  ~ .input-checkbox__label:hover
+  .input-checkbox__checkmark {
+  background-color: var(--color--primary-a6) !important;
+}
+
+.input-checkbox__wrapper--low-performance
+  .input-checkbox__input:checked
+  ~ .input-checkbox__label:hover
+  .input-checkbox__checkmark {
+  background-color: var(--color--primary-a4) !important;
 }
 </style>

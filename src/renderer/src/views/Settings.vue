@@ -1,9 +1,12 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
+import { appStorage, saveAppStorageSnapshot } from '../composables/appStorage'
+import { handleChangeView } from '@renderer/composables/changeView'
 import Button from '../components/Button.vue'
 import Card from '../components/Card.vue'
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
-import { handleChangeView } from '@renderer/composables/changeView'
+
+const appStore = appStorage()
 
 let intervalLogUpdate: number | null = null
 let cleanupParameterRate: (() => void) | null = null
@@ -23,6 +26,17 @@ const exportedFiles = ref<{
   configExports: 0,
   totalSize: '0MB'
 })
+
+const settingsScrollOverlayProps = {
+  element: 'div',
+  defer: true,
+  options: {
+    scrollbars: {
+      autoHide: 'move',
+      autoHideDelay: 300
+    }
+  }
+}
 
 const getLogFileSize = async (): Promise<void> => {
   const size = await window.appApi.getLogFileSize()
@@ -123,6 +137,26 @@ const setApplyConfigBufferSetting = async (): Promise<void> => {
   }
 }
 
+const setLowPerformanceModeSetting = async (): Promise<void> => {
+  const newValue = !appStore.value.lowPerformanceMode
+  const res = await window.appApi.setLowPerformanceModeSetting(newValue)
+
+  if (res) {
+    appStore.value.lowPerformanceMode = newValue
+    emit('notification', {
+      type: 'success',
+      title: 'Low Performance Mode Setting Updated'
+    })
+    saveAppStorageSnapshot()
+    window.location.reload()
+  } else {
+    emit('notification', {
+      type: 'error',
+      title: 'Low Performance Mode Setting Update Failed'
+    })
+  }
+}
+
 const paramUpdateRate = (): void => {
   cleanupParameterRate = window.appApi.parameterRateUpdate((rate: string) => {
     updateRate.value = rate
@@ -164,21 +198,27 @@ onUnmounted(() => {
   cleanupParameterRate?.()
 })
 
+const openTerms = (): void => {
+  handleChangeView('Terms')
+}
+
+const openPrivacy = (): void => {
+  handleChangeView('Privacy')
+}
+
 const emit = defineEmits(['notification'])
 </script>
 
 <template>
-  <div class="settings__wrapper">
-    <OverlayScrollbarsComponent
-      ref="scrollContainer"
-      element="div"
-      defer
-      :options="{
-        scrollbars: {
-          autoHide: 'move',
-          autoHideDelay: 300
-        }
-      }"
+  <div
+    :class="[
+      'settings__wrapper',
+      { 'settings__wrapper--low-performance': appStore.lowPerformanceMode }
+    ]"
+  >
+    <component
+      :is="appStore.lowPerformanceMode ? 'div' : OverlayScrollbarsComponent"
+      v-bind="appStore.lowPerformanceMode ? {} : settingsScrollOverlayProps"
     >
       <div class="settings">
         <Card>
@@ -187,6 +227,24 @@ const emit = defineEmits(['notification'])
           </h2>
         </Card>
         <div class="settings__cards-row settings__card-row--fit">
+          <Card>
+            <div class="settings__content">
+              <h2 class="settings__title">Export Location</h2>
+              <div class="settings__card-content">
+                <p>Full Exports: {{ exportedFiles.fullExports }}</p>
+                <p>Exported Avatars: {{ exportedFiles.avatarExports }}</p>
+                <p>Exported Configs: {{ exportedFiles.configExports }}</p>
+                <p>Total Size: {{ exportedFiles.totalSize }}</p>
+                <div class="settings__card-button-group">
+                  <Button
+                    label="Open Export Directory"
+                    :small="true"
+                    @click="openExportDirectory"
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
           <Card additional-class="card--fit">
             <div class="settings__content">
               <h2 class="settings__title">Log</h2>
@@ -207,73 +265,86 @@ const emit = defineEmits(['notification'])
               </div>
             </div>
           </Card>
-          <Card>
+        </div>
+        <div class="settings__cards-row settings__card-row--fit">
+          <Card additional-class="card--fit">
             <div class="settings__content">
-              <h2 class="settings__title">Export Location</h2>
-              <div class="settings__card-content">
-                <p>Full Exports: {{ exportedFiles.fullExports }}</p>
-                <p>Exported Avatars: {{ exportedFiles.avatarExports }}</p>
-                <p>Exported Configs: {{ exportedFiles.configExports }}</p>
-                <p>Total Size: {{ exportedFiles.totalSize }}</p>
-                <div class="settings__card-button-group">
-                  <Button
-                    label="Open Export Directory"
-                    :small="true"
-                    @click="openExportDirectory"
-                  />
-                </div>
+              <h2 class="settings__title">App</h2>
+              <div class="settings__card-content settings__card-content--buttons">
+                <Button
+                  :label="
+                    applyConfigBuffer ? 'Disable Apply Config Buffer' : 'Enable Apply Config Buffer'
+                  "
+                  :small="true"
+                  :hero="!applyConfigBuffer"
+                  :error="applyConfigBuffer"
+                  tooltip="If your avatar has issues applying some saved parameters, enabling this may help"
+                  @click="setApplyConfigBufferSetting"
+                />
+                <Button
+                  :label="
+                    copyForDiscord ? 'Disable Discord Copy Format' : 'Enable Discord Copy Format'
+                  "
+                  :small="true"
+                  :hero="!copyForDiscord"
+                  :error="copyForDiscord"
+                  tooltip="If the copied share code should be put in a Discord codeblock"
+                  @click="setCopyForDiscordSetting"
+                />
+                <Button
+                  :label="
+                    appStore.lowPerformanceMode
+                      ? 'Disable Low Performance Mode'
+                      : 'Enable Low Performance Mode'
+                  "
+                  :small="true"
+                  :hero="!appStore.lowPerformanceMode"
+                  :error="appStore.lowPerformanceMode"
+                  tooltip="If enabled, the application will run in low performance mode"
+                  @click="setLowPerformanceModeSetting"
+                />
+              </div>
+            </div>
+          </Card>
+          <Card additional-class="card--fit">
+            <div class="settings__content">
+              <h2 class="settings__title">Database</h2>
+              <div class="settings__card-content settings__card-content--buttons">
+                <Button
+                  :label="
+                    saveFaceTracking ? 'Disable Save Face Tracking' : 'Enable Save Face Tracking'
+                  "
+                  :small="true"
+                  :hero="!saveFaceTracking"
+                  :error="saveFaceTracking"
+                  tooltip="If toggled face tracking should be saved or not"
+                  @click="setSaveFaceTrackingSetting"
+                />
+                <Button
+                  label="Delete Database"
+                  :small="true"
+                  :error="true"
+                  tooltip="Will purge the database, you will keep your exported files"
+                  @click="deleteDatabase"
+                />
               </div>
             </div>
           </Card>
         </div>
-        <Card>
-          <div class="settings__content">
-            <h2 class="settings__title">Database</h2>
-            <div class="settings__card-content settings__card-content--buttons">
-              <Button
-                :label="
-                  saveFaceTracking ? 'Disable Save Face Tracking' : 'Enable Save Face Tracking'
-                "
-                :small="true"
-                :hero="!saveFaceTracking"
-                :error="saveFaceTracking"
-                @click="setSaveFaceTrackingSetting"
-              />
-              <Button
-                :label="
-                  applyConfigBuffer ? 'Disable Apply Config Buffer' : 'Enable Apply Config Buffer'
-                "
-                :small="true"
-                :hero="!applyConfigBuffer"
-                :error="applyConfigBuffer"
-                @click="setApplyConfigBufferSetting"
-              />
-              <Button
-                :label="
-                  copyForDiscord ? 'Disable Discord Copy Format' : 'Enable Discord Copy Format'
-                "
-                :small="true"
-                :hero="!copyForDiscord"
-                :error="copyForDiscord"
-                @click="setCopyForDiscordSetting"
-              />
-              <Button label="Delete Database" :small="true" :error="true" @click="deleteDatabase" />
-            </div>
-          </div>
-        </Card>
+
         <Card>
           <div class="settings__content">
             <h2 class="settings__title">Terms & Information</h2>
             <div class="settings__card-content">
               <div class="settings__card-button-group">
-                <Button label="Terms of Service" :small="true" @click="handleChangeView('Terms')" />
-                <Button label="Privacy Policy" :small="true" @click="handleChangeView('Privacy')" />
+                <Button label="Terms of Service" :small="true" @click="openTerms" />
+                <Button label="Privacy Policy" :small="true" @click="openPrivacy" />
               </div>
             </div>
           </div>
         </Card>
       </div>
-    </OverlayScrollbarsComponent>
+    </component>
   </div>
 </template>
 
@@ -295,6 +366,14 @@ const emit = defineEmits(['notification'])
     height: 100%;
     overflow: hidden;
     width: 100%;
+
+    &--low-performance {
+      overflow: auto;
+
+      .settings__cards-row {
+        flex-wrap: wrap;
+      }
+    }
   }
 
   &__content {

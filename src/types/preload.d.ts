@@ -84,6 +84,8 @@ export interface appApi {
   getExportedFileCount: () => Promise<exportedFileCountInterface>
   getApplyConfigBufferSetting: () => Promise<boolean>
   setApplyConfigBufferSetting: (value: boolean) => Promise<boolean>
+  getLowPerformanceModeSetting: () => Promise<boolean>
+  setLowPerformanceModeSetting: (value: boolean) => Promise<boolean>
 }
 
 declare global {
