@@ -1,5 +1,9 @@
 import { Logger } from 'electron-log'
 import { Client, Bundle } from 'node-osc'
+import type { MessageLike, ArgumentType } from 'node-osc'
+
+const PARAM_PREFIX = '/avatar/parameters/'
+const CHUNK_SIZE = 10
 
 export async function applyConfig(
   log: Logger,
@@ -14,25 +18,22 @@ export async function applyConfig(
       return false
     }
 
-    const chunks: unknown[][] = []
-    let chunk: unknown[] = []
+    const chunks: MessageLike[][] = []
+    let chunk: MessageLike[] = []
 
     for (let i = 0; i < content.length; i++) {
       const c = content[i]
 
       if (!c.name || c.value === undefined) continue
 
+      const arg: ArgumentType = c.type ? { type: c.type, value: c.value } : c.value
+
       chunk.push({
-        address: `/avatar/parameters/${c.name}`,
-        args: [
-          {
-            type: c.type,
-            value: c.value
-          }
-        ]
+        address: `${PARAM_PREFIX}${c.name}`,
+        args: [arg]
       })
 
-      if (chunk.length === 10) {
+      if (chunk.length === CHUNK_SIZE) {
         chunks.push(chunk)
         chunk = []
       }
@@ -40,8 +41,22 @@ export async function applyConfig(
 
     if (chunk.length > 0) chunks.push(chunk)
 
+    if (chunks.length === 0) {
+      log.warn('No valid parameters to upload')
+      return false
+    }
+
     for (let i = 0; i < chunks.length; i++) {
-      await OSC_CLIENT.send(new Bundle(...chunks[i]))
+      await new Promise<void>((res, rej) => {
+        OSC_CLIENT.send(new Bundle(...chunks[i]), (e?: Error | null) => {
+          if (e) {
+            rej(e)
+            return
+          }
+
+          res()
+        })
+      })
     }
 
     log.info('Config apply completed')
