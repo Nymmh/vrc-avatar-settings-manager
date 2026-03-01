@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import type { OverlayScrollbars } from 'overlayscrollbars'
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
@@ -25,10 +25,16 @@ const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getPresetsByUq
 const expandedAvatarRow = ref<string | null>(null)
 const expandedConfigRow = ref<number | null>(null)
 const searchAvatar = ref('')
+const renderedAvatarCount = ref(20)
+const dataTableRoot = ref<HTMLElement | null>(null)
 const scrollContainer = ref<{ osInstance: () => OverlayScrollbars | null } | null>(null)
 const avatarRefs = ref<(HTMLElement | null)[]>([])
 const configRefs = ref<(HTMLElement | null)[]>([])
 let cleanupDataTableRefresh: (() => void) | null = null
+let cleanupScrollListener: (() => void) | null = null
+let currentScrollTarget: HTMLElement | null = null
+let bindScrollRetryTimeout: ReturnType<typeof setTimeout> | null = null
+const avatarRenderStep = 20
 
 const dataTableScrollOverlayProps = {
   element: 'div',
@@ -41,8 +47,15 @@ const dataTableScrollOverlayProps = {
   }
 }
 
+const avatarLoadTriggerOffset = 800
+
 const hasConfigs = computed(() => allConfigs.value && allConfigs.value.length > 0)
 const hasPresets = computed(() => allPresets.value?.length > 0)
+
+const getPresetsForConfig = (uqid: string): typeof allPresets.value => {
+  if (!uqid) return []
+  return allPresets.value.filter((preset) => preset.forUqid === uqid)
+}
 
 const failedAvatarSet = computed(() => {
   const map = new Map<string, Set<string>>()
@@ -84,9 +97,95 @@ const filteredAvatars = computed(() => {
   })
 })
 
-const avatarIdWidths = computed(() => {
-  return filteredAvatars.value.map((a) => Math.min((a.avatarId?.length || 10) * 9.4 + 40, 500))
+const visibleAvatars = computed(() => {
+  return filteredAvatars.value.slice(0, renderedAvatarCount.value)
 })
+
+const hasMoreAvatars = computed(() => {
+  return visibleAvatars.value.length < filteredAvatars.value.length
+})
+
+const avatarIdWidths = computed(() => {
+  return visibleAvatars.value.map((a) => Math.min((a.avatarId?.length || 10) * 9.4 + 40, 500))
+})
+
+const resetAvatarRenderWindow = (): void => {
+  renderedAvatarCount.value = avatarRenderStep
+  avatarRefs.value = []
+}
+
+const loadMoreAvatars = (): void => {
+  renderedAvatarCount.value += avatarRenderStep
+}
+
+const loadMoreAvatarsOnScroll = useDebounceFn((): void => {
+  if (!currentScrollTarget || !hasMoreAvatars.value) {
+    return
+  }
+
+  const remainingScroll =
+    currentScrollTarget.scrollHeight -
+    currentScrollTarget.scrollTop -
+    currentScrollTarget.clientHeight
+
+  if (remainingScroll < avatarLoadTriggerOffset) {
+    loadMoreAvatars()
+  }
+}, 80)
+
+const ensureScrollableContent = (): void => {
+  if (!currentScrollTarget) {
+    return
+  }
+
+  let guard = 0
+  while (
+    hasMoreAvatars.value &&
+    currentScrollTarget.scrollHeight <= currentScrollTarget.clientHeight &&
+    guard < 20
+  ) {
+    renderedAvatarCount.value += avatarRenderStep
+    guard += 1
+  }
+}
+
+const bindAvatarInfiniteScroll = async (): Promise<void> => {
+  cleanupScrollListener?.()
+  cleanupScrollListener = null
+  currentScrollTarget = null
+  if (bindScrollRetryTimeout) {
+    clearTimeout(bindScrollRetryTimeout)
+    bindScrollRetryTimeout = null
+  }
+
+  await nextTick()
+
+  const target = appStore.value.lowPerformanceMode
+    ? dataTableRoot.value
+    : scrollContainer.value?.osInstance()?.elements().viewport || null
+
+  if (!target) {
+    if (!appStore.value.lowPerformanceMode) {
+      bindScrollRetryTimeout = setTimeout(() => {
+        bindAvatarInfiniteScroll()
+      }, 200)
+    }
+    return
+  }
+
+  currentScrollTarget = target
+
+  const onScroll = (): void => {
+    loadMoreAvatarsOnScroll()
+  }
+
+  target.addEventListener('scroll', onScroll, { passive: true })
+  cleanupScrollListener = () => {
+    target.removeEventListener('scroll', onScroll)
+  }
+
+  ensureScrollableContent()
+}
 
 const clearFailed = <T,>(array: FailedOperation<T>[], id: T): void => {
   const idx = array.findIndex((item) => item.id === id)
@@ -131,6 +230,7 @@ const resetExpandedState = (): void => {
 
 const getAvatars = async (): Promise<void> => {
   resetExpandedState()
+  resetAvatarRenderWindow()
   failedAvatarUpdates.value = []
   failedConfigUpdates.value = []
   failedPresetUpdates.value = []
@@ -518,6 +618,7 @@ const refreshListen = (): void => {
 onMounted(() => {
   getAvatars()
   refreshListen()
+  bindAvatarInfiniteScroll()
 })
 
 onUnmounted(() => {
@@ -528,6 +629,13 @@ onUnmounted(() => {
   failedConfigUpdates.value = []
   failedPresetUpdates.value = []
   cleanupDataTableRefresh?.()
+  cleanupScrollListener?.()
+  cleanupScrollListener = null
+  currentScrollTarget = null
+  if (bindScrollRetryTimeout) {
+    clearTimeout(bindScrollRetryTimeout)
+    bindScrollRetryTimeout = null
+  }
 })
 
 watch(
@@ -540,11 +648,32 @@ watch(
   }
 )
 
+watch(
+  () => filteredAvatars.value.length,
+  () => {
+    resetAvatarRenderWindow()
+    nextTick(() => {
+      ensureScrollableContent()
+      bindAvatarInfiniteScroll()
+    })
+  }
+)
+
+watch(
+  () => appStore.value.lowPerformanceMode,
+  () => {
+    bindAvatarInfiniteScroll()
+  }
+)
+
 const emit = defineEmits(['notification'])
 </script>
 
 <template>
-  <div :class="['data-table', { 'data-table--low-performance': appStore.lowPerformanceMode }]">
+  <div
+    ref="dataTableRoot"
+    :class="['data-table', { 'data-table--low-performance': appStore.lowPerformanceMode }]"
+  >
     <component
       :is="appStore.lowPerformanceMode ? 'div' : OverlayScrollbarsComponent"
       ref="scrollContainer"
@@ -563,7 +692,11 @@ const emit = defineEmits(['notification'])
             @update:model-value="handleSearchUpdate"
           />
         </Card>
-        <div v-for="(a, idx) in filteredAvatars" :key="idx" class="data-table__avatar-wrapper">
+        <div
+          v-for="(a, idx) in visibleAvatars"
+          :key="a.avatarId || `avatar-${idx}`"
+          class="data-table__avatar-wrapper"
+        >
           <Card>
             <div :ref="(el) => (avatarRefs[idx] = el as HTMLElement)" class="data-table__avatar">
               <div class="data-table__avatar-header">
@@ -639,7 +772,7 @@ const emit = defineEmits(['notification'])
               </div>
             </div>
             <div v-if="isAvatarExpanded(a.avatarId) && hasConfigs" class="data-table__configs">
-              <Card v-for="(config, cIdx) in allConfigs" :key="cIdx">
+              <Card v-for="(config, cIdx) in allConfigs" :key="config.id || `config-${cIdx}`">
                 <div
                   :ref="(el) => (configRefs[cIdx] = el as HTMLElement)"
                   class="data-table__config"
@@ -749,9 +882,8 @@ const emit = defineEmits(['notification'])
 
                   <div v-if="hasPresets && isConfigExpanded(cIdx)" class="data-table__presets">
                     <Card
-                      v-for="(preset, pIdx) in allPresets"
-                      v-show="preset.forUqid === config.uqid"
-                      :key="pIdx"
+                      v-for="(preset, pIdx) in getPresetsForConfig(config.uqid || '')"
+                      :key="preset.id || `preset-${pIdx}`"
                     >
                       <div class="data-table__preset">
                         <h4 class="data-table__preset-title">Preset</h4>
@@ -813,6 +945,10 @@ const emit = defineEmits(['notification'])
             </div>
           </Card>
         </div>
+        <p v-if="hasMoreAvatars" class="data-table__load-more-hint">
+          Scroll down to load more avatars ({{ visibleAvatars.length }} /
+          {{ filteredAvatars.length }})
+        </p>
       </div>
     </component>
   </div>
@@ -1029,6 +1165,12 @@ const emit = defineEmits(['notification'])
     svg {
       pointer-events: none;
     }
+  }
+
+  &__load-more-hint {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    text-align: center;
   }
 }
 </style>
