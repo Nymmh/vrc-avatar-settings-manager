@@ -22,6 +22,8 @@ let OSC_CLIENT: Client | null = null
 let OSC_SERVER: Server | null = null
 let OSC_QUERY: OSCQueryServer | null = null
 let oscHandler: OSCHandler | null = null
+let oscMsgHandler: ((data: unknown[], rinfo?: { address?: string; port?: number }) => void) | null =
+  null
 let asmStorage: ASMStorage | null = null
 
 const dataFolder = checkDataFolder()
@@ -85,7 +87,16 @@ async function setupOSC(): Promise<void> {
 
     asmStorage.setPendingState(false)
     oscHandler = new OSCHandler(log, mainWindow, avatarDB, OSC_CLIENT, asmStorage)
-    OSC_SERVER.on('message', (data) => oscHandler!.handleMessage(data))
+
+    if (oscMsgHandler) {
+      OSC_SERVER.off('message', oscMsgHandler)
+    }
+
+    oscMsgHandler = (data: unknown[]) => {
+      oscHandler?.handleMessage(data)
+    }
+
+    OSC_SERVER.on('message', oscMsgHandler)
 
     log.info('OSC setup complete')
   } catch (e) {
