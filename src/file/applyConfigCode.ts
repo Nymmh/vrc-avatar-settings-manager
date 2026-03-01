@@ -109,6 +109,42 @@ export async function applyConfigCode(
       presets: data.pr || {}
     }
 
+    let nsfwResponse = 0
+    let upload: unknown
+    let saveResponse = 0
+
+    if (currentAviId !== config.avatarId) {
+      const userResponse = await showDialogNoSound(
+        ['Yes', 'No'],
+        0,
+        'Confirm',
+        `The avatar ID in the config does not match the current avatar. Do you want to proceed?`,
+        mainWindow
+      )
+
+      if (userResponse.response !== 0) {
+        log.info('Upload cancelled by user due to avatar ID mismatch')
+        return {
+          success: false,
+          message: 'Upload cancelled by user'
+        }
+      }
+    }
+
+    config.avatarId = currentAviId
+
+    if (config?.nsfw) {
+      const userResponse = await showDialogNoSound(
+        ['Yes', 'No'],
+        0,
+        'NSFW Warning',
+        `This config is marked as NSFW, are you sure you want to apply it?`,
+        mainWindow
+      )
+
+      nsfwResponse = userResponse.response
+    }
+
     log.info('Fetching avatar config for avatarId:', config.avatarId)
 
     const aviConfig = lookForConfig(config.avatarId, vrcPath, log)
@@ -131,10 +167,6 @@ export async function applyConfigCode(
       log
     )
 
-    let nsfwResponse = 0
-    let upload: unknown
-    let saveResponse = 0
-
     if (skipUpload) {
       formattedDataConfig.uqid = config.uqid || ''
       formattedDataConfig.name = config.name || new Date().toISOString()
@@ -143,36 +175,6 @@ export async function applyConfigCode(
       formattedDataConfig.isPreset = config.isPreset ? 1 : 0
       formattedDataConfig.presets = config.presets || {}
       return formattedDataConfig
-    }
-
-    if (currentAviId !== config.avatarId) {
-      const userResponse = await showDialogNoSound(
-        ['Yes', 'No'],
-        0,
-        'Confirm',
-        `The avatar ID in the uploaded config does not match the current avatar. Do you want to proceed?`,
-        mainWindow
-      )
-
-      if (userResponse.response !== 0) {
-        log.info('Upload cancelled by user due to avatar ID mismatch')
-        return {
-          success: false,
-          message: 'Upload cancelled by user'
-        }
-      }
-    }
-
-    if (config?.nsfw) {
-      const userResponse = await showDialogNoSound(
-        ['Yes', 'No'],
-        0,
-        'NSFW Warning',
-        `This config is marked as NSFW, are you sure you want to apply it?`,
-        mainWindow
-      )
-
-      nsfwResponse = userResponse.response
     }
 
     if (nsfwResponse === 0) {
