@@ -138,8 +138,32 @@ export class OSCHandler {
     this.storage.setCurrentAvatarId(avatarId)
     this.mainWindow.webContents.send('avatarId', { id: avatarId })
 
-    await avatarConfig(this.avatarDB, avatarId, this.mainWindow, new Map(), this.log)
+    const avatarData = await avatarConfig(
+      this.avatarDB,
+      avatarId,
+      this.mainWindow,
+      new Map(),
+      this.log
+    )
+
     getNames(this.log, this.avatarDB, this.mainWindow, avatarId)
+
+    const valuedParams = avatarData?.valuedParams
+
+    if (!valuedParams || valuedParams.length === 0) {
+      return
+    }
+
+    const setPendingChanges = new Map<string, unknown>()
+
+    for (let i = 0; i < valuedParams.length; i++) {
+      const param = valuedParams[i]
+      if (typeof param === 'string' || param.name === undefined) continue
+      setPendingChanges.set(param.name, param.value)
+    }
+
+    this.storage.setPendingChangesBulk(setPendingChanges)
+    setPendingChanges.clear()
   }
 
   private async handlePresets(address: string): Promise<void> {
