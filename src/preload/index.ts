@@ -44,6 +44,12 @@ const appApi = {
     const handler = (_event: IpcRendererEvent, data: { isRunning: boolean }): void => meowback(data)
     ipcRenderer.on('vrchat-status-changed', handler)
     return () => ipcRenderer.removeListener('vrchat-status-changed', handler)
+  },
+  getApplyConfigBufferSetting: (): Promise<boolean> => {
+    return ipcRenderer.invoke('getApplyConfigBufferSetting')
+  },
+  setApplyConfigBufferSetting: (value: boolean): Promise<boolean> => {
+    return ipcRenderer.invoke('setApplyConfigBufferSetting', value)
   }
 }
 

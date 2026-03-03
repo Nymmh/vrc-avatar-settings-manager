@@ -32,6 +32,12 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
       return
     }
 
+    const OSCClient = getOSCClient()
+    if (!OSCClient) {
+      log.error('Dependency not found')
+      return
+    }
+
     const loadedAvatarJson = await loadAvatarConfig(log, mainWindow)
 
     if (typeof loadedAvatarJson === 'string') {
@@ -40,7 +46,7 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
         avatarDB,
         mainWindow,
         '',
-        false,
+        OSCClient,
         loadedAvatarJson,
         true
       )) as exportAllConfigsInterface

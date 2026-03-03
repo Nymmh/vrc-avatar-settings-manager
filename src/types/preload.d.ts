@@ -84,6 +84,8 @@ export interface appApi {
   getExportedFileCount: () => Promise<exportedFileCountInterface>
   isVRChatRunning: () => Promise<boolean>
   onVRChatStatusChanged: (meowback: (data: { isRunning: boolean }) => void) => () => void
+  getApplyConfigBufferSetting: () => Promise<boolean>
+  setApplyConfigBufferSetting: (value: boolean) => Promise<boolean>
 }
 
 declare global {

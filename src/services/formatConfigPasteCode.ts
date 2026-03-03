@@ -3,6 +3,10 @@ import { getSaveFaceTrackingSetting } from '../database/getSaveFaceTrackingSetti
 import { Logger } from 'electron-log'
 import { FT_EXCLUDED, FT_REGEX, isExcluded } from '../helpers/excludedParameters'
 
+function normalizeName(name: string): string {
+  return name.replace(/ +/g, '_').replace(/_+/g, '_')
+}
+
 export function formatConfigPasteCode(
   db: Database,
   aviData: string,
@@ -22,6 +26,10 @@ export function formatConfigPasteCode(
 
   if (!Array.isArray(parsedCache.animationParameters) || !Array.isArray(parsedConfig.parameters))
     return formattedData
+
+  const pendingChangesFormat = new Map(
+    Array.from(pendingChanges.entries()).map(([key, value]) => [normalizeName(key), value])
+  )
 
   const parameterMap = new Map(
     parsedConfig.parameters.map((pm) => [pm.name, pm.input?.type === 'Float' ? 'f' : 'i'])
@@ -48,11 +56,11 @@ export function formatConfigPasteCode(
     if (!type) return ap
     if (!value) value = 0
 
-    const formattedName = c.name.replace(/ /g, '_')
+    const formattedName = normalizeName(c.name)
 
     if (hasPendingChanges) {
-      if (pendingChanges.has(formattedName)) {
-        const pendingValue = pendingChanges.get(formattedName)
+      if (pendingChangesFormat.has(formattedName)) {
+        const pendingValue = pendingChangesFormat.get(formattedName)
         if (pendingValue !== undefined) {
           value = pendingValue.value as number | string
         }
@@ -62,7 +70,7 @@ export function formatConfigPasteCode(
         }
 
         const nameWithoutPrefixes = stripVFPrefixes(formattedName)
-        for (const [key, val] of pendingChanges.entries()) {
+        for (const [key, val] of pendingChangesFormat.entries()) {
           const keyWithoutPrefixes = stripVFPrefixes(key)
           if (keyWithoutPrefixes === nameWithoutPrefixes) {
             log.warn(

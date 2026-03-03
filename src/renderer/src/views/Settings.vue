@@ -10,6 +10,7 @@ let cleanupParameterRate: (() => void) | null = null
 const logFileSize = ref('0MB')
 const saveFaceTracking = ref(false)
 const copyForDiscord = ref(false)
+const applyConfigBuffer = ref(false)
 const updateRate = ref('0 params/sec')
 const exportedFiles = ref<{
   fullExports: number
@@ -63,6 +64,11 @@ const getCopyForDiscordSetting = async (): Promise<void> => {
   copyForDiscord.value = setting
 }
 
+const getApplyConfigBufferSetting = async (): Promise<void> => {
+  const setting = await window.appApi.getApplyConfigBufferSetting()
+  applyConfigBuffer.value = setting
+}
+
 const setSaveFaceTrackingSetting = async (): Promise<void> => {
   const newValue = !saveFaceTracking.value
   const res = await window.appApi.setSaveFaceTrackingSetting(newValue)
@@ -99,6 +105,24 @@ const setCopyForDiscordSetting = async (): Promise<void> => {
   }
 }
 
+const setApplyConfigBufferSetting = async (): Promise<void> => {
+  const newValue = !applyConfigBuffer.value
+  const res = await window.appApi.setApplyConfigBufferSetting(newValue)
+  applyConfigBuffer.value = newValue
+
+  if (res) {
+    emit('notification', {
+      type: 'success',
+      title: 'Apply Config Buffer Setting Updated'
+    })
+  } else {
+    emit('notification', {
+      type: 'error',
+      title: 'Apply Config Buffer Setting Update Failed'
+    })
+  }
+}
+
 const paramUpdateRate = (): void => {
   cleanupParameterRate = window.appApi.parameterRateUpdate((rate: string) => {
     updateRate.value = rate
@@ -125,6 +149,7 @@ onMounted(() => {
   getLogFileSize()
   getSaveFaceTrackingSetting()
   getCopyForDiscordSetting()
+  getApplyConfigBufferSetting()
   paramUpdateRate()
   getExportedFileCount()
   intervalLogUpdate = window.setInterval(() => {
@@ -213,6 +238,15 @@ const emit = defineEmits(['notification'])
                 :hero="!saveFaceTracking"
                 :error="saveFaceTracking"
                 @click="setSaveFaceTrackingSetting"
+              />
+              <Button
+                :label="
+                  applyConfigBuffer ? 'Disable Apply Config Buffer' : 'Enable Apply Config Buffer'
+                "
+                :small="true"
+                :hero="!applyConfigBuffer"
+                :error="applyConfigBuffer"
+                @click="setApplyConfigBufferSetting"
               />
               <Button
                 :label="
