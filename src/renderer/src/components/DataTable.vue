@@ -945,10 +945,6 @@ const emit = defineEmits(['notification'])
             </div>
           </Card>
         </div>
-        <p v-if="hasMoreAvatars" class="data-table__load-more-hint">
-          Scroll down to load more avatars ({{ visibleAvatars.length }} /
-          {{ filteredAvatars.length }})
-        </p>
       </div>
     </component>
   </div>
