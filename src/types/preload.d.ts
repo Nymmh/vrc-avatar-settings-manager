@@ -86,6 +86,8 @@ export interface appApi {
   onVRChatStatusChanged: (meowback: (data: { isRunning: boolean }) => void) => () => void
   getApplyConfigBufferSetting: () => Promise<boolean>
   setApplyConfigBufferSetting: (value: boolean) => Promise<boolean>
+  getLowPerformanceModeSetting: () => Promise<boolean>
+  setLowPerformanceModeSetting: (value: boolean) => Promise<boolean>
 }
 
 declare global {

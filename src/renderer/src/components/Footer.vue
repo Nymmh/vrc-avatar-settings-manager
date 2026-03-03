@@ -57,7 +57,7 @@ onMounted(() => {
 const emit = defineEmits(['notification'])
 </script>
 <template>
-  <div class="footer">
+  <div :class="['footer', { 'footer--low-performance': appStore.lowPerformanceMode }]">
     <p class="footer__version">Version: {{ version }}</p>
     <div class="footer__center">
       <a href="https://jinxxy.com/Nymh" target="_blank" rel="noopener noreferrer">Nymh</a>
@@ -106,16 +106,27 @@ const emit = defineEmits(['notification'])
       0 -3px 4px rgba(7, 42, 66, 0.7);
   }
 
+  &--low-performance {
+    backdrop-filter: none !important;
+    background-color: var(--color--low-card-glass-bg) !important;
+    box-shadow: none !important;
+    transition: none !important;
+
+    &:hover {
+      box-shadow: none !important;
+    }
+  }
+
   &__version {
     margin: 0;
     opacity: 0.6;
   }
 
   &__center {
+    align-items: center;
     display: flex;
     flex-flow: row nowrap;
     gap: 16px;
-    align-items: center;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
