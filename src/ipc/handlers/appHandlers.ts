@@ -14,6 +14,8 @@ import { getApplyConfigBufferSetting } from '../../database/getApplyConfigBuffer
 import { setApplyConfigBufferSetting } from '../../database/setApplyConfigBufferSetting'
 import { deleteDatabase } from '../../database/deleteDatabase'
 import { getExportedFileCount } from '../../file/getExportedFileCount'
+import { getLowPerformanceModeSetting } from '../../database/getLowPerformanceModeSetting'
+import { setLowPerformanceModeSetting } from '../../database/setLowPerformanceModeSetting'
 
 interface DataFolder {
   folderPath: string
@@ -124,6 +126,14 @@ export function appHandlers(context: appHandlersContext): void {
 
   ipcMain.handle('setApplyConfigBufferSetting', async (_, value: boolean) => {
     return setApplyConfigBufferSetting(avatarDB, value, context.log)
+  })
+
+  ipcMain.handle('getLowPerformanceModeSetting', async () => {
+    return getLowPerformanceModeSetting(avatarDB, context.log)
+  })
+
+  ipcMain.handle('setLowPerformanceModeSetting', async (_, value: boolean) => {
+    return setLowPerformanceModeSetting(avatarDB, value, context.log)
   })
 
   ipcMain.handle('deleteDatabase', async () => {
