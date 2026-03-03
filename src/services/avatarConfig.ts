@@ -43,7 +43,10 @@ export function avatarConfig(
   mainWindow.webContents.send('foundAvatarFile', {
     success: true
   })
-  mainWindow.webContents.send('avatarConfig', formattedDataConfig)
+
+  const sendData = { ...formattedDataConfig }
+  sendData.valuedParams = []
+  mainWindow.webContents.send('avatarConfig', sendData)
 
   log.info('Successfully fetched avatar config for avatarId:', avatarId)
 

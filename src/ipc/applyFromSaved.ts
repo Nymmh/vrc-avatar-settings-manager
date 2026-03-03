@@ -11,6 +11,7 @@ import { lookForConfig } from '../file/lookForConfig'
 import { lookForCache } from '../file/lookForCache'
 import { formatConfig } from '../services/formatConfig'
 import { cleanJson } from '../helpers/cleanJson'
+import { getApplyConfigBufferSetting } from '../database/getApplyConfigBufferSetting'
 
 const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
 
@@ -79,31 +80,82 @@ export async function applyFromSaved(
     const aviConfig = lookForConfig(currentAvatarId, vrcPath, log)
     const aviCache = lookForCache(currentAvatarId, vrcPath, log)
 
-    if (aviConfig && aviCache) {
-      log.info('Found avatar config and cache files')
-
-      const aviConfigData = cleanJson(
-        fs.readFileSync(path.join(vrcPath, 'OSC', aviConfig), 'utf-8')
-      )
-      const aviCacheData = cleanJson(
-        fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
-      )
-
-      const paramMap = new Map<string, unknown>(
-        parameters
-          .filter(
-            (param): param is valuedParamsInterface & { name: string } =>
-              typeof param.name === 'string'
-          )
-          .map((param) => [param.name, param.value])
-      )
-
-      const formattedDataConfig = formatConfig(db, aviConfigData, aviCacheData, paramMap, log)
-      paramMap.clear()
-      parameters = formattedDataConfig.valuedParams as valuedParamsInterface[]
+    if (!aviConfig || !aviCache) {
+      log.warn('Avatar config or cache file not found... could not apply')
+      return false
     }
 
-    storage.clearPendingChanges()
+    log.info('Found avatar config and cache files')
+
+    const aviConfigData = cleanJson(fs.readFileSync(path.join(vrcPath, 'OSC', aviConfig), 'utf-8'))
+    const aviCacheData = cleanJson(
+      fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
+    )
+
+    const paramMap = new Map<string, unknown>(
+      parameters
+        .filter(
+          (param): param is valuedParamsInterface & { name: string } =>
+            typeof param.name === 'string'
+        )
+        .map((param) => [param.name, param.value])
+    )
+
+    const formattedDataConfig = formatConfig(db, aviConfigData, aviCacheData, paramMap, log)
+
+    paramMap.clear()
+
+    parameters = formattedDataConfig.valuedParams as valuedParamsInterface[]
+    const formattedParamValueMap = new Map<string, unknown>()
+
+    for (let i = 0; i < parameters.length; i++) {
+      const param = parameters[i]
+      if (typeof param === 'string' || param.name === undefined) continue
+      formattedParamValueMap.set(param.name, param.value)
+    }
+
+    const checkApplyBuffer = getApplyConfigBufferSetting(db, log)
+
+    if (checkApplyBuffer) {
+      // Workaround for some avis having issue updating params, it will be a setting in the app to toggle
+      // We basically buffer the value to 0.75 to force it to change on the next update
+      // Issue has only been found with params at 1.0~ so i just used 0.9 :teehee:
+      const pendingChanges = storage.getPendingChanges()
+      let bufferParamsMap: Map<string, unknown> | null = null
+
+      if (pendingChanges.size > 0) {
+        for (const [name, value] of pendingChanges) {
+          const targetValue = formattedParamValueMap.get(name)
+
+          if (typeof value === 'number' && value >= 0.9 && value !== targetValue) {
+            if (bufferParamsMap === null) {
+              bufferParamsMap = new Map<string, unknown>()
+            }
+            bufferParamsMap.set(name, 0.75)
+          }
+        }
+      }
+
+      if (bufferParamsMap !== null) {
+        const bufferConfig = formatConfig(db, aviConfigData, aviCacheData, bufferParamsMap, log)
+        const bufferParams = bufferConfig.valuedParams as valuedParamsInterface[]
+        await applyConfig(log, bufferParams, OSC_CLIENT)
+      }
+
+      bufferParamsMap?.clear()
+    }
+
+    const setPendingChanges = new Map<string, unknown>()
+
+    for (let i = 0; i < parameters.length; i++) {
+      const param = parameters[i]
+      if (typeof param === 'string' || param.name === undefined) continue
+      setPendingChanges.set(param.name, param.value)
+    }
+
+    storage.setPendingChangesBulk(setPendingChanges)
+    setPendingChanges.clear()
+    formattedParamValueMap.clear()
 
     return await applyConfig(log, parameters, OSC_CLIENT)
   } catch (e) {
