@@ -94,6 +94,7 @@ export const BASE_EXCLUDED = new Set([
   'Go/HeightFactor',
   'Go/HeightSmooth',
   'Go/Station/Chair',
+  'HasLoaded',
   'FT/Debug'
 ])
 
@@ -123,7 +124,7 @@ export const REGEX_EXCLUDED = [
   /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]TC_current/,
   /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]TC_FullControllerBuilder/,
   /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]TC_merged_trackingEyes$/,
-  /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]TC_VRC[ _]Avatar[ _]Descriptor_trackingEyes$/,
+  /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]TC_VRC[ _]Avatar[ _]Descriptor_tracking/,
   /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]timeSinceLoad$/,
   /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]counter$/,
   /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]ScaleFactor_b$/,
@@ -134,7 +135,9 @@ export const REGEX_EXCLUDED = [
   /^(?:\/avatar\/parameters\/)?VF_\d+(?:\.\d+)*_True$/,
   /^(?:\/avatar\/parameters\/)?VFH\/Version/,
   /^(?:\/avatar\/parameters\/)?VF[ _]?\d+(?:\.\d+)*[_/]FT\/Debug$/,
-  /^(?:\/avatar\/parameters\/)?FT\/Debug$/
+  /^(?:\/avatar\/parameters\/)?FT\/Debug$/,
+  /^(?:\/avatar\/parameters\/)?VF[ _]N$/,
+  /^(?:\/avatar\/parameters\/)?VF[ _]2022\.3\.22f1$/
 ]
 
 const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
