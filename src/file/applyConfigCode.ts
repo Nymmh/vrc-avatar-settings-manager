@@ -9,11 +9,11 @@ import fs from 'fs'
 import { Client } from 'node-osc'
 import { lookForConfig } from './lookForConfig'
 import { lookForCache } from './lookForCache'
-import { uploadConfig } from '../services/uploadConfig'
 import { saveConfig } from '../ipc/saveConfig'
 import { formatConfigPasteCode } from '../services/formatConfigPasteCode'
 import { fromBase91 } from '../helpers/fromBase91'
 import { cleanJson } from '../helpers/cleanJson'
+import { applyConfig } from '../services/applyConfig'
 
 const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
 
@@ -178,7 +178,10 @@ export async function applyConfigCode(
     }
 
     if (nsfwResponse === 0) {
-      upload = uploadConfig(log, formattedDataConfig, OSC_CLIENT)
+      const valuedParams = Array.isArray(formattedDataConfig.valuedParams)
+        ? formattedDataConfig.valuedParams
+        : []
+      upload = applyConfig(log, valuedParams, OSC_CLIENT)
     } else {
       log.info('Upload cancelled by user due to NSFW warning')
       upload = false
