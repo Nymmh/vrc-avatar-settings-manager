@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, toValue } from 'vue'
+import { computed, onMounted, onUnmounted, ref, toValue } from 'vue'
 import { InputSelectInterface } from '../types/InputSelectInterface'
+import { appStorage } from '../composables/appStorage'
+
+const appStore = appStorage()
+const lowPerformanceMode = computed(() => appStore.value.lowPerformanceMode)
 
 const props = defineProps({
   modelValue: {
@@ -57,7 +61,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="input-select">
+  <div :class="['input-select', { 'input-select--low-performance': lowPerformanceMode }]">
     <label v-if="label" :for="id" class="input-select__label">
       {{ label }}
     </label>
@@ -76,7 +80,22 @@ onUnmounted(() => {
           ▼
         </span>
       </button>
-      <transition name="dropdown">
+      <template v-if="lowPerformanceMode">
+        <ul v-if="isOpen" class="input-select__dropdown">
+          <li
+            v-for="option in options"
+            :key="option.value"
+            :class="[
+              'input-select__option',
+              { 'input-select__option--selected': String(option.value) === modelValue }
+            ]"
+            @click="selectOption(option.value)"
+          >
+            {{ option.label }}
+          </li>
+        </ul>
+      </template>
+      <transition v-else name="dropdown">
         <ul v-if="isOpen" class="input-select__dropdown">
           <li
             v-for="option in options"
@@ -196,6 +215,25 @@ onUnmounted(() => {
 
     &--selected {
       background-color: var(--color--primary-a5);
+    }
+  }
+
+  &--low-performance {
+    .input-select__trigger {
+      transition: none !important;
+
+      &:hover {
+        background: var(--color--low-select-hover) !important;
+        border-color: transparent !important;
+      }
+    }
+
+    .input-select__arrow {
+      transition: none !important;
+    }
+
+    .input-select__option {
+      transition: none !important;
     }
   }
 }

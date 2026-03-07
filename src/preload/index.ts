@@ -42,6 +42,12 @@ const appApi = {
   },
   setApplyConfigBufferSetting: (value: boolean): Promise<boolean> => {
     return ipcRenderer.invoke('setApplyConfigBufferSetting', value)
+  },
+  getLowPerformanceModeSetting: (): Promise<boolean> => {
+    return ipcRenderer.invoke('getLowPerformanceModeSetting')
+  },
+  setLowPerformanceModeSetting: (value: boolean): Promise<boolean> => {
+    return ipcRenderer.invoke('setLowPerformanceModeSetting', value)
   }
 }
 

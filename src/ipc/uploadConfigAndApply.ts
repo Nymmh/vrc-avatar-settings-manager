@@ -5,12 +5,12 @@ import { Client } from 'node-osc'
 import { BrowserWindow } from 'electron'
 import { Database } from 'better-sqlite3'
 import { saveConfig } from './saveConfig'
-import { uploadConfig } from '../services/uploadConfig'
 import { showDialogNoSound } from '../services/showDialogNoSound'
 import { lookForConfig } from '../file/lookForConfig'
 import { lookForCache } from '../file/lookForCache'
 import { cleanJson } from '../helpers/cleanJson'
 import { formatConfig } from '../services/formatConfig'
+import { applyConfig } from '../services/applyConfig'
 
 const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
 
@@ -100,7 +100,8 @@ export async function uploadConfigAndApply(
   }
 
   if (nsfwResponse === 0) {
-    upload = uploadConfig(log, loadedJson, OSC_CLIENT)
+    const valuedParams = Array.isArray(loadedJson.valuedParams) ? loadedJson.valuedParams : []
+    upload = applyConfig(log, valuedParams, OSC_CLIENT)
   } else {
     log.info('Upload cancelled by user due to NSFW warning')
     upload = false

@@ -1,5 +1,10 @@
 <script lang="ts" setup>
 import { useDebounceFn } from '@vueuse/core'
+import { computed } from 'vue'
+import { appStorage } from '../composables/appStorage'
+
+const appStore = appStorage()
+const lowPerformanceMode = computed(() => appStore.value.lowPerformanceMode)
 
 const props = defineProps({
   placeholder: {
@@ -60,7 +65,10 @@ const handleInput = useDebounceFn((event: Event) => {
       <div class="input-number__container">
         <input
           :id="id"
-          :class="['input-number', { 'input-number--failed': error }]"
+          :class="[
+            'input-number',
+            { 'input-number--failed': error, 'input-number--low-performance': lowPerformanceMode }
+          ]"
           :placeholder="placeholder"
           :minlength="minSize"
           :value="modelValue"
@@ -70,7 +78,11 @@ const handleInput = useDebounceFn((event: Event) => {
         <div class="input-number__arrows">
           <button
             type="button"
-            class="input-number__arrow input-number__arrow--up"
+            :class="[
+              'input-number__arrow',
+              'input-number__arrow--up',
+              { 'input-number__arrow--low-performance': lowPerformanceMode }
+            ]"
             @click="increment(modelValue)"
           >
             <svg
@@ -87,7 +99,11 @@ const handleInput = useDebounceFn((event: Event) => {
           </button>
           <button
             type="button"
-            class="input-number__arrow input-number__arrow--down"
+            :class="[
+              'input-number__arrow',
+              'input-number__arrow--down',
+              { 'input-number__arrow--low-performance': lowPerformanceMode }
+            ]"
             @click="decrement(modelValue)"
           >
             <svg
@@ -128,6 +144,14 @@ const handleInput = useDebounceFn((event: Event) => {
 
   &--error {
     border-color: var(--color--failed);
+  }
+
+  &--low-performance {
+    transition: none !important;
+
+    &:hover {
+      border-color: var(--color--primary-a4) !important;
+    }
   }
 
   &:hover {
@@ -188,6 +212,18 @@ const handleInput = useDebounceFn((event: Event) => {
 
     &:active {
       background-color: var(--color--primary-a6);
+    }
+
+    &--low-performance {
+      transition: none !important;
+
+      &:hover {
+        background-color: transparent !important;
+      }
+
+      &:active {
+        background-color: transparent !important;
+      }
     }
   }
 
