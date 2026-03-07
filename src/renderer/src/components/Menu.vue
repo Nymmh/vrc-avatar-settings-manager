@@ -19,7 +19,7 @@ const emit = defineEmits(['notification'])
 </script>
 
 <template>
-  <div class="menu">
+  <div :class="['menu', { 'menu--low-performance': appStore.lowPerformanceMode }]">
     <nav class="menu__nav">
       <div class="menu__center">
         <Button
@@ -59,6 +59,17 @@ const emit = defineEmits(['notification'])
   transition: box-shadow 0.25s ease-in-out;
   width: 100%;
   z-index: 100;
+
+  &--low-performance {
+    backdrop-filter: none !important;
+    background-color: var(--color--low-card-glass-bg) !important;
+    box-shadow: none !important;
+    transition: none !important;
+
+    &:hover {
+      box-shadow: none !important;
+    }
+  }
 
   &__nav {
     align-items: center;
