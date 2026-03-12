@@ -12,49 +12,11 @@ const getVersion = async (): Promise<void> => {
   version.value = await window.appApi.appVersion()
 }
 
-const handleExport = async (): Promise<void> => {
-  const res = await window.avatarApi.exportAllConfigs()
-
-  let type = 'success'
-  let title = 'Export Successful'
-
-  if (!res.success) {
-    type = 'error'
-    title = 'Export Failed'
-  }
-
-  emit('notification', {
-    type,
-    title,
-    text: res.message
-  })
-}
-
-const handleImport = async (): Promise<void> => {
-  const res = await window.avatarApi.importAllConfigs()
-
-  let type = 'success'
-  let title = 'Import Successful'
-
-  if (!res.success) {
-    type = 'error'
-    title = 'Import Failed'
-  }
-
-  appStore.value.dataTableRefresh = true
-
-  emit('notification', {
-    type,
-    title,
-    text: res.message
-  })
-}
-
 onMounted(() => {
   getVersion()
 })
 
-const emit = defineEmits(['notification'])
+defineEmits(['notification'])
 </script>
 <template>
   <div :class="['footer', { 'footer--low-performance': appStore.lowPerformanceMode }]">
@@ -62,18 +24,6 @@ const emit = defineEmits(['notification'])
     <div class="footer__center">
       <a href="https://jinxxy.com/Nymh" target="_blank" rel="noopener noreferrer">Nymh</a>
       <a href="https://discord.gg/rcCCkbDsY3" target="_blank" rel="noopener noreferrer">Discord</a>
-      <Button
-        label="Export All"
-        :small="true"
-        tooltip="Export all data to a file"
-        @click="handleExport"
-      />
-      <Button
-        label="Import All"
-        :small="true"
-        tooltip="Import all data from a file"
-        @click="handleImport"
-      />
     </div>
     <div class="footer_right">
       <Button
