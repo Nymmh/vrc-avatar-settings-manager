@@ -1,8 +1,10 @@
 import { app, dialog } from 'electron'
 import { Logger } from 'electron-log'
+import Database from 'better-sqlite3'
 import { autoUpdater, UpdateInfo } from 'electron-updater'
+import { exportAllForUpdate } from '../file/exportAllForUpdate'
 
-export async function update(log: Logger): Promise<void> {
+export async function update(log: Logger, avatarDB: Database): Promise<void> {
   if (!app.isPackaged) {
     log.info('App is not packaged. Skipping update check.')
     return
@@ -42,7 +44,11 @@ export async function update(log: Logger): Promise<void> {
 
     if (result.response === 0) {
       log.info('App closing and installing update...')
-      autoUpdater.quitAndInstall()
+      try {
+        await exportAllForUpdate(log, avatarDB)
+      } finally {
+        autoUpdater.quitAndInstall()
+      }
     } else {
       log.info('User chose to install the update later')
     }
