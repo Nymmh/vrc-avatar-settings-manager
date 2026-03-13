@@ -179,6 +179,46 @@ const getExportedFileCount = async (): Promise<void> => {
   exportedFiles.value.totalSize = res.totalSize
 }
 
+const handleExport = async (): Promise<void> => {
+  const res = await window.avatarApi.exportAllConfigs()
+
+  let type = 'success'
+  let title = 'Export Successful'
+
+  if (!res.success) {
+    type = 'error'
+    title = 'Export Failed'
+  }
+
+  getExportedFileCount()
+
+  emit('notification', {
+    type,
+    title,
+    text: res.message
+  })
+}
+
+const handleImport = async (): Promise<void> => {
+  const res = await window.avatarApi.importAllConfigs()
+
+  let type = 'success'
+  let title = 'Import Successful'
+
+  if (!res.success) {
+    type = 'error'
+    title = 'Import Failed'
+  }
+
+  appStore.value.dataTableRefresh = true
+
+  emit('notification', {
+    type,
+    title,
+    text: res.message
+  })
+}
+
 onMounted(() => {
   getLogFileSize()
   getSaveFaceTrackingSetting()
@@ -227,7 +267,25 @@ const emit = defineEmits(['notification'])
           </h2>
         </Card>
         <div class="settings__cards-row settings__card-row--fit">
-          <Card>
+          <Card additional-class="card--fit">
+            <div class="settings__content">
+              <div class="settings__card-content">
+                <Button
+                  label="Export All"
+                  :small="true"
+                  tooltip="Export all data to a file"
+                  @click="handleExport"
+                />
+                <Button
+                  label="Import All"
+                  :small="true"
+                  tooltip="Import all data from a file"
+                  @click="handleImport"
+                />
+              </div>
+            </div>
+          </Card>
+          <Card additional-class="card--fit">
             <div class="settings__content">
               <h2 class="settings__title">Export Location</h2>
               <div class="settings__card-content">
