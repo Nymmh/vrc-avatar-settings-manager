@@ -19,7 +19,7 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
         <div class="privacy__section">
           <h1 class="privacy__header">Privacy Policy for Avatar Settings Manager</h1>
           <p class="privacy__text">
-            <span class="privacy__bold">Last Updated:</span> December 23, 2025
+            <span class="privacy__bold">Last Updated:</span> March, 12 2026
           </p>
           <p class="privacy__text">
             This Privacy Policy explains what data Avatar Settings Manager (ASM) collects, how it's
@@ -74,6 +74,13 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
                 %USERPROFILE%\Documents\VRCAvatarSettingsManager\
               </span>
             </li>
+            <li>
+              <span class="privacy__bold">Backup Files: </span>
+              <span>Stored in</span>
+              <span class="privacy__highlight">
+                %USERPROFILE%\Documents\VRCAvatarSettingsManagerBackup\
+              </span>
+            </li>
           </ul>
           <p class="privacy__text">
             <span class="privacy__bold">ASM does not use cloud storage.</span>
@@ -118,8 +125,9 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
           <ul class="privacy__list privacy__text">
             <li>
               <span class="privacy__bold">Manual Deletion:</span> Removing the
-              <span class="privacy__highlight">VRCAvatarSettingsManager</span> folder from your
-              <span class="privacy__highlight">%USERPROFILE%\Documents</span> directory and the
+              <span class="privacy__highlight">VRCAvatarSettingsManager</span> and
+              <span class="privacy__highlight">VRCAvatarSettingsManagerBackup</span> folder from
+              your <span class="privacy__highlight">%USERPROFILE%\Documents</span> directory and the
               <span class="privacy__highlight">vrc-avatar-settings-manager</span> folder from
               <span class="privacy__highlight">%APPDATA%\Roaming</span>
             </li>
@@ -131,8 +139,12 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
               is automatically removed. You'll be given the option to also delete your saved
               configurations in
               <span class="privacy__highlight">
-                %USERPROFILE%\Documents\VRCAvatarSettingsManager
+                %USERPROFILE%\Documents\VRCAvatarSettingsManager </span
+              >. The backup folder in
+              <span class="privacy__highlight">
+                %USERPROFILE%\Documents\VRCAvatarSettingsManagerBackup
               </span>
+              will not be automatically removed.
             </li>
           </ul>
         </div>
@@ -176,7 +188,14 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
           <h2 class="privacy__sub-header">Age Requirements</h2>
           <p class="privacy__text">
             ASM is intended for users aged 13 and older, consistent with VRChat's Terms of Service
-            as referenced in EULA Section 7.1. We do not knowingly collect data from users under 13.
+            as referenced in EULA Section
+            <a
+              href="https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#71-vrchat"
+              target="_blank"
+              class="privacy__link"
+            >
+              7.1</a
+            >. ASM does not collect any personal data from any users, including those under 13.
           </p>
         </div>
         <div class="privacy__section">
@@ -210,11 +229,25 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
             </li>
             <li>
               <span class="privacy__bold">Right to Portability:</span> Export features allow you to
-              save and transfer your configurations as specified in EULA Section 6.2
+              save and transfer your configurations as specified in EULA Section
+              <a
+                href="https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#62-sharing-and-distribution"
+                target="_blank"
+                class="privacy__link"
+              >
+                6.2</a
+              >
             </li>
             <li>
               <span class="privacy__bold">Right to Control:</span> You retain all rights to your
-              configurations and decide what to save and share (EULA Section 6.1)
+              configurations and decide what to save and share (EULA Section
+              <a
+                href="https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#61-configuration-files"
+                target="_blank"
+                class="privacy__link"
+              >
+                6.1</a
+              >)
             </li>
             <li>
               <span class="privacy__bold">Right to Know:</span> This policy discloses all data

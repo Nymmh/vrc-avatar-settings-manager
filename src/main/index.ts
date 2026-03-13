@@ -125,7 +125,7 @@ app.whenReady().then(async () => {
   createWindow()
   syncAllAvatarNames(log, avatarDB)
   await setupOSC()
-  update(log)
+  update(log, avatarDB)
   log.info('App is ready')
 })
 

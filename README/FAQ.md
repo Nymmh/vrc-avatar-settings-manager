@@ -25,6 +25,7 @@ All of ASM's data is stored locally on your computer in:
 - **Database**: `%APPDATA%\Roaming\vrc-avatar-settings-manager\Meow Storage\meow.db`
 - **Exported Files**: `%USERPROFILE%\Documents\VRCAvatarSettingsManager\exports`
 - **Log Files**: `%USERPROFILE%\Documents\VRCAvatarSettingsManager\meow.log`
+- **Backup Files**: `%USERPROFILE%\Documents\VRCAvatarSettingsManagerBackup\`
 
 ASM only transmits data to your local VRChat client. The only external network request is to check for software updates from the official GitHub repository. No user data, configurations, or personal information is transmitted externally.
 
