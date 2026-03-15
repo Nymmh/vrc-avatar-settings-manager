@@ -22,7 +22,7 @@ export interface avatarApi {
     avatarName: string
   ) => uploadConfigAndApplyTypeInterface
   uploadConfig: (saveName?: string, nsfw: boolean, avatarId?: string) => uploadConfigInterface
-  refreshAvatarFile: () => { success: boolean }
+  refreshAvatarFile: () => { success: boolean; avatarId: string }
   savedNames: (meowback: (data: savedNamesInterface[]) => void) => () => void
   applyConfig: (id: number) => { success: boolean }
   getAllSaved: () => Promise<getAllSavedInterface[] | null>

@@ -107,6 +107,11 @@ const savedConfigs = async (): Promise<void> => {
   })
 }
 
+const refreshAvatarData = async (): Promise<void> => {
+  const res = await window.avatarApi.refreshAvatarFile()
+  appStore.value.avatarId = res.avatarId
+}
+
 const aviFileUpdate = (): void => {
   appStore.value.avatarFoundFile = false
   showAvatarFoundFileMsg.value = false
@@ -345,8 +350,9 @@ onMounted(() => {
                       appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data'
                     }}
                   </p>
-                  <div v-if="!appStore.avatarFoundFile">
+                  <div v-if="!appStore.avatarFoundFile" class="main__avatar-error">
                     <p>Change out of the current avatar to another avatar, then back.</p>
+                    <Button label="Refresh" @click="refreshAvatarData" />
                   </div>
                 </div>
                 <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
@@ -481,6 +487,14 @@ onMounted(() => {
     padding-bottom: 22px;
     padding-top: 22px;
     width: 100%;
+  }
+
+  &__avatar-error {
+    align-items: center;
+    display: flex;
+    flex-flow: column;
+    gap: 12px;
+    justify-content: center;
   }
 
   &__avatar-data {

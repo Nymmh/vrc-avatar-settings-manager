@@ -210,7 +210,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
 
     if (!mainWindow) {
       log.error('Dependency not found')
-      return { success: false }
+      return { success: false, avatarId: '' }
     }
 
     const currentAviId = storage.getCurrentAvatarId()
@@ -219,7 +219,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     await avatarConfig(avatarDB, currentAviId, mainWindow, new Map(), log)
     getNames(log, avatarDB, mainWindow, currentAviId)
     log.info('Avatar config refreshed')
-    return { success: true }
+    return { success: true, avatarId: currentAviId }
   })
 
   ipcMain.handle('getAllSaved', async () => {
