@@ -1,6 +1,6 @@
 # Privacy Policy for Avatar Settings Manager
 
-**Last Updated:** December 23, 2025
+**Last Updated:** March, 12 2026
 
 This Privacy Policy explains what data Avatar Settings Manager (ASM) collects, how it's used, and how it's stored.
 
@@ -22,6 +22,7 @@ All data is stored **exclusively on your local computer** in:
 
 - **Database**: A SQLite database (`meow.db`) stored in `%APPDATA%\Roaming\vrc-avatar-settings-manager\Meow Storage\`
 - **Log Files**: Stored in `%USERPROFILE%\Documents\VRCAvatarSettingsManager\`
+- **Backup Files**: Stored in `%USERPROFILE%\Documents\VRCAvatarSettingsManagerBackup\`
 
 **ASM does not use cloud storage.** All your data remains on your device under your complete control.
 
@@ -57,8 +58,8 @@ When you export configurations or presets:
 
 You can delete your data at any time by:
 
-- **Manual Deletion**: Removing the `VRCAvatarSettingsManager` folder from your `%USERPROFILE%\Documents` directory and the `vrc-avatar-settings-manager` folder from `%APPDATA%\Roaming`
-- **Uninstaller**: During uninstallation, the app data in `%APPDATA%\Roaming\vrc-avatar-settings-manager` is automatically removed. You'll be given the option to also delete your saved configurations in `%USERPROFILE%\Documents\VRCAvatarSettingsManager`
+- **Manual Deletion**: Removing the `VRCAvatarSettingsManager` and `VRCAvatarSettingsManagerBackup` folder from your `%USERPROFILE%\Documents` directory and the `vrc-avatar-settings-manager` folder from `%APPDATA%\Roaming`
+- **Uninstaller**: During uninstallation, the app data in `%APPDATA%\Roaming\vrc-avatar-settings-manager` is automatically removed. You'll be given the option to also delete your saved configurations in `%USERPROFILE%\Documents\VRCAvatarSettingsManager`. The backup folder in `%USERPROFILE%\Documents\VRCAvatarSettingsManagerBackup` will not be automatically removed.
 
 ## Third-Party Services
 
@@ -85,7 +86,7 @@ We may update this Privacy Policy from time to time. Changes will be reflected i
 
 ## Age Requirements
 
-ASM is intended for users aged 13 and older, consistent with VRChat's Terms of Service as referenced in EULA Section 7.1. We do not knowingly collect data from users under 13.
+ASM is intended for users aged 13 and older, consistent with VRChat's Terms of Service as referenced in EULA Section [7.1](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#71-vrchat). ASM does not collect any personal data from any users, including those under 13.
 
 ## Data Security
 
@@ -102,8 +103,8 @@ You have complete control over your data, consistent with GDPR and CCPA principl
 
 - **Right to Access**: All data is stored locally in SQLite format and accessible at any time
 - **Right to Deletion**: You can delete all data at any time through manual deletion or the uninstaller (see Section "Data Deletion" above)
-- **Right to Portability**: Export features allow you to save and transfer your configurations as specified in EULA Section 6.2
-- **Right to Control**: You retain all rights to your configurations and decide what to save and share (EULA Section 6.1)
+- **Right to Portability**: Export features allow you to save and transfer your configurations as specified in EULA Section [6.2](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#62-sharing-and-distribution)
+- **Right to Control**: You retain all rights to your configurations and decide what to save and share (EULA Section [6.1](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#61-configuration-files))
 - **Right to Know**: This policy discloses all data collection and usage practices
 
 Since all data is stored locally on your device, you have direct control without needing to submit access or deletion requests.
