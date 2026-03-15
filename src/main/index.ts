@@ -129,7 +129,7 @@ app.whenReady().then(async () => {
   createWindow()
   syncAllAvatarNames(log, avatarDB)
   await setupOSC()
-  update(log)
+  update(log, avatarDB)
 
   if (mainWindow && asmStorage && oscHandler) {
     vrchatLog = new VRChatLogMonitor(log, () => {
