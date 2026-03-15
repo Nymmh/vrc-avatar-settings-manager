@@ -24,6 +24,7 @@ const allConfigs = ref<Awaited<ReturnType<typeof window.avatarApi.getConfigById>
 const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getPresetsByUqid>>>([])
 const expandedAvatarRow = ref<string | null>(null)
 const expandedConfigRow = ref<number | null>(null)
+const expandedActionGroups = ref<Set<string>>(new Set())
 const searchAvatar = ref('')
 const renderedAvatarCount = ref(20)
 const dataTableRoot = ref<HTMLElement | null>(null)
@@ -261,6 +262,7 @@ const getPresetsByConfig = async (idx: number): Promise<void> => {
 
 const isAvatarExpanded = (aviId: string): boolean => expandedAvatarRow.value === aviId
 const isConfigExpanded = (idx: number): boolean => expandedConfigRow.value === idx
+const isActionGroupExpanded = (group: string): boolean => expandedActionGroups.value.has(group)
 const toggleAvatar = (aviId: string, idx: number): void => {
   if (expandedAvatarRow.value === aviId) {
     expandedAvatarRow.value = null
@@ -300,6 +302,14 @@ const toggleConfig = (idx: number): void => {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }
     }, 100)
+  }
+}
+
+const toggleActionGroup = (group: string): void => {
+  if (expandedActionGroups.value.has(group)) {
+    expandedActionGroups.value.delete(group)
+  } else {
+    expandedActionGroups.value.add(group)
   }
 }
 
@@ -628,6 +638,7 @@ onUnmounted(() => {
   failedAvatarUpdates.value = []
   failedConfigUpdates.value = []
   failedPresetUpdates.value = []
+  expandedActionGroups.value.clear()
   cleanupDataTableRefresh?.()
   cleanupScrollListener?.()
   cleanupScrollListener = null
@@ -748,7 +759,7 @@ const emit = defineEmits(['notification'])
 
               <div class="data-table__avatar-actions">
                 <Button
-                  label="Update"
+                  label="Save Changes"
                   :small="true"
                   :error="failedAvatarSet.get(a.avatarId)?.has('update') ?? false"
                   :warning="true"
@@ -825,59 +836,160 @@ const emit = defineEmits(['notification'])
                       <p class="data-table__config-value">{{ config.fromFile ? 'Yes' : 'No' }}</p>
                     </div>
                   </div>
-
                   <div class="data-table__config-actions">
-                    <Button
-                      v-if="config.id && appStore.avatarId"
-                      label="Apply"
-                      :small="true"
-                      tooltip="Apply config"
-                      :error="failedConfigSet.get(config.id)?.has('apply') ?? false"
-                      @click="handleConfigApply(config.id)"
-                    />
-                    <Button
-                      v-if="config.id"
-                      label="Export"
-                      :small="true"
-                      tooltip="Export config and associated preset(optional) to file"
-                      :error="failedConfigSet.get(config.id)?.has('export') ?? false"
-                      @click="handleConfigExport(config.id)"
-                    />
-                    <Button
-                      v-if="config.id"
-                      label="Update"
-                      :small="true"
-                      tooltip="Update config name & NSFW status"
-                      :error="failedConfigSet.get(config.id)?.has('update') ?? false"
-                      :warning="true"
-                      @click="handleConfigUpdate(config.id)"
-                    />
-                    <Button
-                      v-if="!config.isPreset && config.id"
-                      label="Create Preset"
-                      :small="true"
-                      :hero="true"
-                      tooltip="Create a new preset for this config"
-                      :error="failedConfigSet.get(config.id)?.has('createPreset') ?? false"
-                      @click="handleCreatePreset(config.id)"
-                    />
-                    <Button
-                      v-if="config.id"
-                      label="Replace Params"
-                      :small="true"
-                      tooltip="Replace config parameters with ones from a file, must be a config file not an avatar file"
-                      :error="failedConfigSet.get(config.id)?.has('replace') ?? false"
-                      :warning="true"
-                      @click="handleConfigReplace(config.id)"
-                    />
-                    <Button
-                      v-if="config.id"
-                      label="Delete"
-                      :small="true"
-                      :error="true"
-                      tooltip="Delete config and all associated presets"
-                      @click="handleConfigDelete(config.id)"
-                    />
+                    <div class="data-table__config-actions-header">
+                      <button
+                        v-if="a.avatarId"
+                        :class="[
+                          'data-table__expand-button',
+                          {
+                            'data-table__expand-button--expanded': isActionGroupExpanded(
+                              `${a.avatarId}_${cIdx}_PA`
+                            )
+                          }
+                        ]"
+                        @click="toggleActionGroup(`${a.avatarId}_${cIdx}_PA`)"
+                      >
+                        <svg
+                          width="23"
+                          height="23"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 6l4 4 4-4"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            fill="none"
+                          />
+                        </svg>
+                      </button>
+                      <h4 class="data-table__config-button-header">Main</h4>
+                    </div>
+                    <Card v-if="isActionGroupExpanded(`${a.avatarId}_${cIdx}_PA`)">
+                      <div class="data-table__config-actions-groups">
+                        <Button
+                          v-if="config.id && appStore.avatarId"
+                          label="Apply"
+                          :small="true"
+                          tooltip="Apply config"
+                          :error="failedConfigSet.get(config.id)?.has('apply') ?? false"
+                          @click="handleConfigApply(config.id)"
+                        />
+                        <Button
+                          v-if="!config.isPreset && config.id"
+                          label="Create Preset"
+                          :small="true"
+                          :hero="true"
+                          tooltip="Create a new preset for this config"
+                          :error="failedConfigSet.get(config.id)?.has('createPreset') ?? false"
+                          @click="handleCreatePreset(config.id)"
+                        />
+                      </div>
+                    </Card>
+                    <div class="data-table__config-actions-header">
+                      <button
+                        v-if="a.avatarId"
+                        :class="[
+                          'data-table__expand-button',
+                          {
+                            'data-table__expand-button--expanded': isActionGroupExpanded(
+                              `${a.avatarId}_${cIdx}_U`
+                            )
+                          }
+                        ]"
+                        @click="toggleActionGroup(`${a.avatarId}_${cIdx}_U`)"
+                      >
+                        <svg
+                          width="23"
+                          height="23"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 6l4 4 4-4"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            fill="none"
+                          />
+                        </svg>
+                      </button>
+                      <h4 class="data-table__config-button-header">Utility</h4>
+                    </div>
+                    <Card v-if="isActionGroupExpanded(`${a.avatarId}_${cIdx}_U`)">
+                      <div class="data-table__config-actions-groups">
+                        <Button
+                          v-if="config.id"
+                          label="Export"
+                          :small="true"
+                          tooltip="Export config and associated preset(optional) to file"
+                          :error="failedConfigSet.get(config.id)?.has('export') ?? false"
+                          @click="handleConfigExport(config.id)"
+                        />
+                        <Button
+                          v-if="config.id"
+                          label="Save Changes"
+                          :small="true"
+                          tooltip="Update config name & NSFW status"
+                          :error="failedConfigSet.get(config.id)?.has('update') ?? false"
+                          :warning="true"
+                          @click="handleConfigUpdate(config.id)"
+                        />
+                        <Button
+                          v-if="config.id"
+                          label="Replace Params"
+                          :small="true"
+                          tooltip="Replace config parameters with ones from a file, must be a config file not an avatar file"
+                          :error="failedConfigSet.get(config.id)?.has('replace') ?? false"
+                          :warning="true"
+                          @click="handleConfigReplace(config.id)"
+                        />
+                      </div>
+                    </Card>
+                    <div class="data-table__config-actions-header">
+                      <button
+                        v-if="a.avatarId"
+                        :class="[
+                          'data-table__expand-button',
+                          {
+                            'data-table__expand-button--expanded': isActionGroupExpanded(
+                              `${a.avatarId}_${cIdx}_D`
+                            )
+                          }
+                        ]"
+                        @click="toggleActionGroup(`${a.avatarId}_${cIdx}_D`)"
+                      >
+                        <svg
+                          width="23"
+                          height="23"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 6l4 4 4-4"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            fill="none"
+                          />
+                        </svg>
+                      </button>
+                      <h4 class="data-table__config-button-header">Destructive</h4>
+                    </div>
+                    <Card v-if="isActionGroupExpanded(`${a.avatarId}_${cIdx}_D`)">
+                      <div class="data-table__config-actions-groups">
+                        <Button
+                          v-if="config.id"
+                          label="Delete"
+                          :small="true"
+                          :error="true"
+                          tooltip="Delete config and all associated presets"
+                          @click="handleConfigDelete(config.id)"
+                        />
+                      </div>
+                    </Card>
                   </div>
 
                   <div v-if="hasPresets && isConfigExpanded(cIdx)" class="data-table__presets">
@@ -1029,7 +1141,7 @@ const emit = defineEmits(['notification'])
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 16px;
     justify-content: center;
   }
 
@@ -1060,8 +1172,22 @@ const emit = defineEmits(['notification'])
     position: relative;
   }
 
+  &__config-actions-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 12px;
+    right: 15px;
+    position: relative;
+  }
+
   &__config-title {
     font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__config-button-header {
+    font-size: 1rem;
     font-weight: 600;
     margin: 0;
   }
@@ -1087,8 +1213,18 @@ const emit = defineEmits(['notification'])
   }
 
   &__config-actions {
+    align-items: flex-start;
+    display: flex;
+    flex-flow: column;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  &__config-actions-groups {
     align-items: center;
     display: flex;
+    flex-flow: row;
     flex-wrap: wrap;
     gap: 16px;
     justify-content: center;
