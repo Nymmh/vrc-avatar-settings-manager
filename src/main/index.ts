@@ -116,7 +116,6 @@ app.whenReady().then(async () => {
   // })
 
   asmStorage = new ASMStorage()
-
   ipcHandlers({
     log,
     avatarDB,
@@ -125,7 +124,6 @@ app.whenReady().then(async () => {
     getOSCClient: () => OSC_CLIENT,
     dataFolder
   })
-
   createWindow()
   syncAllAvatarNames(log, avatarDB)
   await setupOSC()
