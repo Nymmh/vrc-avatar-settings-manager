@@ -127,12 +127,12 @@ const setApplyConfigBufferSetting = async (): Promise<void> => {
   if (res) {
     emit('notification', {
       type: 'success',
-      title: 'Apply Config Buffer Setting Updated'
+      title: 'Config Buffer Setting Updated'
     })
   } else {
     emit('notification', {
       type: 'error',
-      title: 'Apply Config Buffer Setting Update Failed'
+      title: 'Config Buffer Setting Update Failed'
     })
   }
 }
@@ -328,9 +328,7 @@ const emit = defineEmits(['notification'])
               <h2 class="settings__title">App</h2>
               <div class="settings__card-content settings__card-content--buttons">
                 <Button
-                  :label="
-                    applyConfigBuffer ? 'Disable Apply Config Buffer' : 'Enable Apply Config Buffer'
-                  "
+                  :label="applyConfigBuffer ? 'Disable Config Buffer' : 'Enable Config Buffer'"
                   :small="true"
                   :hero="!applyConfigBuffer"
                   :error="applyConfigBuffer"
