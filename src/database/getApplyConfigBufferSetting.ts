@@ -13,7 +13,7 @@ export function getApplyConfigBufferSetting(db: Database, log: Logger): boolean 
       return false
     }
   } catch (e) {
-    log.error('Error getting apply config buffer setting', e)
+    log.error('Error getting config buffer setting', e)
     return false
   }
 }
