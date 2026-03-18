@@ -7,7 +7,7 @@ export function setApplyConfigBufferSetting(db: Database, value: boolean, log: L
     u.run(value ? 'true' : 'false')
     return true
   } catch (e) {
-    log.error('Error setting apply config buffer setting', e)
+    log.error('Error setting config buffer setting', e)
     return false
   }
 }
