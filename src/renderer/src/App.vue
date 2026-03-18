@@ -368,24 +368,32 @@ onMounted(() => {
                     />
                   </div>
                   <div v-if="configSelectValue" class="main__apply-buttons">
-                    <Button label="Apply" tooltip="Apply selected config" @click="handleApply" />
-                    <Button
-                      label="Copy Share Code"
-                      tooltip="Copy config share code for these settings"
-                      @click="handleCopyCode"
-                    />
-                    <Button
-                      label="Update"
-                      tooltip="Update selected config with current avatar settings"
-                      :warning="true"
-                      @click="handleSavedUpdated"
-                    />
-                    <Button
-                      label="Delete"
-                      tooltip="Delete selected config"
-                      :error="true"
-                      @click="handleDelete"
-                    />
+                    <div class="main__apply-button">
+                      <Button label="Apply" tooltip="Apply selected config" @click="handleApply" />
+                    </div>
+                    <div class="main__apply-button">
+                      <Button
+                        label="Copy Share Code"
+                        tooltip="Copy config share code for these settings"
+                        @click="handleCopyCode"
+                      />
+                    </div>
+                    <div class="main__apply-button">
+                      <Button
+                        label="Update"
+                        tooltip="Update selected config with current avatar settings"
+                        :warning="true"
+                        @click="handleSavedUpdated"
+                      />
+                    </div>
+                    <div class="main__apply-button">
+                      <Button
+                        label="Delete"
+                        tooltip="Delete selected config"
+                        :error="true"
+                        @click="handleDelete"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -504,11 +512,23 @@ onMounted(() => {
   }
 
   &__save,
-  &__save-exists,
-  &__apply-buttons {
+  &__save-exists {
     align-items: center;
     display: flex;
     gap: 18px;
+    justify-content: center;
+  }
+
+  &__apply-buttons {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(2, auto);
+    justify-content: center;
+  }
+
+  &__apply-button {
+    align-items: center;
+    display: flex;
     justify-content: center;
   }
 
