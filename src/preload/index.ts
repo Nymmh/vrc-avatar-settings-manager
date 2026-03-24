@@ -48,6 +48,12 @@ const appApi = {
   },
   setLowPerformanceModeSetting: (value: boolean): Promise<boolean> => {
     return ipcRenderer.invoke('setLowPerformanceModeSetting', value)
+  },
+  getTiplinkWebhookSecret: (): Promise<string> => {
+    return ipcRenderer.invoke('getTiplinkWebhookSecret')
+  },
+  rotateTiplinkWebhookSecret: (): Promise<string | null> => {
+    return ipcRenderer.invoke('rotateTiplinkWebhookSecret')
   }
 }
 

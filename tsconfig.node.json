@@ -10,7 +10,8 @@
     "src/database/**/*", 
     "src/osc/**/*.ts", 
     "src/file/**/*.ts", 
-    "src/helpers/**/*.ts"
+    "src/helpers/**/*.ts",
+    "src/webhooks/**/*.ts"
   ],
   "compilerOptions": {
     "composite": true,

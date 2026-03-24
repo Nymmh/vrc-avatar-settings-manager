@@ -86,6 +86,8 @@ export interface appApi {
   setApplyConfigBufferSetting: (value: boolean) => Promise<boolean>
   getLowPerformanceModeSetting: () => Promise<boolean>
   setLowPerformanceModeSetting: (value: boolean) => Promise<boolean>
+  getTiplinkWebhookSecret: () => Promise<string>
+  rotateTiplinkWebhookSecret: () => Promise<string | null>
 }
 
 declare global {

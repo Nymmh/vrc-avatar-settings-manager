@@ -16,6 +16,9 @@ import { deleteDatabase } from '../../database/deleteDatabase'
 import { getExportedFileCount } from '../../file/getExportedFileCount'
 import { getLowPerformanceModeSetting } from '../../database/getLowPerformanceModeSetting'
 import { setLowPerformanceModeSetting } from '../../database/setLowPerformanceModeSetting'
+import { getTiplinkWebhookSecret } from '../../database/getTiplinkWebhookSecret'
+import { setTiplinkWebhookSecret } from '../../database/setTiplinkWebhookSecret'
+import crypto from 'crypto'
 
 interface DataFolder {
   folderPath: string
@@ -134,6 +137,21 @@ export function appHandlers(context: appHandlersContext): void {
 
   ipcMain.handle('setLowPerformanceModeSetting', async (_, value: boolean) => {
     return setLowPerformanceModeSetting(avatarDB, value, context.log)
+  })
+
+  ipcMain.handle('getTiplinkWebhookSecret', async () => {
+    return getTiplinkWebhookSecret(avatarDB, context.log)
+  })
+
+  ipcMain.handle('rotateTiplinkWebhookSecret', async () => {
+    const newSecret = crypto.randomBytes(32).toString('hex')
+    const success = setTiplinkWebhookSecret(avatarDB, newSecret, context.log)
+    if (!success) {
+      return null
+    }
+
+    context.log.info('TipLink webhook secret rotated')
+    return newSecret
   })
 
   ipcMain.handle('deleteDatabase', async () => {

@@ -16,6 +16,10 @@ import { ipcHandlers } from '../ipc/handlers/ipcHandler'
 import { deleteOldLog } from '../file/deleteOldLog'
 import { OSCQueryServer } from 'oscquery'
 import { update } from './update'
+import { WebhookServer } from '../webhooks/webhookServer'
+import { TiplinkHandler } from '../webhooks/tiplink'
+import { ensureTiplinkWebhookSecret } from '../database/ensureTiplinkWebhookSecret'
+import { getTiplinkWebhookSecret } from '../database/getTiplinkWebhookSecret'
 
 let mainWindow: BrowserWindow | null = null
 let OSC_CLIENT: Client | null = null
@@ -25,6 +29,8 @@ let oscHandler: OSCHandler | null = null
 let oscMsgHandler: ((data: unknown[], rinfo?: { address?: string; port?: number }) => void) | null =
   null
 let asmStorage: ASMStorage | null = null
+let webhookServer: WebhookServer | null = null
+let tiplinkHandler: TiplinkHandler | null = null
 
 const dataFolder = checkDataFolder()
 
@@ -105,6 +111,43 @@ async function setupOSC(): Promise<void> {
   }
 }
 
+async function setupWebhooks(): Promise<void> {
+  log.info('Setting up webhooks...')
+
+  try {
+    const secret = ensureTiplinkWebhookSecret(avatarDB, log)
+    if (!secret) {
+      throw new Error('Unable to initialize TipLink webhook secret')
+    }
+
+    webhookServer = new WebhookServer(
+      {
+        port: 3001,
+        secretProvider: () => getTiplinkWebhookSecret(avatarDB, log),
+        enableRateLimit: true
+      },
+      log
+    )
+
+    tiplinkHandler = new TiplinkHandler(async (event) => {
+      mainWindow?.webContents.send('tiplink:event', event)
+    }, log)
+
+    webhookServer.registerWebhook('tiplink', async (data: unknown) => {
+      if (!tiplinkHandler) {
+        throw new Error('TipLink handler not initialized')
+      }
+
+      await tiplinkHandler.handleEvent(data)
+    })
+
+    await webhookServer.start()
+    log.info('Webhook setup complete')
+  } catch (e) {
+    log.error('Error setting up webhooks:', e)
+  }
+}
+
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.nymh.avatarsettingsmanager')
   // app.on('browser-window-created', (_, window) => {
@@ -125,6 +168,7 @@ app.whenReady().then(async () => {
   createWindow()
   syncAllAvatarNames(log, avatarDB)
   await setupOSC()
+  await setupWebhooks()
   update(log, avatarDB)
   log.info('App is ready')
 })
@@ -135,6 +179,7 @@ app.on('activate', function () {
 
 app.on('will-quit', () => {
   log.info('Meow Meow is shutting down...')
+  webhookServer?.stop()
   oscHandler?.cleanup()
   asmStorage?.cleanState()
   avatarDB.close()
