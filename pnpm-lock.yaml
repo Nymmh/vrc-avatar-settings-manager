@@ -59,6 +59,9 @@ importers:
       '@types/node':
         specifier: ^22.19.15
         version: 22.19.15
+      '@types/node-osc':
+        specifier: ^9.1.0
+        version: 9.1.0
       '@vitejs/plugin-vue':
         specifier: ^6.0.5
         version: 6.0.5(vite@7.3.1(@types/node@22.19.15)(jiti@2.6.1)(sass@1.98.0))(vue@3.5.31(typescript@5.9.3))
@@ -953,6 +956,9 @@ packages:
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
+
+  '@types/node-osc@9.1.0':
+    resolution: {integrity: sha512-FG7mbygo2IgdFA1pF1WlluTY9zzisLh62HWnC/7q9PLSmWvyVW+GAu8giNo+Gj2NvB4Xk9oYU2W+UiZwOk2DgQ==}
 
   '@types/node@22.19.15':
     resolution: {integrity: sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg==}
@@ -3488,6 +3494,10 @@ snapshots:
       '@types/node': 22.19.15
 
   '@types/ms@2.1.0': {}
+
+  '@types/node-osc@9.1.0':
+    dependencies:
+      '@types/node': 22.19.15
 
   '@types/node@22.19.15':
     dependencies:
