@@ -16,6 +16,8 @@ import { ipcHandlers } from '../ipc/handlers/ipcHandler'
 import { deleteOldLog } from '../file/deleteOldLog'
 import { OSCQueryServer } from 'oscquery'
 import { update } from './update'
+import { VRChatMonitor } from './VRChatMonitor'
+import { VRChatLogMonitor } from '../file/getVRChatLog'
 
 let mainWindow: BrowserWindow | null = null
 let OSC_CLIENT: Client | null = null
@@ -25,6 +27,8 @@ let oscHandler: OSCHandler | null = null
 let oscMsgHandler: ((data: unknown[], rinfo?: { address?: string; port?: number }) => void) | null =
   null
 let asmStorage: ASMStorage | null = null
+let vrchatMonitor: VRChatMonitor | null = null
+let vrchatLog: VRChatLogMonitor | null = null
 
 const dataFolder = checkDataFolder()
 
@@ -112,7 +116,6 @@ app.whenReady().then(async () => {
   // })
 
   asmStorage = new ASMStorage()
-
   ipcHandlers({
     log,
     avatarDB,
@@ -121,11 +124,20 @@ app.whenReady().then(async () => {
     getOSCClient: () => OSC_CLIENT,
     dataFolder
   })
-
   createWindow()
   syncAllAvatarNames(log, avatarDB)
   await setupOSC()
   update(log, avatarDB)
+
+  if (mainWindow && asmStorage && oscHandler) {
+    vrchatLog = new VRChatLogMonitor(log, () => {
+      vrchatMonitor?.onNewLogFileFound()
+    })
+
+    vrchatMonitor = new VRChatMonitor(log, mainWindow, asmStorage, vrchatLog, oscHandler)
+    await vrchatMonitor.start()
+  }
+
   log.info('App is ready')
 })
 
@@ -137,6 +149,8 @@ app.on('will-quit', () => {
   log.info('Meow Meow is shutting down...')
   oscHandler?.cleanup()
   asmStorage?.cleanState()
+  vrchatMonitor?.stop()
+  vrchatLog?.stop()
   avatarDB.close()
   OSC_CLIENT?.close()
   OSC_SERVER?.close()

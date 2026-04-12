@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import { appStorage, saveAppStorageSnapshot } from '../composables/appStorage'
+import { appStorage } from '../composables/appStorage'
 import { handleChangeView } from '@renderer/composables/changeView'
 import Button from '../components/Button.vue'
 import Card from '../components/Card.vue'
@@ -147,8 +147,6 @@ const setLowPerformanceModeSetting = async (): Promise<void> => {
       type: 'success',
       title: 'Low Performance Mode Setting Updated'
     })
-    saveAppStorageSnapshot()
-    window.location.reload()
   } else {
     emit('notification', {
       type: 'error',
