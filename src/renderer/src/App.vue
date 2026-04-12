@@ -352,6 +352,10 @@ onMounted(() => {
                   </p>
                   <div v-if="!appStore.avatarFoundFile" class="main__avatar-error">
                     <p>Change out of the current avatar to another avatar, then back.</p>
+                    <p>
+                      If you reset your avatar, it may take up to a minute for VRChat to regenerate
+                      the avatar data.
+                    </p>
                     <Button label="Refresh" @click="refreshAvatarData" />
                   </div>
                 </div>
