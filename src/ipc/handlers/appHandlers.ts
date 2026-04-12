@@ -133,7 +133,12 @@ export function appHandlers(context: appHandlersContext): void {
   })
 
   ipcMain.handle('setLowPerformanceModeSetting', async (_, value: boolean) => {
-    return setLowPerformanceModeSetting(avatarDB, value, context.log)
+    const lowPerformanceModeSetting = await setLowPerformanceModeSetting(
+      avatarDB,
+      value,
+      context.log
+    )
+    return lowPerformanceModeSetting
   })
 
   ipcMain.handle('deleteDatabase', async () => {

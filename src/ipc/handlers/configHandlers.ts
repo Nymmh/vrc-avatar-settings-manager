@@ -210,16 +210,32 @@ export function configHandlers(context: ConfigHandlerContext): void {
 
     if (!mainWindow) {
       log.error('Dependency not found')
-      return { success: false }
+      return { success: false, avatarId: '' }
     }
 
     const currentAviId = storage.getCurrentAvatarId()
     storage.clearLoadedJson()
 
-    await avatarConfig(avatarDB, currentAviId, mainWindow, new Map(), log)
+    const avatarData = await avatarConfig(avatarDB, currentAviId, mainWindow, new Map(), log)
     getNames(log, avatarDB, mainWindow, currentAviId)
+
+    const valuedParams = avatarData?.valuedParams
+
+    if (valuedParams && valuedParams.length > 0) {
+      const setPendingChanges = new Map<string, unknown>()
+
+      for (let i = 0; i < valuedParams.length; i++) {
+        const param = valuedParams[i]
+        if (typeof param === 'string' || param.name === undefined) continue
+        setPendingChanges.set(param.name, param.value)
+      }
+
+      storage.setPendingChangesBulk(setPendingChanges)
+      setPendingChanges.clear()
+    }
+
     log.info('Avatar config refreshed')
-    return { success: true }
+    return { success: true, avatarId: currentAviId }
   })
 
   ipcMain.handle('getAllSaved', async () => {

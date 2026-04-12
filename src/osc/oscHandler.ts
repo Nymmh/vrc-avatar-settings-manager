@@ -131,7 +131,7 @@ export class OSCHandler {
   }
 
   private async handleAvatarChange(avatarId: string): Promise<void> {
-    this.log.info('Received avatar change')
+    this.log.info(`Received avatar change: ${avatarId}`)
 
     this.storage.clearPendingChanges()
     this.storage.clearLoadedJson()

@@ -48,6 +48,7 @@ let cleanupAvatarId: (() => void) | null = null
 let cleanupFoundAvatarFile: (() => void) | null = null
 let cleanupAvatarConfig: (() => void) | null = null
 let cleanupSavedNames: (() => void) | null = null
+let cleanupVRChatStatus: (() => void) | null = null
 
 const mainScrollOverlayProps = {
   element: 'div',
@@ -104,6 +105,11 @@ const savedConfigs = async (): Promise<void> => {
       value: id
     }))
   })
+}
+
+const refreshAvatarData = async (): Promise<void> => {
+  const res = await window.avatarApi.refreshAvatarFile()
+  appStore.value.avatarId = res.avatarId
 }
 
 const aviFileUpdate = (): void => {
@@ -269,6 +275,33 @@ const handleInputUpdate = ({ id, value, checked }): void => {
   }
 }
 
+const setupVRChatMonitor = (): void => {
+  cleanupVRChatStatus?.()
+  cleanupVRChatStatus = window.appApi.onVRChatStatusChanged((data) => {
+    if (!data.isRunning) {
+      appStore.value.currentView = 'Waiting'
+      appStore.value.avatarId = ''
+      appStore.value.avatarFoundFile = false
+      showAvatarFoundFileMsg.value = false
+      avatarConfig.value = null
+      saveName.value = ''
+      holdSaveName.value = false
+      configSelectValue.value = ''
+      resetVars()
+
+      pushNotification({
+        type: 'warn',
+        title: 'VRChat Closed'
+      })
+    } else {
+      pushNotification({
+        type: 'info',
+        title: 'VRChat Started'
+      })
+    }
+  })
+}
+
 const getLowPerformanceModeSetting = async (): Promise<void> => {
   const setting = await window.appApi.getLowPerformanceModeSetting()
   appStore.value.lowPerformanceMode = setting
@@ -285,6 +318,7 @@ onMounted(() => {
   aviFileUpdate()
   savedConfigs()
   aviConfig()
+  setupVRChatMonitor()
 })
 </script>
 
@@ -316,8 +350,13 @@ onMounted(() => {
                       appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data'
                     }}
                   </p>
-                  <div v-if="!appStore.avatarFoundFile">
+                  <div v-if="!appStore.avatarFoundFile" class="main__avatar-error">
                     <p>Change out of the current avatar to another avatar, then back.</p>
+                    <p>
+                      If you reset your avatar, it may take up to a minute for VRChat to regenerate
+                      the avatar data.
+                    </p>
+                    <Button label="Refresh" @click="refreshAvatarData" />
                   </div>
                 </div>
                 <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
@@ -460,6 +499,14 @@ onMounted(() => {
     padding-bottom: 22px;
     padding-top: 22px;
     width: 100%;
+  }
+
+  &__avatar-error {
+    align-items: center;
+    display: flex;
+    flex-flow: column;
+    gap: 12px;
+    justify-content: center;
   }
 
   &__avatar-data {
