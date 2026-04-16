@@ -2,7 +2,7 @@
 
 [![Discord](https://img.shields.io/discord/1351240463096615042?style=for-the-badge&logo=discord&logoColor=white&label=Discord&labelColor=%235865F2&color=%23323232)](https://discord.gg/rcCCkbDsY3)
 [![Jinxxy](./README/assets/jinxxy.png)](https://jinxxy.com/Nymh/ASM)
-[![VirusTotal](https://img.shields.io/badge/-VirusTotal-394EFF?style=for-the-badge&logo=virustotal&link=https%3A%2F%2Fwww.virustotal.com%2Fgui%2Ffile%2Fb8eda1f1ab78a4787174f0837b7524881888e491088bd396da8a4e4e51920432%2Fdetection)](https://www.virustotal.com/gui/file/b8eda1f1ab78a4787174f0837b7524881888e491088bd396da8a4e4e51920432/detection)
+[![VirusTotal](https://img.shields.io/badge/-VirusTotal-394EFF?style=for-the-badge&logo=virustotal&link=https%3A%2F%2Fwww.virustotal.com%2Fgui%2Ffile%2Fb8eda1f1ab78a4787174f0837b7524881888e491088bd396da8a4e4e51920432%2Fdetection)](https://www.virustotal.com/gui/file/0c96b6a3b39d34bd7f1ad8174e209e0684b723e5b94789bb0835f8c36fbcdc6e)
 
 Avatar Settings Manager(ASM) is a free comprehensive lightweight VRChat utility designed to preserve, manage, and share avatar parameter configurations. Never lose your avatar settings again, whether from accidental resets, avatar updates, or switching between variations. All without logging into your VRChat account.
 
