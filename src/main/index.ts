@@ -19,9 +19,10 @@ import { update } from './update'
 import { WebhookServer } from '../webhooks/webhookServer'
 import { TiplinkHandler } from '../webhooks/tiplink'
 import { ensureTiplinkWebhookSecret } from '../database/ensureTiplinkWebhookSecret'
-import { getTiplinkWebhookSecret } from '../database/getTiplinkWebhookSecret'
+import { getActiveTiplinkWebhookSecrets } from '../database/getTiplinkWebhookSecretState'
 import { VRChatMonitor } from './VRChatMonitor'
 import { VRChatLogMonitor } from '../file/getVRChatLog'
+import { registerTiplinkRoutes } from '../webhooks/registerTiplinkRoutes'
 
 let mainWindow: BrowserWindow | null = null
 let OSC_CLIENT: Client | null = null
@@ -126,8 +127,8 @@ async function setupWebhooks(): Promise<void> {
 
     webhookServer = new WebhookServer(
       {
-        port: 3001,
-        secretProvider: () => getTiplinkWebhookSecret(avatarDB, log),
+        port: 8711,
+        secretProvider: () => getActiveTiplinkWebhookSecrets(avatarDB, log),
         enableRateLimit: true
       },
       log
@@ -143,6 +144,18 @@ async function setupWebhooks(): Promise<void> {
       }
 
       await tiplinkHandler.handleEvent(data)
+    })
+
+    if (!asmStorage) {
+      throw new Error('ASM storage not initialized')
+    }
+
+    registerTiplinkRoutes(webhookServer, {
+      log,
+      avatarDB,
+      storage: asmStorage,
+      getMainWindow: () => mainWindow,
+      getOSCClient: () => OSC_CLIENT
     })
 
     await webhookServer.start()

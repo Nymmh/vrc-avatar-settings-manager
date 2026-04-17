@@ -4,7 +4,7 @@
 
 export interface WebhookConfig {
   port: number
-  secretProvider: () => string // Shared secret for HMAC signing (resolved at request time)
+  secretProvider: () => string[] // Shared secrets for HMAC signing (resolved at request time)
   enableRateLimit?: boolean
 }
 
@@ -18,7 +18,11 @@ export interface TiplinkEvent {
 }
 
 export interface WebhookResponse {
-  status: 'ok' | 'error'
-  message: string
-  details?: unknown
+  success: boolean
+  msg: string
+  data?: unknown
+}
+
+export interface WebhookRouteResult extends WebhookResponse {
+  statusCode?: number
 }

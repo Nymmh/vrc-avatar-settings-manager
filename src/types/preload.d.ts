@@ -89,7 +89,17 @@ export interface appApi {
   getLowPerformanceModeSetting: () => Promise<boolean>
   setLowPerformanceModeSetting: (value: boolean) => Promise<boolean>
   getTiplinkWebhookSecret: () => Promise<string>
-  rotateTiplinkWebhookSecret: () => Promise<string | null>
+  getTiplinkWebhookSecretInfo: () => Promise<{
+    previousSecretExpiresAt: number | null
+    hasGraceWindow: boolean
+    rotationWindowMs: number
+  }>
+  copyTiplinkWebhookSecret: () => Promise<boolean>
+  rotateTiplinkWebhookSecret: () => Promise<{
+    secret: string
+    previousSecretExpiresAt: number | null
+  } | null>
+  resetTiplinkWebhookSecret: (value: string) => Promise<boolean>
 }
 
 declare global {

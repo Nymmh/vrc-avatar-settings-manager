@@ -14,6 +14,8 @@ const logFileSize = ref('0MB')
 const saveFaceTracking = ref(false)
 const copyForDiscord = ref(false)
 const applyConfigBuffer = ref(false)
+const tiplinkSecret = ref('')
+const tiplinkSecretExpiresAt = ref<number | null>(null)
 const updateRate = ref('0 params/sec')
 const exportedFiles = ref<{
   fullExports: number
@@ -81,6 +83,16 @@ const getCopyForDiscordSetting = async (): Promise<void> => {
 const getApplyConfigBufferSetting = async (): Promise<void> => {
   const setting = await window.appApi.getApplyConfigBufferSetting()
   applyConfigBuffer.value = setting
+}
+
+const getTiplinkWebhookSecretState = async (): Promise<void> => {
+  const [secret, info] = await Promise.all([
+    window.appApi.getTiplinkWebhookSecret(),
+    window.appApi.getTiplinkWebhookSecretInfo()
+  ])
+
+  tiplinkSecret.value = secret
+  tiplinkSecretExpiresAt.value = info.previousSecretExpiresAt
 }
 
 const setSaveFaceTrackingSetting = async (): Promise<void> => {
@@ -217,11 +229,61 @@ const handleImport = async (): Promise<void> => {
   })
 }
 
+const copyTiplinkSecret = async (): Promise<void> => {
+  const success = await window.appApi.copyTiplinkWebhookSecret()
+  emit('notification', {
+    type: success ? 'success' : 'error',
+    title: success ? 'TipLink Secret Copied' : 'Failed To Copy TipLink Secret'
+  })
+}
+
+const rotateTiplinkSecret = async (): Promise<void> => {
+  const result = await window.appApi.rotateTiplinkWebhookSecret()
+
+  if (!result) {
+    emit('notification', {
+      type: 'error',
+      title: 'Failed To Rotate TipLink Secret'
+    })
+    return
+  }
+
+  tiplinkSecret.value = result.secret
+  tiplinkSecretExpiresAt.value = result.previousSecretExpiresAt
+
+  emit('notification', {
+    type: 'success',
+    title: 'TipLink Secret Rotated',
+    text: 'The previous secret remains valid for 5 minutes.'
+  })
+}
+
+const maskedTiplinkSecret = (): string => {
+  if (!tiplinkSecret.value) {
+    return 'Not generated yet'
+  }
+
+  if (tiplinkSecret.value.length <= 12) {
+    return tiplinkSecret.value
+  }
+
+  return `${tiplinkSecret.value.slice(0, 6)}...${tiplinkSecret.value.slice(-6)}`
+}
+
+const tiplinkRotationWindowText = (): string => {
+  if (!tiplinkSecretExpiresAt.value) {
+    return 'No previous secret is active.'
+  }
+
+  return `Previous secret valid until ${new Date(tiplinkSecretExpiresAt.value).toLocaleTimeString()}`
+}
+
 onMounted(() => {
   getLogFileSize()
   getSaveFaceTrackingSetting()
   getCopyForDiscordSetting()
   getApplyConfigBufferSetting()
+  getTiplinkWebhookSecretState()
   paramUpdateRate()
   getExportedFileCount()
   intervalLogUpdate = window.setInterval(() => {
@@ -385,18 +447,45 @@ const emit = defineEmits(['notification'])
             </div>
           </Card>
         </div>
-
-        <Card>
-          <div class="settings__content">
-            <h2 class="settings__title">Terms & Information</h2>
-            <div class="settings__card-content">
-              <div class="settings__card-button-group">
-                <Button label="Terms of Service" :small="true" @click="openTerms" />
-                <Button label="Privacy Policy" :small="true" @click="openPrivacy" />
+        <div class="settings__cards-row settings__card-row--fit">
+          <Card additional-class="card--fit">
+            <div class="settings__content">
+              <h2 class="settings__title">TipLink</h2>
+              <div class="settings__card-content">
+                <p>
+                  Current Secret: <span>{{ maskedTiplinkSecret() }}</span>
+                </p>
+                <p>{{ tiplinkRotationWindowText() }}</p>
+                <div class="settings__card-button-group">
+                  <Button
+                    label="Copy Secret"
+                    :small="true"
+                    tooltip="Copy the current TipLink signing secret to your clipboard"
+                    @click="copyTiplinkSecret"
+                  />
+                  <Button
+                    label="Rotate Secret"
+                    :small="true"
+                    :warning="true"
+                    tooltip="Generate a new secret. The previous secret remains valid for 5 minutes."
+                    @click="rotateTiplinkSecret"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+          <Card additional-class="card--fit">
+            <div class="settings__content">
+              <h2 class="settings__title">Terms & Information</h2>
+              <div class="settings__card-content">
+                <div class="settings__card-button-group">
+                  <Button label="Terms of Service" :small="true" @click="openTerms" />
+                  <Button label="Privacy Policy" :small="true" @click="openPrivacy" />
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </component>
   </div>

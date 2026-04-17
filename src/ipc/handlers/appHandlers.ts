@@ -1,4 +1,4 @@
-import { ipcMain, app, BrowserWindow, shell } from 'electron'
+import { ipcMain, app, BrowserWindow, shell, clipboard } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { ASMStorage } from '../../main/ASMStorage'
@@ -18,7 +18,11 @@ import { getLowPerformanceModeSetting } from '../../database/getLowPerformanceMo
 import { setLowPerformanceModeSetting } from '../../database/setLowPerformanceModeSetting'
 import { getTiplinkWebhookSecret } from '../../database/getTiplinkWebhookSecret'
 import { setTiplinkWebhookSecret } from '../../database/setTiplinkWebhookSecret'
-import crypto from 'crypto'
+import { rotateTiplinkWebhookSecret } from '../../database/rotateTiplinkWebhookSecret'
+import {
+  getTiplinkWebhookSecretState,
+  TIPLINK_SECRET_ROTATION_WINDOW_MS
+} from '../../database/getTiplinkWebhookSecretState'
 
 interface DataFolder {
   folderPath: string
@@ -148,15 +152,42 @@ export function appHandlers(context: appHandlersContext): void {
     return getTiplinkWebhookSecret(avatarDB, context.log)
   })
 
+  ipcMain.handle('getTiplinkWebhookSecretInfo', async () => {
+    const secretState = getTiplinkWebhookSecretState(avatarDB, context.log)
+    return {
+      previousSecretExpiresAt: secretState.previousSecretExpiresAt,
+      hasGraceWindow:
+        Boolean(secretState.previousSecret) && secretState.previousSecretExpiresAt !== null,
+      rotationWindowMs: TIPLINK_SECRET_ROTATION_WINDOW_MS
+    }
+  })
+
+  ipcMain.handle('copyTiplinkWebhookSecret', async () => {
+    const secret = getTiplinkWebhookSecret(avatarDB, context.log)
+    if (!secret) {
+      return false
+    }
+
+    clipboard.writeText(secret)
+    return true
+  })
+
   ipcMain.handle('rotateTiplinkWebhookSecret', async () => {
-    const newSecret = crypto.randomBytes(32).toString('hex')
-    const success = setTiplinkWebhookSecret(avatarDB, newSecret, context.log)
-    if (!success) {
+    const result = rotateTiplinkWebhookSecret(avatarDB, context.log)
+    if (!result) {
       return null
     }
 
     context.log.info('TipLink webhook secret rotated')
-    return newSecret
+    return result
+  })
+
+  ipcMain.handle('resetTiplinkWebhookSecret', async (_, value: string) => {
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      return false
+    }
+
+    return setTiplinkWebhookSecret(avatarDB, value.trim(), context.log)
   })
 
   ipcMain.handle('deleteDatabase', async () => {

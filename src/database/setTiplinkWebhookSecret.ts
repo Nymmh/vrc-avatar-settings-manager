@@ -3,14 +3,15 @@ import { Logger } from 'electron-log'
 
 export function setTiplinkWebhookSecret(db: Database, value: string, log: Logger): boolean {
   try {
-    const updateStmt = db.prepare(
-      `UPDATE settings SET value = ? WHERE key = 'tiplinkWebhookSecret'`
+    const setSetting = db.prepare(
+      `INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`
     )
-    const result = updateStmt.run(value)
 
-    if (result.changes === 0) {
-      db.prepare(`INSERT INTO settings (key, value) VALUES ('tiplinkWebhookSecret', ?)`).run(value)
-    }
+    db.transaction(() => {
+      setSetting.run('tiplinkWebhookSecret', value)
+      setSetting.run('tiplinkWebhookPreviousSecret', '')
+      setSetting.run('tiplinkWebhookPreviousSecretExpiresAt', '')
+    })()
 
     return true
   } catch (e) {

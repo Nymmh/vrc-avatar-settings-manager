@@ -60,8 +60,24 @@ const appApi = {
   getTiplinkWebhookSecret: (): Promise<string> => {
     return ipcRenderer.invoke('getTiplinkWebhookSecret')
   },
-  rotateTiplinkWebhookSecret: (): Promise<string | null> => {
+  getTiplinkWebhookSecretInfo: (): Promise<{
+    previousSecretExpiresAt: number | null
+    hasGraceWindow: boolean
+    rotationWindowMs: number
+  }> => {
+    return ipcRenderer.invoke('getTiplinkWebhookSecretInfo')
+  },
+  copyTiplinkWebhookSecret: (): Promise<boolean> => {
+    return ipcRenderer.invoke('copyTiplinkWebhookSecret')
+  },
+  rotateTiplinkWebhookSecret: (): Promise<{
+    secret: string
+    previousSecretExpiresAt: number | null
+  } | null> => {
     return ipcRenderer.invoke('rotateTiplinkWebhookSecret')
+  },
+  resetTiplinkWebhookSecret: (value: string): Promise<boolean> => {
+    return ipcRenderer.invoke('resetTiplinkWebhookSecret', value)
   }
 }
 

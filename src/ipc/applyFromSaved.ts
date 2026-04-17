@@ -15,15 +15,25 @@ import { getApplyConfigBufferSetting } from '../database/getApplyConfigBufferSet
 
 const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
 
-export async function applyFromSaved(
+export interface ApplyFromSavedResult {
+  success: boolean
+  msg: string
+}
+
+interface ApplyFromSavedOptions {
+  interactive: boolean
+}
+
+async function applyFromSavedInternal(
   log: Logger,
   db: Database,
   id: number,
   currentAvatarId: string,
   OSC_CLIENT: Client,
   mainWindow: BrowserWindow,
-  storage: ASMStorage
-): Promise<boolean> {
+  storage: ASMStorage,
+  options: ApplyFromSavedOptions
+): Promise<ApplyFromSavedResult> {
   try {
     log.info(`Applying config: ${id}`)
 
@@ -33,7 +43,7 @@ export async function applyFromSaved(
 
     if (!q) {
       log.error(`Config not found: ${id}`)
-      return false
+      return { success: false, msg: 'Saved config not found' }
     }
 
     let parameters: valuedParamsInterface[]
@@ -42,12 +52,20 @@ export async function applyFromSaved(
       parameters = JSON.parse(q.parameters)
     } catch {
       log.error('Error parsing JSON:')
-      return false
+      return { success: false, msg: 'Saved config contains invalid parameter data' }
     }
 
     const warningButtons = ['Apply', 'Cancel']
 
     if (q.avatarId !== currentAvatarId) {
+      if (!options.interactive) {
+        log.warn('Saved config avatar mismatch for webhook apply')
+        return {
+          success: false,
+          msg: 'Saved config belongs to a different avatar than the current avatar'
+        }
+      }
+
       const userResponse = await showDialogNoSound(
         warningButtons,
         0,
@@ -58,22 +76,32 @@ export async function applyFromSaved(
 
       if (userResponse.response !== 0) {
         log.info('User cancelled avatar mismatch')
-        return false
+        return { success: false, msg: 'User cancelled avatar mismatch warning' }
       }
     }
 
     if (q.nsfw) {
-      const userResponse = await showDialogNoSound(
-        warningButtons,
-        0,
-        'NSFW',
-        `This config is marked as NSFW. Do you want to proceed?`,
-        mainWindow
-      )
+      // if (!options.interactive) {
+      //   log.warn('Saved config marked NSFW for webhook apply')
+      //   return {
+      //     success: false,
+      //     msg: 'Saved config is marked as NSFW and cannot be applied remotely'
+      //   }
+      // }
 
-      if (userResponse.response !== 0) {
-        log.info('User cancelled NSFW')
-        return false
+      if (options.interactive) {
+        const userResponse = await showDialogNoSound(
+          warningButtons,
+          0,
+          'NSFW',
+          `This config is marked as NSFW. Do you want to proceed?`,
+          mainWindow
+        )
+
+        if (userResponse.response !== 0) {
+          log.info('User cancelled NSFW')
+          return { success: false, msg: 'User cancelled NSFW warning' }
+        }
       }
     }
 
@@ -82,7 +110,7 @@ export async function applyFromSaved(
 
     if (!aviConfig || !aviCache) {
       log.warn('Avatar config or cache file not found... could not apply')
-      return false
+      return { success: false, msg: 'Current avatar files could not be found' }
     }
 
     log.info('Found avatar config and cache files')
@@ -157,9 +185,50 @@ export async function applyFromSaved(
     setPendingChanges.clear()
     formattedParamValueMap.clear()
 
-    return await applyConfig(log, parameters, OSC_CLIENT)
+    const applySuccess = await applyConfig(log, parameters, OSC_CLIENT)
+    return {
+      success: applySuccess,
+      msg: applySuccess ? 'Saved config applied successfully' : 'Failed to apply saved config'
+    }
   } catch (e) {
     log.error('Error applying config from saved:', e)
-    return false
+    return { success: false, msg: 'Unexpected error applying saved config' }
   }
+}
+
+export async function applyFromSaved(
+  log: Logger,
+  db: Database,
+  id: number,
+  currentAvatarId: string,
+  OSC_CLIENT: Client,
+  mainWindow: BrowserWindow,
+  storage: ASMStorage
+): Promise<boolean> {
+  const result = await applyFromSavedInternal(
+    log,
+    db,
+    id,
+    currentAvatarId,
+    OSC_CLIENT,
+    mainWindow,
+    storage,
+    { interactive: true }
+  )
+
+  return result.success
+}
+
+export async function applyFromSavedForWebhook(
+  log: Logger,
+  db: Database,
+  id: number,
+  currentAvatarId: string,
+  OSC_CLIENT: Client,
+  mainWindow: BrowserWindow,
+  storage: ASMStorage
+): Promise<ApplyFromSavedResult> {
+  return applyFromSavedInternal(log, db, id, currentAvatarId, OSC_CLIENT, mainWindow, storage, {
+    interactive: false
+  })
 }
