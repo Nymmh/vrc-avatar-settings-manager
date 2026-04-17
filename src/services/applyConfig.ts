@@ -1,6 +1,8 @@
 import { Logger } from 'electron-log'
 import { Client, Bundle } from 'node-osc'
-import type { MessageLike, ArgumentType } from 'node-osc'
+
+type ArgumentType = string | number | boolean | { type: string; value: string | number | boolean }
+type MessageLike = { address: string; args: ArgumentType[] }
 
 const PARAM_PREFIX = '/avatar/parameters/'
 const CHUNK_SIZE = 10
@@ -48,7 +50,8 @@ export async function applyConfig(
 
     for (let i = 0; i < chunks.length; i++) {
       await new Promise<void>((res, rej) => {
-        OSC_CLIENT.send(new Bundle(...chunks[i]), (e?: Error | null) => {
+        const bundleElements = chunks[i].map((msg) => [msg.address, ...msg.args])
+        OSC_CLIENT.send(new Bundle(0, ...bundleElements), (e?: Error | null) => {
           if (e) {
             rej(e)
             return

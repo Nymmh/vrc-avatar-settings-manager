@@ -22,7 +22,7 @@ export interface avatarApi {
     avatarName: string
   ) => uploadConfigAndApplyTypeInterface
   uploadConfig: (saveName?: string, nsfw: boolean, avatarId?: string) => uploadConfigInterface
-  refreshAvatarFile: () => { success: boolean }
+  refreshAvatarFile: () => { success: boolean; avatarId: string }
   savedNames: (meowback: (data: savedNamesInterface[]) => void) => () => void
   applyConfig: (id: number) => { success: boolean }
   getAllSaved: () => Promise<getAllSavedInterface[] | null>
@@ -82,6 +82,8 @@ export interface appApi {
   setCopyForDiscordSetting: (value: boolean) => Promise<boolean>
   deleteDatabase: () => Promise<boolean>
   getExportedFileCount: () => Promise<exportedFileCountInterface>
+  isVRChatRunning: () => Promise<boolean>
+  onVRChatStatusChanged: (meowback: (data: { isRunning: boolean }) => void) => () => void
   getApplyConfigBufferSetting: () => Promise<boolean>
   setApplyConfigBufferSetting: (value: boolean) => Promise<boolean>
   getLowPerformanceModeSetting: () => Promise<boolean>

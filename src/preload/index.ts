@@ -37,6 +37,14 @@ const appApi = {
   getExportedFileCount: (): Promise<exportedFileCountInterface> => {
     return ipcRenderer.invoke('getExportedFileCount')
   },
+  isVRChatRunning: (): Promise<boolean> => {
+    return ipcRenderer.invoke('isVRChatRunning')
+  },
+  onVRChatStatusChanged: (meowback: (data: { isRunning: boolean }) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, data: { isRunning: boolean }): void => meowback(data)
+    ipcRenderer.on('vrchat-status-changed', handler)
+    return () => ipcRenderer.removeListener('vrchat-status-changed', handler)
+  },
   getApplyConfigBufferSetting: (): Promise<boolean> => {
     return ipcRenderer.invoke('getApplyConfigBufferSetting')
   },
