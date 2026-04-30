@@ -5,4 +5,30 @@ out
 *.log*
 *.heapsnapshot
 *.heapprofile
+.env
+.vs/
+bin/
+obj/
+*.csproj.user
+*.user
+*.suo
+
+# Files
 src/webhooks/INTEGRATION.md
+
+# Rust
+asm-core-rs/target/
+
+# Rust tests
+asm-core-rs/ping_test.txt
+asm-core-rs/ping_out.txt
+
+test_assets
+
+# Unity Addon C#
+asm-unity-addon.csproj
+asm-unity-addon/.vs/
+asm-unity-addon/bin/
+asm-unity-addon/obj/
+asm-unity-addon/*.csproj.user
+test/*
