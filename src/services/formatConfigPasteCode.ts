@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3'
+import { resolveParameters } from './resolveParameters'
 import { getSaveFaceTrackingSetting } from '../database/getSaveFaceTrackingSetting'
 import { Logger } from 'electron-log'
 import { FT_EXCLUDED, FT_REGEX, VF_PREFIX_REGEX, isExcluded } from '../helpers/excludedParameters'
@@ -12,10 +13,6 @@ const LIGHTING_VALUES = new Set<string>([
   'Light Multiplier',
   'Light_Multiplier'
 ])
-
-function normalizeName(name: string): string {
-  return name.replace(/ +/g, '_').replace(/_+/g, '_')
-}
 
 function stripVFPrefix(name: string): string {
   return name.replace(VF_PREFIX_REGEX, '')
@@ -34,7 +31,7 @@ export function formatConfigPasteCode(
   db: Database,
   aviData: string,
   aviCache: string,
-  pendingChanges: Map<string, { value: number | string; type: string }>,
+  pendingChanges: Map<string, { value: number | string; type: string; nameFormat?: 'exact' }>,
   log: Logger
 ): avatarDBInterface {
   log.info('Formatting config paste code')
@@ -50,10 +47,24 @@ export function formatConfigPasteCode(
   if (!Array.isArray(parsedCache.animationParameters) || !Array.isArray(parsedConfig.parameters))
     return formattedData
 
+  const resolved = resolveParameters(
+    Array.from(pendingChanges, ([name, entry]) => ({ name, ...entry })),
+    parsedConfig
+  )
+  pendingChanges = new Map(
+    resolved.map((p) => [
+      p.name!,
+      {
+        value: p.value as number | string,
+        type: p.type!,
+        nameFormat: 'exact'
+      }
+    ])
+  )
   const parsedParameters = parsedConfig.parameters
 
   const pendingChangesFormat = new Map(
-    Array.from(pendingChanges.entries()).map(([key, value]) => [normalizeName(key), value])
+    Array.from(pendingChanges.entries()).map(([key, value]) => [key, value])
   )
 
   const pendingChangesBySuffix = new Map<
@@ -96,7 +107,7 @@ export function formatConfigPasteCode(
     const c = parsedParameters[i]
     let value = cacheValueMap.get(c.name) ?? c.value
 
-    if (isExcluded(c.name, true)) continue
+    if (isExcluded(c.name, true) || !c.input) continue
 
     if (saveFaceTrackingSetting === false) {
       if (FT_EXCLUDED.has(c.name) || FT_REGEX.test(c.name)) {
@@ -110,7 +121,7 @@ export function formatConfigPasteCode(
     if (!type) continue
     if (!value && !isLightingName(c.name)) value = 0
 
-    const formattedName = normalizeName(c.name)
+    const formattedName = c.name
 
     if (hasPendingChanges) {
       if (pendingChangesFormat.has(formattedName)) {
@@ -135,6 +146,8 @@ export function formatConfigPasteCode(
 
     valuedParams.push({
       name: formattedName,
+      nameFormat: 'exact',
+      address: c.input?.address,
       value,
       type
     })

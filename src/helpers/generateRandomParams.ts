@@ -80,7 +80,7 @@ export async function generateRandomParams(
       let value = cacheValueMap.get(c.name) ?? c.value
       const type = parameterMap.get(c.name)
 
-      if (isExcluded(c.name, true)) return ap
+      if (isExcluded(c.name, true) || !c.input) return ap
       if (FT_EXCLUDED.has(c.name) || FT_REGEX.test(c.name)) {
         return ap
       }
@@ -88,7 +88,7 @@ export async function generateRandomParams(
       if (!type) return ap
       if (!value) value = 0
 
-      const formattedName = c.name.replace(/ +/g, '_')
+      const formattedName = c.name
 
       if (type === 'i') {
         const samples = Array.from({ length: 5 }, () => (Math.random() < 0.5 ? 0 : 1))
@@ -100,6 +100,8 @@ export async function generateRandomParams(
 
       ap.push({
         name: formattedName,
+        nameFormat: 'exact',
+        address: c.input.address,
         value,
         type
       })

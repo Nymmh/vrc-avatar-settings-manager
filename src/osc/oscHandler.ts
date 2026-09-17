@@ -7,11 +7,13 @@ import { getNames } from '../database/getSavedNames'
 import { applyPreset } from '../database/applyPreset'
 import { updatePreset } from '../database/updatePreset'
 import { ASMStorage } from '../main/ASMStorage'
+import { readOscConfig } from '../file/readOscConfig'
 import { clearNonExcludedFromCache, isExcluded } from '../helpers/excludedParameters'
 
 export class OSCHandler {
   private readonly PARAM_PREFIX = '/avatar/parameters/'
   private readonly PRESET_TOKEN = 'Nymh/ASM/Preset/'
+  private readonly outputNames = new Map<string, string | null>()
   private parameterCount: number = 0
   private lastResetTime: number = Date.now()
   private rateInterval: NodeJS.Timeout
@@ -65,7 +67,16 @@ export class OSCHandler {
       return
     }
 
-    if (isExcluded(address)) return
+    const canonicalName = this.outputNames.get(address)
+    if (address !== '/avatar/change' && canonicalName === null) {
+      this.log.warn(`Ambiguous OSC output address: ${address}`)
+      return
+    }
+    const classifiedAddress =
+      address !== '/avatar/change' && canonicalName !== undefined
+        ? `${this.PARAM_PREFIX}${canonicalName}`
+        : address
+    if (isExcluded(classifiedAddress)) return
 
     if (address === '/avatar/change') {
       if (typeof payload !== 'string' || payload.trim().length === 0) {
@@ -75,9 +86,9 @@ export class OSCHandler {
 
       this.storage.confirmAvatarIdFromOsc()
       await this.handleAvatarChangeTrigger(payload)
-    } else if (address.includes(this.PRESET_TOKEN)) {
-      await this.handlePresets(address)
-    } else if (address.startsWith(this.PARAM_PREFIX)) {
+    } else if (classifiedAddress.includes(this.PRESET_TOKEN)) {
+      await this.handlePresets(classifiedAddress)
+    } else if (address.startsWith(this.PARAM_PREFIX) || this.outputNames.has(address)) {
       if (this.skipDupOsc(address, payload)) {
         return
       }
@@ -137,6 +148,16 @@ export class OSCHandler {
   private async handleAvatarChange(avatarId: string): Promise<void> {
     this.log.info(`Received avatar change: ${avatarId}`)
 
+    this.outputNames.clear()
+    try {
+      for (const parameter of readOscConfig(avatarId, this.log).parameters) {
+        const address = parameter.output?.address
+        if (!address) continue
+        this.outputNames.set(address, this.outputNames.has(address) ? null : parameter.name)
+      }
+    } catch (error) {
+      this.log.warn('Could not read OSC output mappings:', error)
+    }
     this.storage.clearPendingChanges()
     this.storage.clearLoadedJson()
     this.storage.setCurrentAvatarId(avatarId)
@@ -250,7 +271,13 @@ export class OSCHandler {
   }
 
   private handleParamChange(address: string, payload: unknown): void {
-    const cleanAddress = address.slice(this.PARAM_PREFIX.length)
+    const mappedName = this.outputNames.get(address)
+    if (mappedName === null) {
+      this.log.warn(`Ambiguous OSC output address: ${address}`)
+      return
+    }
+    const cleanAddress = mappedName ?? address.slice(this.PARAM_PREFIX.length)
+    if (isExcluded(cleanAddress, true)) return
     this.storage.setPendingChanges(cleanAddress, payload)
     this.parameterCount++
   }

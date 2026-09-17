@@ -4,6 +4,8 @@ import { Client } from 'node-osc'
 import { applyConfig } from '../services/applyConfig'
 import { BrowserWindow } from 'electron'
 import { showDialogNoSound } from '../services/showDialogNoSound'
+import { readOscConfig } from '../file/readOscConfig'
+import { resolveParameters } from '../services/resolveParameters'
 
 export async function applyPreset(
   log: Logger,
@@ -63,7 +65,10 @@ export async function applyPreset(
       }
     }
 
-    const parameters = JSON.parse(avatarData.parameters)
+    const parameters = resolveParameters(
+      JSON.parse(avatarData.parameters),
+      readOscConfig(avatarId, log)
+    )
 
     return await applyConfig(log, parameters, OSC_CLIENT)
   } catch (e) {

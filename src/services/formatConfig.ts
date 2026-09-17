@@ -13,10 +13,6 @@ const LIGHTING_VALUES = new Set<string>([
   'Light_Multiplier'
 ])
 
-function normalizeName(name: string): string {
-  return name.replace(/ +/g, '_').replace(/_+/g, '_')
-}
-
 function stripVFPrefix(name: string): string {
   return name.replace(VF_PREFIX_REGEX, '')
 }
@@ -53,9 +49,7 @@ export function formatConfig(
   const parsedParameters = parsedConfig.parameters
   const hasPendingChanges = pendingChanges.size > 0
   const pendingChangesFormat = hasPendingChanges
-    ? new Map(
-        Array.from(pendingChanges.entries()).map(([key, value]) => [normalizeName(key), value])
-      )
+    ? new Map(Array.from(pendingChanges.entries()).map(([key, value]) => [key, value]))
     : new Map<string, unknown>()
 
   const pendingChangesBySuffix = new Map<string, { key: string; value: unknown }>()
@@ -96,7 +90,7 @@ export function formatConfig(
     const c = parsedParameters[i]
     let value = cacheValueMap.get(c.name) ?? c.value
 
-    if (isExcluded(c.name, true)) continue
+    if (isExcluded(c.name, true) || !c.input) continue
 
     if (saveFaceTrackingSetting === false) {
       if (FT_EXCLUDED.has(c.name) || FT_REGEX.test(c.name)) {
@@ -109,7 +103,7 @@ export function formatConfig(
     if (!type) continue
     if (!value && !isLightingName(c.name)) value = 0
 
-    const formattedName = normalizeName(c.name)
+    const formattedName = c.name
 
     if (hasPendingChanges) {
       if (pendingChangesFormat.has(formattedName)) {
@@ -142,6 +136,8 @@ export function formatConfig(
 
     valuedParams.push({
       name: formattedName,
+      nameFormat: 'exact',
+      address: c.input?.address,
       value,
       type
     })

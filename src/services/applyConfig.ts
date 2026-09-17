@@ -31,7 +31,7 @@ export async function applyConfig(
       const arg: ArgumentType = c.type ? { type: c.type, value: c.value } : c.value
 
       chunk.push({
-        address: `${PARAM_PREFIX}${c.name}`,
+        address: c.address || `${PARAM_PREFIX}${c.name}`,
         args: [arg]
       })
 
