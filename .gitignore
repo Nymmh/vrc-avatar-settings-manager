@@ -1,3 +1,5 @@
+.worktrees/
+
 node_modules
 dist
 out
@@ -9,9 +11,8 @@ out
 .vs/
 bin/
 obj/
-*.csproj.user
-*.user
 *.suo
+*.code-workspace
 
 # Files
 src/webhooks/INTEGRATION.md
@@ -25,10 +26,23 @@ asm-core-rs/ping_out.txt
 
 test_assets
 
-# Unity Addon C#
-asm-unity-addon.csproj
+# Base C#
 asm-unity-addon/.vs/
 asm-unity-addon/bin/
 asm-unity-addon/obj/
-asm-unity-addon/*.csproj.user
+asm-unity-addon/testData/
+asm-unity-addon/logic/addons/*
 test/*
+asm-unity-addon-tests/*
+*.txt
+asm-private-key.json
+
+# Other Solutions
+asm-unity-prefab-builder-addon/
+asm-unity-keygen/
+release/*
+asm-unity-editmode-tests/
+
+# Local
+local.slnx
+/Local.Build.props
