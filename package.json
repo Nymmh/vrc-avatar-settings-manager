@@ -22,7 +22,8 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
-    "publish": "electron-builder --publish always"
+    "publish": "electron-builder --publish always",
+    "wiki:publish": "gh workflow run publish-wiki.yml --repo Nymmh/vrc-avatar-settings-manager --ref main"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

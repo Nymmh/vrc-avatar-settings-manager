@@ -86,7 +86,7 @@ We may update this Privacy Policy from time to time. Changes will be reflected i
 
 ## Age Requirements
 
-ASM is intended for users aged 13 and older, consistent with VRChat's Terms of Service as referenced in EULA Section [7.1](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#71-vrchat). ASM does not collect any personal data from any users, including those under 13.
+ASM is intended for users aged 13 and older, consistent with VRChat's Terms of Service as referenced in EULA Section [7.1](./eula.md#71-vrchat). ASM does not collect any personal data from any users, including those under 13.
 
 ## Data Security
 
@@ -103,8 +103,8 @@ You have complete control over your data, consistent with GDPR and CCPA principl
 
 - **Right to Access**: All data is stored locally in SQLite format and accessible at any time
 - **Right to Deletion**: You can delete all data at any time through manual deletion or the uninstaller (see Section "Data Deletion" above)
-- **Right to Portability**: Export features allow you to save and transfer your configurations as specified in EULA Section [6.2](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#62-sharing-and-distribution)
-- **Right to Control**: You retain all rights to your configurations and decide what to save and share (EULA Section [6.1](https://github.com/Nymmh/vrc-avatar-settings-manager/wiki/Terms#61-configuration-files))
+- **Right to Portability**: Export features allow you to save and transfer your configurations as specified in EULA Section [6.2](./eula.md#62-sharing-and-distribution)
+- **Right to Control**: You retain all rights to your configurations and decide what to save and share (EULA Section [6.1](./eula.md#61-configuration-files))
 - **Right to Know**: This policy discloses all data collection and usage practices
 
 Since all data is stored locally on your device, you have direct control without needing to submit access or deletion requests.
