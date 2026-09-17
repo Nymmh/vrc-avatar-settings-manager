@@ -1,5 +1,6 @@
 export class ASMStorage {
   private currentAviId: string = ''
+  private avatarIdConfirmedByOscAt: number | null = null
   private loadedJson: avatarDBInterface | null = null
   private pendingChanges: Map<string, unknown> = new Map()
   private loadedAvatarJson: exportAllConfigsInterface | null = null
@@ -11,6 +12,14 @@ export class ASMStorage {
 
   setCurrentAvatarId(avatarId: string): void {
     this.currentAviId = avatarId
+  }
+
+  hasOscAvatarId(since: number = 0): boolean {
+    return this.avatarIdConfirmedByOscAt !== null && this.avatarIdConfirmedByOscAt >= since
+  }
+
+  confirmAvatarIdFromOsc(): void {
+    this.avatarIdConfirmedByOscAt = Date.now()
   }
 
   getLoadedJson(): avatarDBInterface | null {
@@ -62,6 +71,7 @@ export class ASMStorage {
 
   cleanState(): void {
     this.currentAviId = ''
+    this.avatarIdConfirmedByOscAt = null
     this.loadedJson = null
     this.pendingChanges.clear()
     this.loadedAvatarJson = null

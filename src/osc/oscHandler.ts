@@ -68,11 +68,12 @@ export class OSCHandler {
     if (isExcluded(address)) return
 
     if (address === '/avatar/change') {
-      if (typeof payload !== 'string') {
-        this.log.warn('Avatar change payload is not a string, malformed data')
+      if (typeof payload !== 'string' || payload.trim().length === 0) {
+        this.log.warn('Avatar change payload is not a nonempty string, malformed data')
         return
       }
 
+      this.storage.confirmAvatarIdFromOsc()
       await this.handleAvatarChangeTrigger(payload)
     } else if (address.includes(this.PRESET_TOKEN)) {
       await this.handlePresets(address)
@@ -110,7 +111,10 @@ export class OSCHandler {
     const now = Date.now()
     const deltaMs = now - this.lastAviChangeAt
     const isDupAviChange =
-      this.lastAviChangeId === avatarId && deltaMs >= 0 && deltaMs < this.AVI_CHANGE_DUP_MS
+      this.lastAviChangeId === avatarId &&
+      this.storage.getCurrentAvatarId() === avatarId &&
+      deltaMs >= 0 &&
+      deltaMs < this.AVI_CHANGE_DUP_MS
 
     if (isDupAviChange) {
       this.log.info(`Duplicate avatar change ignoring... (deltaMs=${deltaMs}): ${avatarId}`)
