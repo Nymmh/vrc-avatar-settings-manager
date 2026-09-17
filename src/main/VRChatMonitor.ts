@@ -11,6 +11,7 @@ export class VRChatMonitor {
   private avatarPollingInterval: NodeJS.Timeout | null = null
   private isCheckingStatus: boolean = false
   private isCheckingAvatarId: boolean = false
+  private avatarPollingGeneration: number = 0
   private readonly POLL_INTERVAL = 5000 // 5 seconds
 
   constructor(
@@ -75,6 +76,7 @@ export class VRChatMonitor {
   }
 
   stop(): void {
+    this.isRunning = false
     if (this.checkInterval) {
       clearInterval(this.checkInterval)
       this.checkInterval = null
@@ -94,6 +96,11 @@ export class VRChatMonitor {
       return
     }
 
+    const logCreatedAt = this.vrchatLog.getCurrentLog()?.createdAt
+    if (logCreatedAt && !this.storage.hasOscAvatarId(logCreatedAt.getTime())) {
+      this.storage.cleanState()
+    }
+
     this.log.info('New VRChat log detected, restarting avatar ID polling')
     this.stopAvatarIdPolling()
     this.startAvatarIdPolling()
@@ -105,14 +112,14 @@ export class VRChatMonitor {
     }
 
     this.log.info('Starting avatar ID polling...')
-    void this.checkAvatarIdFromLog()
-
     this.avatarPollingInterval = setInterval(() => {
       void this.checkAvatarIdFromLog()
     }, this.POLL_INTERVAL)
+    void this.checkAvatarIdFromLog()
   }
 
   private stopAvatarIdPolling(): void {
+    this.avatarPollingGeneration++
     if (this.avatarPollingInterval) {
       clearInterval(this.avatarPollingInterval)
       this.avatarPollingInterval = null
@@ -125,24 +132,45 @@ export class VRChatMonitor {
       return
     }
 
+    if (this.storage.hasOscAvatarId()) {
+      this.stopAvatarIdPolling()
+      return
+    }
+
     this.isCheckingAvatarId = true
+    const generation = this.avatarPollingGeneration
 
     try {
-      const avatarId = await this.vrchatLog.getAvatarIdFromLog()
+      const avatarId =
+        (await this.vrchatLog.getAvatarIdFromOscQuery()) ??
+        (await this.vrchatLog.getAvatarIdFromLog())
+
+      if (!this.isRunning || generation !== this.avatarPollingGeneration) {
+        return
+      }
+
+      if (this.storage.hasOscAvatarId()) {
+        this.stopAvatarIdPolling()
+        return
+      }
 
       if (!avatarId) {
         return
       }
 
       if (this.storage.getCurrentAvatarId() === avatarId) {
-        this.log.info('Avatar ID from log matches stored avatar ID')
+        this.log.info('Recovered avatar ID matches stored avatar ID')
       } else {
-        this.log.info(`Avatar ID from log: ${avatarId}`)
-        this.storage.setCurrentAvatarId(avatarId)
+        this.log.info(`Recovered avatar ID: ${avatarId}`)
         await this.oscHandler.handleAvatarChangeTrigger(avatarId)
       }
 
-      this.stopAvatarIdPolling()
+      if (
+        generation === this.avatarPollingGeneration &&
+        (this.storage.hasOscAvatarId() || this.storage.getCurrentAvatarId() === avatarId)
+      ) {
+        this.stopAvatarIdPolling()
+      }
     } catch (error) {
       this.log.error('Error checking avatar ID from log:', error)
     } finally {

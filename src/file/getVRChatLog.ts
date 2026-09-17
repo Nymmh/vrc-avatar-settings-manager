@@ -7,36 +7,33 @@ const LOG_FILE_PREFIX = 'output_log_'
 const LOG_FILE_SUFFIX = '.txt'
 const MAX_LOG_READ = 2 * 1024 * 1024 // 2MB
 
-const AVATAR_DATA_REGEX = /(Saving Avatar Data|Loading Avatar Data|avatar):([a-zA-Z0-9_-]+)/g
+const AVATAR_DATA_REGEX = /(Saving Avatar Data|Loading Avatar Data):([a-zA-Z0-9_-]+)/g
 
 interface VRChatLogFile {
   path: string
   name: string
   mtime: Date
+  createdAt: Date
 }
 
-interface AvatarMatch {
-  source: string
-  avatarId: string
-}
-
-function getNewestAvatarMatch(content: string): AvatarMatch | null {
+function getLoadedAvatarId(content: string): string | null {
   AVATAR_DATA_REGEX.lastIndex = 0
-  let latestMatch: AvatarMatch | null = null
+  let avatarId: string | null = null
   let match = AVATAR_DATA_REGEX.exec(content)
 
   while (match) {
-    latestMatch = {
-      source: match[1],
-      avatarId: match[2]
+    if (match[1] === 'Loading Avatar Data') {
+      avatarId = match[2]
+    } else if (match[2] !== avatarId) {
+      avatarId = null
     }
     match = AVATAR_DATA_REGEX.exec(content)
   }
 
-  return latestMatch
+  return avatarId
 }
 
-async function readLogEnd(filePath: string, max: number): Promise<string> {
+async function readLog(filePath: string, max: number, fromStart = false): Promise<string> {
   const fileRead = await fsPromises.open(filePath, 'r')
 
   try {
@@ -47,7 +44,7 @@ async function readLogEnd(filePath: string, max: number): Promise<string> {
       return ''
     }
 
-    const startPos = stats.size - readLength
+    const startPos = fromStart ? 0 : stats.size - readLength
     const buffer = Buffer.allocUnsafe(readLength)
     await fileRead.read(buffer, 0, readLength, startPos)
 
@@ -76,7 +73,8 @@ export async function getVRChatLogFiles(log: Logger): Promise<VRChatLogFile[]> {
         logFiles.push({
           path: filePath,
           name: f.name,
-          mtime: stats.mtime
+          mtime: stats.mtime,
+          createdAt: stats.birthtime
         })
       }
     }
@@ -115,7 +113,8 @@ export async function getNewestLog(log: Logger): Promise<VRChatLogFile | null> {
         newestFile = {
           path: filePath,
           name: f.name,
-          mtime: stats.mtime
+          mtime: stats.mtime,
+          createdAt: stats.birthtime
         }
       }
     }
@@ -179,6 +178,50 @@ export class VRChatLogMonitor {
     return this.currentNewestFile
   }
 
+  async getAvatarIdFromOscQuery(): Promise<string | null> {
+    const logFile = this.getCurrentLog()
+    if (!logFile) {
+      return null
+    }
+
+    try {
+      const logStart = await readLog(logFile.path, MAX_LOG_READ, true)
+      const matches = Array.from(
+        logStart.matchAll(/Advertising Service VRChat-Client-\S+ of type OSCQuery on (\d+)/g)
+      )
+      const port = Number(matches.at(-1)?.[1])
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        return null
+      }
+
+      const response = await fetch(`http://127.0.0.1:${port}/avatar/change`, {
+        signal: AbortSignal.timeout(2000),
+        redirect: 'error'
+      })
+      if (!response.ok) {
+        return null
+      }
+
+      const node = (await response.json()) as {
+        FULL_PATH?: unknown
+        TYPE?: unknown
+        VALUE?: unknown
+      } | null
+      const avatarId = Array.isArray(node?.VALUE) ? node.VALUE[0] : null
+      if (
+        node?.FULL_PATH !== '/avatar/change' ||
+        node.TYPE !== 's' ||
+        typeof avatarId !== 'string' ||
+        !/^avtr_[a-zA-Z0-9_-]+$/.test(avatarId)
+      ) {
+        return null
+      }
+
+      return avatarId
+    } catch {
+      return null
+    }
+  }
   async getAvatarIdFromLog(): Promise<string | null> {
     const logFile = this.getCurrentLog()
 
@@ -187,16 +230,8 @@ export class VRChatLogMonitor {
     }
 
     try {
-      const logTail = await readLogEnd(logFile.path, MAX_LOG_READ)
-      const newestAvatarMatch = getNewestAvatarMatch(logTail)
-
-      if (newestAvatarMatch) {
-        if (newestAvatarMatch.source === 'avatar') {
-          this.log.warn('Using fallback search for avatar ID... might be wrong')
-        }
-
-        return newestAvatarMatch.avatarId
-      }
+      const logTail = await readLog(logFile.path, MAX_LOG_READ)
+      return getLoadedAvatarId(logTail)
     } catch (error) {
       this.log.error('Error reading VRChat log file:', error)
     }
