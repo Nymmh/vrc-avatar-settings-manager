@@ -4,25 +4,16 @@ directories:
   buildResources: build
 copyright: Copyright © 2025 ${author}
 files:
-  - '!**/.vscode/*'
-  - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-  - '!**/*.{heapsnapshot,heapprofile}'
-  - '!**/*.map'
+  # Production dependencies and package.json are included by electron-builder.
+  - 'out/main/**/*'
+  - 'out/preload/**/*'
+  - 'out/renderer/**/*'
+  - 'resources/icon.png'
+  - '!**/*.{heapsnapshot,heapprofile,map}'
   - '!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}'
   - '!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}'
   - '!**/node_modules/*.d.ts'
   - '!**/node_modules/.bin'
-  - '!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}'
-  - '!.editorconfig'
-  - '!**/._*'
-  - '!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}'
-  - '!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}'
-  - '!**/{appveyor.yml,.travis.yml,circle.yml}'
-  - '!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}'
 asarUnpack:
   - '**/node_modules/better-sqlite3/build/**/*'
 electronLanguages:
