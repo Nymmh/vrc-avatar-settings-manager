@@ -1,0 +1,66 @@
+name: Publish wiki
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'Nymmh/vrc-avatar-settings-manager' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'Nymmh' &&
+      github.triggering_actor == 'Nymmh'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: wiki-publishing
+    steps:
+      - name: Check out the dispatched main revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+
+      - name: Build pages and images
+        run: node scripts/build-wiki.mjs "$RUNNER_TEMP/wiki-output"
+
+      - name: Publish generated files
+        shell: bash
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$WIKI_TOKEN" ]]; then
+            echo 'Add WIKI_TOKEN to the wiki-publishing environment before publishing.' >&2
+            exit 1
+          fi
+          auth=$(printf 'x-access-token:%s' "$WIKI_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth"
+          export GIT_TERMINAL_PROMPT=0
+          git clone --depth 1 https://github.com/Nymmh/vrc-avatar-settings-manager.wiki.git "$RUNNER_TEMP/wiki"
+          rsync -a "$RUNNER_TEMP/wiki-output/" "$RUNNER_TEMP/wiki/"
+          cd "$RUNNER_TEMP/wiki"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          if git diff --cached --quiet; then
+            echo 'Wiki is already up to date.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git commit -m "Update wiki from ${GITHUB_SHA:0:12}"
+          git push origin HEAD
+          echo "Published wiki from main revision $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"
