@@ -11,6 +11,7 @@ import { lookForCache } from '../file/lookForCache'
 import { cleanJson } from '../helpers/cleanJson'
 import { formatConfig } from '../services/formatConfig'
 import { applyConfig } from '../services/applyConfig'
+import { resolveParameters } from '../services/resolveParameters'
 
 const vrcPath = path.join(process.env.APPDATA!.replace('Roaming', 'LocalLow'), 'VRChat/VRChat')
 
@@ -73,8 +74,15 @@ export async function uploadConfigAndApply(
       fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
     )
 
+    let resolved: valuedParamsInterface[]
+    try {
+      resolved = resolveParameters(loadedJson.valuedParams, JSON.parse(aviConfigData))
+    } catch (error) {
+      log.error('Cannot resolve imported parameters:', error)
+      return { upload: false, saveMessage: 'Could not map saved parameters to this avatar' }
+    }
     const paramMap = new Map<string, unknown>(
-      loadedJson.valuedParams
+      resolved
         .filter(
           (param): param is valuedParamsInterface & { name: string } =>
             typeof param.name === 'string'
@@ -85,6 +93,8 @@ export async function uploadConfigAndApply(
     const formattedDataConfig = formatConfig(db, aviConfigData, aviCacheData, paramMap, log)
     paramMap.clear()
     loadedJson.valuedParams = formattedDataConfig.valuedParams as valuedParamsInterface[]
+  } else {
+    return { upload: false, saveMessage: 'Current avatar data files not found' }
   }
 
   if (loadedJson?.nsfw) {

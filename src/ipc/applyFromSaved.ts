@@ -5,6 +5,7 @@ import { BrowserWindow } from 'electron'
 import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
 import { applyConfig } from '../services/applyConfig'
+import { resolveParameters } from '../services/resolveParameters'
 import { showDialogNoSound } from '../services/showDialogNoSound'
 import { ASMStorage } from '../main/ASMStorage'
 import { lookForConfig } from '../file/lookForConfig'
@@ -91,6 +92,8 @@ export async function applyFromSaved(
     const aviCacheData = cleanJson(
       fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
     )
+
+    parameters = resolveParameters(parameters, JSON.parse(aviConfigData))
 
     const paramMap = new Map<string, unknown>(
       parameters

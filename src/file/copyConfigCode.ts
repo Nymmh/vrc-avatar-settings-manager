@@ -131,9 +131,18 @@ export async function copyConfigCode(
       log.error('Checksum version not found')
       return { success: false, message: 'Checksum version not found' }
     }
+    if (new Set(parsed.map((param) => param.name)).size !== parsed.length) {
+      log.error('Cannot export duplicate saved parameter names')
+      return {
+        success: false,
+        message:
+          'Duplicate parameter names in this config. Re-save it from the avatar before sharing.'
+      }
+    }
     const compactParams = parsed
       .filter((p: valuedParamsInterface) => p.value !== 0)
       .map((p: valuedParamsInterface) => {
+        if (p.nameFormat === 'exact') return [p.name, p.value, p.type || 'i', 'exact']
         return p.type && p.type !== 'i' ? [p.name, p.value, p.type] : [p.name, p.value]
       })
 

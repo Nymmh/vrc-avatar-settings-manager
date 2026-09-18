@@ -14,6 +14,8 @@ interface avatarDB {
 }
 
 interface valuedParams {
+  nameFormat?: 'exact'
+  address?: string
   name?: string
   value?: number | boolean | string
   type?: string
