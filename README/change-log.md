@@ -1,3 +1,10 @@
+# Version 1.1.1 - 2026-09-17
+
+## Fixes
+
+- Fixed bug with avatar swapping sometimes not being picked up
+- Fixed bug with normalized parameter names
+
 # Version 1.1.0 - 2026-04-16
 
 ## Changes
