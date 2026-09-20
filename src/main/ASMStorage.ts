@@ -1,3 +1,7 @@
+const MAX_PENDING_CHANGES = 8192
+const MAX_PARAMETER_NAME_LENGTH = 1024
+const MAX_PARAMETER_STRING_LENGTH = 1024
+
 export class ASMStorage {
   private currentAviId: string = ''
   private avatarIdConfirmedByOscAt: number | null = null
@@ -34,19 +38,40 @@ export class ASMStorage {
   }
 
   getPendingChanges(): Map<string, unknown> {
-    return this.pendingChanges
+    return new Map(this.pendingChanges)
   }
 
-  setPendingChanges(address: string, payload: unknown): void {
-    this.pendingChanges.set(address, payload)
-  }
-
-  setPendingChangesBulk(changes: Map<string, unknown>): void {
-    this.pendingChanges.clear()
-
-    for (const [address, payload] of changes) {
-      this.pendingChanges.set(address, payload)
+  private isValidPendingChange(address: string, payload: unknown): boolean {
+    if (
+      typeof address !== 'string' ||
+      address.length === 0 ||
+      address.length > MAX_PARAMETER_NAME_LENGTH
+    ) {
+      return false
     }
+
+    if (payload === undefined || payload === null || typeof payload === 'boolean') return true
+    if (typeof payload === 'number') return Number.isFinite(payload)
+    return typeof payload === 'string' && payload.length <= MAX_PARAMETER_STRING_LENGTH
+  }
+
+  setPendingChanges(address: string, payload: unknown): boolean {
+    if (!this.isValidPendingChange(address, payload)) return false
+    if (!this.pendingChanges.has(address) && this.pendingChanges.size >= MAX_PENDING_CHANGES) {
+      return false
+    }
+    this.pendingChanges.set(address, payload)
+    return true
+  }
+
+  setPendingChangesBulk(changes: Map<string, unknown>): boolean {
+    if (changes.size > MAX_PENDING_CHANGES) return false
+    for (const [address, payload] of changes) {
+      if (!this.isValidPendingChange(address, payload)) return false
+    }
+
+    this.pendingChanges = new Map(changes)
+    return true
   }
 
   clearPendingChanges(): void {

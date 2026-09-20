@@ -74,8 +74,6 @@ export async function generateRandomParams(
 
     let randomParams: valuedParamsInterface[] = []
 
-    storage.clearPendingChanges()
-
     randomParams = parsedConfig.parameters.reduce((ap, c) => {
       let value = cacheValueMap.get(c.name) ?? c.value
       const type = parameterMap.get(c.name)
@@ -106,10 +104,14 @@ export async function generateRandomParams(
         type
       })
 
-      storage.setPendingChanges(formattedName, value)
-
       return ap
     }, [] as valuedParamsInterface[])
+
+    const pendingChanges = new Map(randomParams.map((param) => [param.name!, param.value]))
+    if (!storage.setPendingChangesBulk(pendingChanges)) {
+      log.warn('Random parameters exceed pending-state limits or contain unsupported values')
+      return false
+    }
 
     log.info(`Generated ${randomParams.length} random parameters for avatarId: ${avatarId}`)
 
