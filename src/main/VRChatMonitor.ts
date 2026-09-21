@@ -158,17 +158,13 @@ export class VRChatMonitor {
         return
       }
 
-      if (this.storage.getCurrentAvatarId() === avatarId) {
-        this.log.info('Recovered avatar ID matches stored avatar ID')
-      } else {
+      if (this.storage.getCurrentAvatarId() !== avatarId) {
         this.log.info(`Recovered avatar ID: ${avatarId}`)
         await this.oscHandler.handleAvatarChangeTrigger(avatarId)
       }
 
-      if (
-        generation === this.avatarPollingGeneration &&
-        (this.storage.hasOscAvatarId() || this.storage.getCurrentAvatarId() === avatarId)
-      ) {
+      if (generation === this.avatarPollingGeneration && this.storage.hasOscAvatarId()) {
+        this.log.info('Avatar polling stopping')
         this.stopAvatarIdPolling()
       }
     } catch (error) {
