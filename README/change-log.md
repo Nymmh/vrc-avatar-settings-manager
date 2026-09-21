@@ -1,3 +1,13 @@
+# Version 1.1.2
+
+## Changes
+
+- Changed OSC memory management so should use less now and manage itself better
+
+## Fixes
+
+- Fixes avatar polling
+
 # Version 1.1.1 - 2026-09-17
 
 ## Fixes
