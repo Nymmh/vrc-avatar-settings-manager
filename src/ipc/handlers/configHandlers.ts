@@ -128,7 +128,8 @@ export function configHandlers(context: ConfigHandlerContext): void {
       mainWindow,
       storage
     )
-    log.info(`Config applied`)
+    if (res) log.info('Config applied')
+    else log.warn('Config apply failed or cancelled')
     return { success: !!res }
   })
 

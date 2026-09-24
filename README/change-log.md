@@ -1,3 +1,9 @@
+# Version 1.1.2 - 2026-09-24
+
+## Fixes
+
+- Fixed a bug where removed parameters still trying to match
+
 # Version 1.1.1 - 2026-09-17
 
 ## Fixes
