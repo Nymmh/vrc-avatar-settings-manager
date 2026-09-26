@@ -22,8 +22,7 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
-    "publish": "electron-builder --publish always",
-    "wiki:publish": "gh workflow run publish-wiki.yml --repo Nymmh/vrc-avatar-settings-manager --ref main"
+    "publish": "electron-builder --publish always"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -69,7 +68,7 @@
       "brace-expansion": ">=5.0.5",
       "lodash": "4.18.0",
       "tar": ">=7.5.8",
-      "axios": "^1.15.0",
+      "axios": "^1.20.0",
       "minimatch": ">=9.0.6",
       "rollup": ">=4.59.0",
       "flatted": ">=3.4.0",

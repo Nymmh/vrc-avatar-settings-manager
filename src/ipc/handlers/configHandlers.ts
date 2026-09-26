@@ -231,7 +231,10 @@ export function configHandlers(context: ConfigHandlerContext): void {
         setPendingChanges.set(param.name, param.value)
       }
 
-      storage.setPendingChangesBulk(setPendingChanges)
+      if (!storage.setPendingChangesBulk(setPendingChanges)) {
+        log.warn('Avatar parameters exceed pending-state limits or contain unsupported values')
+        return { success: false, avatarId: currentAviId }
+      }
       setPendingChanges.clear()
     }
 
