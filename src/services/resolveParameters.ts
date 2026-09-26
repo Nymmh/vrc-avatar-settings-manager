@@ -20,6 +20,12 @@ const suffix = (name: string): string => {
   return name
 }
 
+function isWritableInput(
+  input: OscParameter['input']
+): input is NonNullable<OscParameter['input']> {
+  return !!input?.address?.startsWith('/') && ['Float', 'Int', 'Bool'].includes(input.type)
+}
+
 export function resolveParameters(
   saved: valuedParamsInterface[],
   config: OscConfig,
@@ -35,9 +41,10 @@ export function resolveParameters(
   const addresses = new Map<string, ResolvedEntry>()
   const resolved: valuedParamsInterface[] = []
 
-  for (const entry of saved) {
+  for (const [idx, entry] of saved.entries()) {
     if (!entry || typeof entry.name !== 'string') {
-      throw new Error('Invalid saved parameter')
+      log.warn(`Invalid saved parameter at idx ${idx}. Skipping saved parameter.`)
+      continue
     }
     if (isExcluded(entry.name, true)) continue
     const hasValue = entry.value !== undefined
@@ -52,16 +59,25 @@ export function resolveParameters(
     if (!exact && matches.length === 0) {
       matches = targets.filter((p) => legacyName(suffix(p.name)) === legacyName(suffix(name)))
     }
-    if (matches.length !== 1) {
-      if (!hasValue) continue
-      throw new Error(`${matches.length ? 'Ambiguous' : 'Missing'} parameter mapping: ${name}`)
+    if (matches.length === 0) {
+      log.warn(`Missing parameter mapping: ${name}. Skipping saved parameter.`)
+      continue
     }
-
-    const target = matches[0]
+    let target = matches[0]
+    if (matches.length > 1) {
+      target =
+        matches.find((p) => p.name === name) ??
+        matches.find((p) => isWritableInput(p.input)) ??
+        target
+      log.warn(
+        `Ambiguous parameter mapping: ${name}. Candidates: ${JSON.stringify(matches.map((p) => p.name))}. ` +
+          `Using ${JSON.stringify(target.name)}.`
+      )
+    }
     const input = target.input
-    if (!input?.address?.startsWith('/') || !['Float', 'Int', 'Bool'].includes(input.type)) {
-      if (!hasValue) continue
-      throw new Error(`Parameter is not writable: ${target.name}`)
+    if (!isWritableInput(input)) {
+      log.warn(`Parameter is not writable: ${target.name}. Skipping saved parameter.`)
+      continue
     }
     const value = typeof entry.value === 'boolean' ? Number(entry.value) : entry.value
     const previous = used.get(target.name)

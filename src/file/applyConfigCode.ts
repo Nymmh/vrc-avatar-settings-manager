@@ -93,17 +93,19 @@ export async function applyConfigCode(
       }
     )
 
-    if (new Set(fullParams.map((param) => param.name)).size !== fullParams.length) {
-      throw new Error('Duplicate saved parameter names in share code')
+    const paramsMap = new Map<
+      string,
+      { value: number | string; type: string; nameFormat?: 'exact' }
+    >()
+    for (const { name, ...parameter } of fullParams) {
+      if (paramsMap.has(name)) {
+        log.warn(
+          `Duplicate saved parameter name in share code: ${JSON.stringify(name)}. Skipping duplicate; keeping the first entry.`
+        )
+        continue
+      }
+      paramsMap.set(name, parameter)
     }
-    const paramsMap = new Map(
-      fullParams.map(
-        (param: { name: string; value: number; type: string; nameFormat?: 'exact' }) => [
-          param.name,
-          { value: param.value, type: param.type, nameFormat: param.nameFormat }
-        ]
-      )
-    ) as Map<string, { value: number | string; type: string; nameFormat?: 'exact' }>
 
     const config = {
       type: data.t === 'c' ? 'config' : data.t,

@@ -1,3 +1,9 @@
+# Version 1.1.4 - 2026-09-25
+
+## Fixes
+
+- Apply errors wont throw anymore, they will now skip
+
 # Version 1.1.3 - 2026-09-25
 
 ## Fixes
