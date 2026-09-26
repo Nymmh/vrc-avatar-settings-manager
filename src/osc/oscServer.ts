@@ -10,7 +10,7 @@ export function oscServer(log: Logger, PORT: number): Promise<Server> {
   }
 
   return new Promise((res, rej) => {
-    const OSC_SERVER = new Server(PORT, '127.0.0.1', () => {
+    const OSC_SERVER = new Server(PORT, '0.0.0.0', () => {
       log.info(`Server listening on port: ${PORT}`)
       res(OSC_SERVER)
     })

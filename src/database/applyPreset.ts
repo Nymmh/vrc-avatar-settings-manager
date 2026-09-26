@@ -67,7 +67,8 @@ export async function applyPreset(
 
     const parameters = resolveParameters(
       JSON.parse(avatarData.parameters),
-      readOscConfig(avatarId, log)
+      readOscConfig(avatarId, log),
+      log
     )
 
     return await applyConfig(log, parameters, OSC_CLIENT)

@@ -49,7 +49,8 @@ export function formatConfigPasteCode(
 
   const resolved = resolveParameters(
     Array.from(pendingChanges, ([name, entry]) => ({ name, ...entry })),
-    parsedConfig
+    parsedConfig,
+    log
   )
   pendingChanges = new Map(
     resolved.map((p) => [

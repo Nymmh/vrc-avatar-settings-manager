@@ -76,7 +76,7 @@ export async function uploadConfigAndApply(
 
     let resolved: valuedParamsInterface[]
     try {
-      resolved = resolveParameters(loadedJson.valuedParams, JSON.parse(aviConfigData))
+      resolved = resolveParameters(loadedJson.valuedParams, JSON.parse(aviConfigData), log)
     } catch (error) {
       log.error('Cannot resolve imported parameters:', error)
       return { upload: false, saveMessage: 'Could not map saved parameters to this avatar' }

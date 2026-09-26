@@ -93,7 +93,7 @@ export async function applyFromSaved(
       fs.readFileSync(path.join(vrcPath, 'LocalAvatarData', aviCache), 'utf-8')
     )
 
-    parameters = resolveParameters(parameters, JSON.parse(aviConfigData))
+    parameters = resolveParameters(parameters, JSON.parse(aviConfigData), log)
 
     const paramMap = new Map<string, unknown>(
       parameters

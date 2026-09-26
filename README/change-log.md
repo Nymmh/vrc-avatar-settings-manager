@@ -1,3 +1,9 @@
+# Version 1.1.3 - 2026-09-25
+
+## Fixes
+
+- Should hopefully fix parameter collision
+
 # Version 1.1.2 - 2026-09-25
 
 ## Changes

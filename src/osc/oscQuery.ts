@@ -8,7 +8,6 @@ export async function oscQuery(log: Logger): Promise<{ port: number; service: OS
   const oscPort = randomNumber()
   const service = new OSCQueryServer({
     oscPort,
-    oscIp: '127.0.0.1',
     httpPort: oscPort,
     serviceName: 'Nymh-avatar-settings-manager'
   })
