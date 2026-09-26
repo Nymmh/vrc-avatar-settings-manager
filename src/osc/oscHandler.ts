@@ -187,7 +187,9 @@ export class OSCHandler {
       setPendingChanges.set(param.name, param.value)
     }
 
-    this.storage.setPendingChangesBulk(setPendingChanges)
+    if (!this.storage.setPendingChangesBulk(setPendingChanges)) {
+      this.log.warn('Avatar parameters exceed pending-state limits or contain unsupported values')
+    }
     setPendingChanges.clear()
   }
 
@@ -278,7 +280,8 @@ export class OSCHandler {
     }
     const cleanAddress = mappedName ?? address.slice(this.PARAM_PREFIX.length)
     if (isExcluded(cleanAddress, true)) return
-    this.storage.setPendingChanges(cleanAddress, payload)
-    this.parameterCount++
+    if (this.storage.setPendingChanges(cleanAddress, payload)) {
+      this.parameterCount++
+    }
   }
 }

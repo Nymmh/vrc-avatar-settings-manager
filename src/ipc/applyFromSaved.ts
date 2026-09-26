@@ -117,13 +117,27 @@ export async function applyFromSaved(
       formattedParamValueMap.set(param.name, param.value)
     }
 
+    const pendingChanges = storage.getPendingChanges()
+    const setPendingChanges = new Map<string, unknown>()
+
+    for (let i = 0; i < parameters.length; i++) {
+      const param = parameters[i]
+      if (typeof param === 'string' || param.name === undefined) continue
+      setPendingChanges.set(param.name, param.value)
+    }
+
+    if (!storage.setPendingChangesBulk(setPendingChanges)) {
+      log.warn('Config parameters exceed pending-state limits or contain unsupported values')
+      return false
+    }
+    setPendingChanges.clear()
+
     const checkApplyBuffer = getApplyConfigBufferSetting(db, log)
 
     if (checkApplyBuffer) {
       // Workaround for some avis having issue updating params, it will be a setting in the app to toggle
       // We basically buffer the value to 0.75 to force it to change on the next update
       // Issue has only been found with params at 1.0~ so i just used 0.9 :teehee:
-      const pendingChanges = storage.getPendingChanges()
       let bufferParamsMap: Map<string, unknown> | null = null
 
       if (pendingChanges.size > 0) {
@@ -148,16 +162,6 @@ export async function applyFromSaved(
       bufferParamsMap?.clear()
     }
 
-    const setPendingChanges = new Map<string, unknown>()
-
-    for (let i = 0; i < parameters.length; i++) {
-      const param = parameters[i]
-      if (typeof param === 'string' || param.name === undefined) continue
-      setPendingChanges.set(param.name, param.value)
-    }
-
-    storage.setPendingChangesBulk(setPendingChanges)
-    setPendingChanges.clear()
     formattedParamValueMap.clear()
 
     return await applyConfig(log, parameters, OSC_CLIENT)
