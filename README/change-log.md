@@ -1,4 +1,4 @@
-# Version 1.1.2
+# Version 1.1.2 - 2026-09-25
 
 ## Changes
 
@@ -7,6 +7,7 @@
 ## Fixes
 
 - Fixes avatar polling
+- Fixed a bug where removed parameters still trying to match
 
 # Version 1.1.1 - 2026-09-17
 

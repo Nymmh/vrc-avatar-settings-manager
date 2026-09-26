@@ -12,7 +12,12 @@ export interface OscConfig {
 }
 
 const legacyName = (name: string): string => name.replace(/ +/g, '_').replace(/_+/g, '_')
-const suffix = (name: string): string => name.replace(VF_PREFIX_REGEX, '')
+const suffix = (name: string): string => {
+  while (VF_PREFIX_REGEX.test(name)) {
+    name = name.replace(VF_PREFIX_REGEX, '')
+  }
+  return name
+}
 
 export function resolveParameters(
   saved: valuedParamsInterface[],
