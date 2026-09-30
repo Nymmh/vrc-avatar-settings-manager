@@ -2,8 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { appStorage } from '../composables/appStorage'
 import { handleChangeView } from '@renderer/composables/changeView'
-import Button from '../components/Button.vue'
-import Card from '../components/Card.vue'
+import Icon from '../components/Icon.vue'
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
 
 const appStore = appStorage()
@@ -86,9 +85,9 @@ const getApplyConfigBufferSetting = async (): Promise<void> => {
 const setSaveFaceTrackingSetting = async (): Promise<void> => {
   const newValue = !saveFaceTracking.value
   const res = await window.appApi.setSaveFaceTrackingSetting(newValue)
-  saveFaceTracking.value = newValue
 
   if (res) {
+    saveFaceTracking.value = newValue
     emit('notification', {
       type: 'success',
       title: 'Save Face Tracking Setting Updated'
@@ -104,9 +103,9 @@ const setSaveFaceTrackingSetting = async (): Promise<void> => {
 const setCopyForDiscordSetting = async (): Promise<void> => {
   const newValue = !copyForDiscord.value
   const res = await window.appApi.setCopyForDiscordSetting(newValue)
-  copyForDiscord.value = newValue
 
   if (res) {
+    copyForDiscord.value = newValue
     emit('notification', {
       type: 'success',
       title: 'Discord Copy Format Setting Updated'
@@ -122,9 +121,9 @@ const setCopyForDiscordSetting = async (): Promise<void> => {
 const setApplyConfigBufferSetting = async (): Promise<void> => {
   const newValue = !applyConfigBuffer.value
   const res = await window.appApi.setApplyConfigBufferSetting(newValue)
-  applyConfigBuffer.value = newValue
 
   if (res) {
+    applyConfigBuffer.value = newValue
     emit('notification', {
       type: 'success',
       title: 'Config Buffer Setting Updated'
@@ -222,6 +221,9 @@ onMounted(() => {
   getSaveFaceTrackingSetting()
   getCopyForDiscordSetting()
   getApplyConfigBufferSetting()
+  void window.appApi.getLowPerformanceModeSetting().then((value) => {
+    appStore.value.lowPerformanceMode = value
+  })
   paramUpdateRate()
   getExportedFileCount()
   intervalLogUpdate = window.setInterval(() => {
@@ -259,144 +261,187 @@ const emit = defineEmits(['notification'])
       v-bind="appStore.lowPerformanceMode ? {} : settingsScrollOverlayProps"
     >
       <div class="settings">
-        <Card>
-          <h2 class="settings__title">
-            Incoming: <span>{{ updateRate }}</span>
-          </h2>
-        </Card>
-        <div class="settings__cards-row settings__card-row--fit">
-          <Card additional-class="card--fit">
-            <div class="settings__content">
-              <div class="settings__card-content">
-                <Button
-                  label="Export All"
-                  :small="true"
-                  tooltip="Export all data to a file"
-                  @click="handleExport"
-                />
-                <Button
-                  label="Import All"
-                  :small="true"
-                  tooltip="Import all data from a file"
-                  @click="handleImport"
-                />
+        <div class="settings__row settings__row--three">
+          <section class="settings__card">
+            <div class="settings__heading">
+              <span class="settings__icon"><Icon name="database" :size="25" /></span>
+              <div>
+                <h2>Data Management</h2>
+                <p>Export or import all avatar data, configurations and settings.</p>
               </div>
             </div>
-          </Card>
-          <Card additional-class="card--fit">
-            <div class="settings__content">
-              <h2 class="settings__title">Export Location</h2>
-              <div class="settings__card-content">
-                <p>Full Exports: {{ exportedFiles.fullExports }}</p>
-                <p>Exported Avatars: {{ exportedFiles.avatarExports }}</p>
-                <p>Exported Configs: {{ exportedFiles.configExports }}</p>
-                <p>Total Size: {{ exportedFiles.totalSize }}</p>
-                <div class="settings__card-button-group">
-                  <Button
-                    label="Open Export Directory"
-                    :small="true"
-                    @click="openExportDirectory"
-                  />
-                </div>
+            <div class="settings__actions">
+              <button class="settings__action" @click="handleExport">
+                <Icon name="upload" />Export All
+              </button>
+              <button class="settings__action" @click="handleImport">
+                <Icon name="download" />Import All
+              </button>
+            </div>
+          </section>
+
+          <section class="settings__card">
+            <div class="settings__heading">
+              <span class="settings__icon"><Icon name="folder" :size="25" /></span>
+              <div><h2>Export Location</h2></div>
+            </div>
+            <dl class="settings__stats">
+              <div>
+                <dt>Full Exports</dt>
+                <dd>{{ exportedFiles.fullExports }}</dd>
+              </div>
+              <div>
+                <dt>Exported Avatars</dt>
+                <dd>{{ exportedFiles.avatarExports }}</dd>
+              </div>
+              <div>
+                <dt>Exported Configs</dt>
+                <dd>{{ exportedFiles.configExports }}</dd>
+              </div>
+              <div>
+                <dt>Total Size</dt>
+                <dd>{{ exportedFiles.totalSize }}</dd>
+              </div>
+            </dl>
+            <div class="settings__actions settings__actions--divider">
+              <button class="settings__action" @click="openExportDirectory">
+                <Icon name="folder" />Open Export Directory
+              </button>
+            </div>
+          </section>
+
+          <section class="settings__card">
+            <div class="settings__heading">
+              <span class="settings__icon"><Icon name="file" :size="25" /></span>
+              <div>
+                <h2>Log</h2>
+                <p>Log file size: {{ logFileSize }}</p>
               </div>
             </div>
-          </Card>
-          <Card additional-class="card--fit">
-            <div class="settings__content">
-              <h2 class="settings__title">Log</h2>
-              <div class="settings__card-content">
-                <p>
-                  Log file size: <span>{{ logFileSize }}</span>
-                </p>
-                <div class="settings__card-button-group">
-                  <Button label="Open Log Directory" :small="true" @click="openLogDirectory" />
-                  <Button
-                    label="Delete"
-                    :small="true"
-                    :error="true"
-                    tooltip="Delete Log"
-                    @click="deleteLogFile"
-                  />
-                </div>
-              </div>
+            <div class="settings__actions">
+              <button class="settings__action" @click="openLogDirectory">
+                <Icon name="folder" />Open Log Directory
+              </button>
+              <button class="settings__action settings__action--danger" @click="deleteLogFile">
+                <Icon name="trash" />Delete Log
+              </button>
             </div>
-          </Card>
-        </div>
-        <div class="settings__cards-row settings__card-row--fit">
-          <Card additional-class="card--fit">
-            <div class="settings__content">
-              <h2 class="settings__title">App</h2>
-              <div class="settings__card-content settings__card-content--buttons">
-                <Button
-                  :label="applyConfigBuffer ? 'Disable Config Buffer' : 'Enable Config Buffer'"
-                  :small="true"
-                  :hero="!applyConfigBuffer"
-                  :error="applyConfigBuffer"
-                  tooltip="If your avatar has issues applying some saved parameters, enabling this may help"
-                  @click="setApplyConfigBufferSetting"
-                />
-                <Button
-                  :label="
-                    copyForDiscord ? 'Disable Discord Copy Format' : 'Enable Discord Copy Format'
-                  "
-                  :small="true"
-                  :hero="!copyForDiscord"
-                  :error="copyForDiscord"
-                  tooltip="If the copied share code should be put in a Discord codeblock"
-                  @click="setCopyForDiscordSetting"
-                />
-                <Button
-                  :label="
-                    appStore.lowPerformanceMode
-                      ? 'Disable Low Performance Mode'
-                      : 'Enable Low Performance Mode'
-                  "
-                  :small="true"
-                  :hero="!appStore.lowPerformanceMode"
-                  :error="appStore.lowPerformanceMode"
-                  tooltip="If enabled, the application will run in low performance mode"
-                  @click="setLowPerformanceModeSetting"
-                />
-              </div>
-            </div>
-          </Card>
-          <Card additional-class="card--fit">
-            <div class="settings__content">
-              <h2 class="settings__title">Database</h2>
-              <div class="settings__card-content settings__card-content--buttons">
-                <Button
-                  :label="
-                    saveFaceTracking ? 'Disable Save Face Tracking' : 'Enable Save Face Tracking'
-                  "
-                  :small="true"
-                  :hero="!saveFaceTracking"
-                  :error="saveFaceTracking"
-                  tooltip="If toggled face tracking should be saved or not"
-                  @click="setSaveFaceTrackingSetting"
-                />
-                <Button
-                  label="Delete Database"
-                  :small="true"
-                  :error="true"
-                  tooltip="Will purge the database, you will keep your exported files"
-                  @click="deleteDatabase"
-                />
-              </div>
-            </div>
-          </Card>
+          </section>
         </div>
 
-        <Card>
-          <div class="settings__content">
-            <h2 class="settings__title">Terms & Information</h2>
-            <div class="settings__card-content">
-              <div class="settings__card-button-group">
-                <Button label="Terms of Service" :small="true" @click="openTerms" />
-                <Button label="Privacy Policy" :small="true" @click="openPrivacy" />
+        <div class="settings__row settings__row--two">
+          <section class="settings__card">
+            <div class="settings__heading">
+              <span class="settings__icon"><Icon name="gear" :size="25" /></span>
+              <div>
+                <h2>Application</h2>
+                <p>Application behavior and performance settings. Incoming: {{ updateRate }}</p>
               </div>
             </div>
+            <div class="settings__toggle-row">
+              <div>
+                <strong>Enable Config Buffer</strong
+                ><small>Temporarily store configuration data to improve stability.</small>
+              </div>
+              <button
+                class="settings__switch"
+                type="button"
+                role="switch"
+                :aria-checked="applyConfigBuffer"
+                aria-label="Enable Config Buffer"
+                @click="setApplyConfigBufferSetting"
+              >
+                <span />
+              </button>
+            </div>
+            <div class="settings__toggle-row">
+              <div>
+                <strong>Disable Discord Copy Format</strong
+                ><small>Use plain text when copying to clipboard.</small>
+              </div>
+              <button
+                class="settings__switch"
+                type="button"
+                role="switch"
+                :aria-checked="!copyForDiscord"
+                aria-label="Disable Discord Copy Format"
+                @click="setCopyForDiscordSetting"
+              >
+                <span />
+              </button>
+            </div>
+            <div class="settings__toggle-row">
+              <div>
+                <strong>Disable Low Performance Mode</strong
+                ><small>Keep full performance features enabled.</small>
+              </div>
+              <button
+                class="settings__switch"
+                type="button"
+                role="switch"
+                :aria-checked="!appStore.lowPerformanceMode"
+                aria-label="Disable Low Performance Mode"
+                @click="setLowPerformanceModeSetting"
+              >
+                <span />
+              </button>
+            </div>
+          </section>
+
+          <section class="settings__card">
+            <div class="settings__heading">
+              <span class="settings__icon"><Icon name="database" :size="25" /></span>
+              <div>
+                <h2>Database</h2>
+                <p>Saved data and tracking options.</p>
+              </div>
+            </div>
+            <div class="settings__toggle-row">
+              <div>
+                <strong>Enable Save Face Tracking</strong
+                ><small>Save face tracking data with configurations.</small>
+              </div>
+              <button
+                class="settings__switch"
+                type="button"
+                role="switch"
+                :aria-checked="saveFaceTracking"
+                aria-label="Enable Save Face Tracking"
+                @click="setSaveFaceTrackingSetting"
+              >
+                <span />
+              </button>
+            </div>
+            <button
+              class="settings__action settings__action--danger settings__action--delete-database"
+              @click="deleteDatabase"
+            >
+              <Icon name="trash" :size="23" />
+              <span
+                ><strong>Delete Database</strong
+                ><small>Permanently delete saved data, configurations and settings.</small></span
+              >
+            </button>
+          </section>
+        </div>
+
+        <section class="settings__card settings__card--terms">
+          <div class="settings__heading">
+            <span class="settings__icon"><Icon name="file" :size="25" /></span>
+            <div>
+              <h2>Terms &amp; Information</h2>
+              <p>View the application's terms of service and privacy policy.</p>
+            </div>
           </div>
-        </Card>
+          <div class="settings__actions">
+            <button class="settings__action" @click="openTerms">
+              Terms of Service<Icon name="external" :size="17" />
+            </button>
+            <button class="settings__action" @click="openPrivacy">
+              Privacy Policy<Icon name="external" :size="17" />
+            </button>
+          </div>
+        </section>
       </div>
     </component>
   </div>
@@ -404,70 +449,220 @@ const emit = defineEmits(['notification'])
 
 <style lang="scss" scoped>
 .settings {
-  align-items: center;
-  display: flex;
-  flex-flow: column nowrap;
-  gap: 36px;
-  justify-content: center;
-  padding-bottom: 22px;
-  padding-top: 22px;
+  display: grid;
+  gap: 22px;
   width: 100%;
+  padding: 4px 2px 24px;
+  color: var(--asm-text);
 
   &__wrapper {
     display: flex;
-    flex-flow: column;
-    gap: 28px;
+    flex-direction: column;
     height: 100%;
     overflow: hidden;
-    width: 100%;
-
-    &--low-performance {
-      overflow: auto;
-
-      .settings__cards-row {
-        flex-wrap: wrap;
-      }
-    }
   }
-
-  &__content {
+  &__wrapper > * {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+  &__wrapper--low-performance {
+    overflow: auto;
+  }
+  &__row {
+    display: grid;
+    gap: 22px;
+    min-width: 0;
+  }
+  &__row--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  &__row--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  &__card {
     display: flex;
-    flex-flow: column;
-    gap: 18px;
+    flex-direction: column;
+    min-width: 0;
+    gap: 22px;
+    padding: 24px;
+    border: 1px solid var(--color--card-glass-border);
+    border-radius: 14px;
+    background: var(--asm-panel);
   }
-
-  &__title {
-    font-size: 1.1rem;
-    font-weight: 600;
+  &__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    min-width: 0;
+  }
+  &__heading h2 {
+    margin: 5px 0 8px;
+    font-size: 1.12rem;
+    font-weight: 700;
+  }
+  &__heading p {
+    margin: 0;
+    color: var(--asm-muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+  &__icon {
+    display: inline-flex;
+    flex: 0 0 52px;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    border-radius: 10px;
+    background: var(--color--primary-a6);
+  }
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: auto;
+  }
+  &__actions--divider {
+    padding-top: 16px;
+    border-top: 1px solid var(--color--card-glass-border);
+  }
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--color--low-button);
+    color: var(--asm-text);
+    cursor: pointer;
+  }
+  &__action:hover {
+    background: var(--color--low-button-hover);
+  }
+  &__action--danger {
+    background: var(--color--low-error);
+  }
+  &__action--danger:hover {
+    background: var(--color--low-error-hover);
+  }
+  &__action:active {
+    filter: brightness(0.85);
+  }
+  &__stats {
+    display: grid;
+    gap: 8px;
     margin: 0;
   }
-
-  &__cards-row {
+  &__stats > div {
     display: flex;
-    flex-flow: row;
-    gap: 28px;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  &__stats dt,
+  &__stats dd {
+    margin: 0;
+  }
+  &__stats dd {
+    color: var(--asm-muted);
+  }
+  &__toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding-top: 13px;
+    border-top: 1px solid var(--color--card-glass-border);
+  }
+  &__toggle-row strong,
+  &__toggle-row small {
+    display: block;
+  }
+  &__toggle-row strong {
+    font-weight: 600;
+  }
+  &__toggle-row small {
+    margin-top: 5px;
+    color: var(--asm-muted);
+    font-size: 0.79rem;
+    line-height: 1.35;
+  }
+  &__switch {
+    position: relative;
+    flex: 0 0 56px;
+    width: 56px;
+    height: 32px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--color--primary-a1);
+    cursor: pointer;
+  }
+  &__switch[aria-checked='true'] {
+    background: var(--color--low-button);
+  }
+  &__switch span {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--asm-text);
+    transition: transform 0.18s ease;
+  }
+  &__switch[aria-checked='true'] span {
+    transform: translateX(24px);
+  }
+  &__switch:focus-visible,
+  &__action:focus-visible {
+    outline: 2px solid var(--color--primary-a3);
+    outline-offset: 2px;
+  }
+  &__action--delete-database {
+    justify-content: flex-start;
     width: 100%;
-
-    &--fit {
-      height: fit-content;
-    }
+    margin-top: auto;
+    text-align: left;
   }
-
-  &__card-content {
-    display: flex;
-    flex-flow: column;
-    gap: 16px;
-
-    &--buttons {
-      align-items: center;
-    }
+  &__action--delete-database span,
+  &__action--delete-database small {
+    display: block;
   }
-
-  &__card-button-group {
-    display: flex;
-    flex-flow: row;
-    gap: 8px;
+  &__action--delete-database small {
+    margin-top: 3px;
+    opacity: 0.8;
+    font-size: 0.78rem;
+  }
+  &__card--terms {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  &__card--terms .settings__actions {
+    margin-top: 0;
+  }
+}
+@media (max-width: 1100px) {
+  .settings__row--three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .settings__row--three .settings__card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 750px) {
+  .settings__row--three,
+  .settings__row--two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings__row--three .settings__card:last-child {
+    grid-column: auto;
+  }
+  .settings__card--terms {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

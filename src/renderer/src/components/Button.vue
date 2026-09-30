@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { appStorage } from '../composables/appStorage'
+import Icon from './Icon.vue'
 
 const appStore = appStorage()
 const lowPerformanceMode = computed(() => appStore.value.lowPerformanceMode)
@@ -11,6 +12,10 @@ defineProps({
     default: false
   },
   label: {
+    type: String,
+    default: ''
+  },
+  icon: {
     type: String,
     default: ''
   },
@@ -52,6 +57,7 @@ defineProps({
     ]"
   >
     <button class="button">
+      <Icon v-if="icon" :name="icon" :size="18" />
       {{ label }}
     </button>
     <span v-if="tooltip" class="button__tooltip">{{ tooltip }}</span>
@@ -63,6 +69,9 @@ defineProps({
 @use '../styles/scss/color.scss' as colors;
 
 .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 5px 12px;
 
   &__wrapper {

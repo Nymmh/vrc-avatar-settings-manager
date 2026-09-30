@@ -145,7 +145,7 @@ const emit = defineEmits(['notification', 'uploaded'])
 
 <template>
   <div class="load-file">
-    <Button label="Load From File" @click="handleLoad" />
+    <Button label="Load From File" icon="folder" @click="handleLoad" />
     <p v-if="loadedConfigName" class="load-file__loaded-config">
       Loaded config: <span class="load-file__loaded-config__file">{{ loadedConfigName }}</span>
     </p>

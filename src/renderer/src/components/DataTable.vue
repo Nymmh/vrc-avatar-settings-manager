@@ -13,6 +13,8 @@ import { appStorage } from '../composables/appStorage'
 
 type OpResult = { success: boolean; message?: string }
 type FailedOperation<T = string | number> = { id: T; action: string }
+type SavedConfig = NonNullable<Awaited<ReturnType<typeof window.avatarApi.getAllSaved>>>[number]
+type Preset = NonNullable<Awaited<ReturnType<typeof window.avatarApi.getAllPresets>>>[number]
 
 const appStore = appStorage()
 
@@ -26,6 +28,25 @@ const expandedAvatarRow = ref<string | null>(null)
 const expandedConfigRow = ref<number | null>(null)
 const expandedActionGroups = ref<Set<string>>(new Set())
 const searchAvatar = ref('')
+const selectedAvatarId = ref<string | null>(null)
+const editedAvatarId = ref('')
+const showManagement = ref(false)
+const searchableConfigs = ref<SavedConfig[]>([])
+const searchablePresets = ref<Preset[]>([])
+const detailConfigs = computed(() =>
+  searchableConfigs.value.filter((config) => {
+    if (config.avatarId !== selectedAvatarId.value) return false
+    const query = searchAvatar.value.trim().toLowerCase()
+    if (!query) return true
+    const avatar = allAvatars.value.find((entry) => entry.avatarId === selectedAvatarId.value)
+    return [avatar?.name, avatar?.avatarId, config.name].some((value) =>
+      value?.toLowerCase().includes(query)
+    )
+  })
+)
+const selectedAvatar = computed(() =>
+  allAvatars.value.find((avatar) => avatar.avatarId === selectedAvatarId.value)
+)
 const renderedAvatarCount = ref(20)
 const dataTableRoot = ref<HTMLElement | null>(null)
 const scrollContainer = ref<{ osInstance: () => OverlayScrollbars | null } | null>(null)
@@ -93,7 +114,12 @@ const filteredAvatars = computed(() => {
   const query = searchAvatar.value.toLowerCase()
   return allAvatars.value.filter((avatar) => {
     return (
-      avatar.avatarId?.toLowerCase().includes(query) || avatar.name?.toLowerCase().includes(query)
+      avatar.avatarId?.toLowerCase().includes(query) ||
+      avatar.name?.toLowerCase().includes(query) ||
+      searchableConfigs.value.some(
+        (config) =>
+          config.avatarId === avatar.avatarId && config.name?.toLowerCase().includes(query)
+      )
     )
   })
 })
@@ -236,6 +262,40 @@ const getAvatars = async (): Promise<void> => {
   failedConfigUpdates.value = []
   failedPresetUpdates.value = []
   allAvatars.value = await window.avatarApi.getAllAvatars()
+  searchableConfigs.value = (await window.avatarApi.getAllSaved()) || []
+  searchablePresets.value = (await window.avatarApi.getAllPresets()) || []
+  if (!allAvatars.value.some((avatar) => avatar.avatarId === selectedAvatarId.value)) {
+    selectedAvatarId.value = allAvatars.value[0]?.avatarId || null
+  }
+  if (selectedAvatarId.value) {
+    allConfigs.value = searchableConfigs.value.filter(
+      (config) => config.avatarId === selectedAvatarId.value
+    )
+    allPresets.value = searchablePresets.value.filter(
+      (preset) => preset.avatarId === selectedAvatarId.value
+    )
+    editedAvatarId.value = selectedAvatarId.value
+  }
+}
+
+const selectAvatar = (avatarId: string): void => {
+  selectedAvatarId.value = avatarId
+  editedAvatarId.value = avatarId
+  allConfigs.value = searchableConfigs.value.filter((config) => config.avatarId === avatarId)
+  allPresets.value = searchablePresets.value.filter((preset) => preset.avatarId === avatarId)
+}
+
+const applyDetailConfig = async (config: SavedConfig): Promise<void> => {
+  if (!config.id) return
+  const result = await window.avatarApi.applyConfig(config.id)
+  pushNotification(result, 'Preset applied', 'Preset application failed')
+}
+
+const deleteDetailConfig = async (config: SavedConfig): Promise<void> => {
+  if (!config.id) return
+  const result = await window.avatarApi.deleteConfig(config.id)
+  pushNotification(result, 'Preset deleted', 'Delete failed')
+  if (result.success) await getAvatars()
 }
 
 const getConfigsByAvatar = async (avatarId: string): Promise<void> => {
@@ -339,7 +399,7 @@ const handleAvatarUpdate = async (avatarId: string): Promise<void> => {
     avatarIdInput?: string
     name: string
   }
-  const updatedAvatarId = avatar.avatarIdInput || avatar.avatarId
+  const updatedAvatarId = editedAvatarId.value || avatar.avatarId
 
   clearFailed(failedAvatarUpdates.value, avatarId)
 
@@ -364,7 +424,7 @@ const handleAvatarUpdate = async (avatarId: string): Promise<void> => {
     failedAvatarUpdates.value
   )
 
-  getAvatars()
+  if (res.success) await getAvatars()
 }
 
 const handleAvatarExport = async (avatarId: string): Promise<void> => {
@@ -393,6 +453,7 @@ const handleAvatarDelete = async (avatarId: string): Promise<void> => {
 
   if (res.success) {
     allAvatars.value = allAvatars.value.filter((a) => a.avatarId !== avatarId)
+    await getAvatars()
   }
 }
 
@@ -451,6 +512,7 @@ const handleConfigUpdate = async (configId: number): Promise<void> => {
     'update',
     failedConfigUpdates.value
   )
+  if (res.success) await getAvatars()
 }
 
 const handleCreatePreset = async (configId: number): Promise<void> => {
@@ -478,9 +540,7 @@ const handleCreatePreset = async (configId: number): Promise<void> => {
     failedConfigUpdates.value
   )
 
-  if (res.success && config.avatarId) {
-    await getConfigsByAvatar(config.avatarId)
-  }
+  if (res.success) await getAvatars()
 }
 
 const handleConfigReplace = async (configId: number): Promise<void> => {
@@ -498,9 +558,7 @@ const handleConfigReplace = async (configId: number): Promise<void> => {
     failedConfigUpdates.value
   )
 
-  if (res.success && config.avatarId) {
-    await getConfigsByAvatar(config.avatarId)
-  }
+  if (res.success) await getAvatars()
 }
 
 const handleConfigDelete = async (configId: number): Promise<void> => {
@@ -525,6 +583,7 @@ const handleConfigDelete = async (configId: number): Promise<void> => {
     if (index !== -1) {
       allConfigs.value.splice(index, 1)
     }
+    await getAvatars()
   }
 }
 
@@ -570,6 +629,7 @@ const handlePresetUpdate = async (presetId: number): Promise<void> => {
     'update',
     failedPresetUpdates.value
   )
+  if (res.success) await getAvatars()
 }
 
 const handlePresetDelete = async (presetId: number): Promise<void> => {
@@ -586,7 +646,7 @@ const handlePresetDelete = async (presetId: number): Promise<void> => {
   )
 
   if (res.success) {
-    await getConfigsByAvatar(preset.avatarId)
+    await getAvatars()
   }
 }
 
@@ -628,7 +688,6 @@ const refreshListen = (): void => {
 onMounted(() => {
   getAvatars()
   refreshListen()
-  bindAvatarInfiniteScroll()
 })
 
 onUnmounted(() => {
@@ -662,20 +721,49 @@ watch(
 watch(
   () => filteredAvatars.value.length,
   () => {
+    if (!filteredAvatars.value.some((avatar) => avatar.avatarId === selectedAvatarId.value)) {
+      const firstId = filteredAvatars.value[0]?.avatarId
+      if (firstId) selectAvatar(firstId)
+      else selectedAvatarId.value = null
+    }
     resetAvatarRenderWindow()
     nextTick(() => {
-      ensureScrollableContent()
-      bindAvatarInfiniteScroll()
+      if (showManagement.value) {
+        ensureScrollableContent()
+        bindAvatarInfiniteScroll()
+      }
     })
   }
 )
 
+watch(searchAvatar, () => {
+  if (!filteredAvatars.value.some((avatar) => avatar.avatarId === selectedAvatarId.value)) {
+    const firstId = filteredAvatars.value[0]?.avatarId
+    if (firstId) selectAvatar(firstId)
+    else selectedAvatarId.value = null
+  }
+})
+
 watch(
   () => appStore.value.lowPerformanceMode,
   () => {
-    bindAvatarInfiniteScroll()
+    if (showManagement.value) bindAvatarInfiniteScroll()
   }
 )
+
+watch(showManagement, (open) => {
+  if (open) {
+    void bindAvatarInfiniteScroll()
+  } else {
+    cleanupScrollListener?.()
+    cleanupScrollListener = null
+    currentScrollTarget = null
+    if (bindScrollRetryTimeout) {
+      clearTimeout(bindScrollRetryTimeout)
+      bindScrollRetryTimeout = null
+    }
+  }
+})
 
 const emit = defineEmits(['notification'])
 </script>
@@ -685,12 +773,157 @@ const emit = defineEmits(['notification'])
     ref="dataTableRoot"
     :class="['data-table', { 'data-table--low-performance': appStore.lowPerformanceMode }]"
   >
+    <div v-if="!showManagement" class="data-browser">
+      <div class="data-browser__header">
+        <div>
+          <p class="data-browser__eyebrow">Library</p>
+          <h1>All Data</h1>
+        </div>
+        <label class="data-browser__search">
+          <span class="sr-only">Search avatars, configurations, and presets</span>
+          <input v-model="searchAvatar" type="search" placeholder="Search saved data" />
+        </label>
+      </div>
+      <div class="data-browser__body">
+        <div class="data-browser__avatars">
+          <p class="data-browser__caption">
+            Saved avatars <span>{{ filteredAvatars.length }}</span>
+          </p>
+          <div class="data-browser__avatar-list">
+            <button
+              v-for="avatar in filteredAvatars"
+              :key="avatar.avatarId"
+              class="data-browser__avatar"
+              :class="{ 'is-selected': selectedAvatarId === avatar.avatarId }"
+              @click="selectAvatar(avatar.avatarId)"
+            >
+              <span>{{ avatar.name || 'Unnamed avatar' }}</span
+              ><span aria-hidden="true">›</span>
+            </button>
+            <p v-if="!filteredAvatars.length" class="data-browser__empty">
+              No saved avatars match your search.
+            </p>
+          </div>
+        </div>
+        <div class="data-browser__detail">
+          <template v-if="selectedAvatar">
+            <div class="data-browser__detail-head">
+              <div>
+                <p class="data-browser__eyebrow">Selected avatar</p>
+                <h2>{{ selectedAvatar.name }}</h2>
+                <p class="data-browser__avatar-id">{{ selectedAvatar.avatarId }}</p>
+              </div>
+            </div>
+            <p class="data-browser__caption">
+              Presets <span>{{ detailConfigs.length }}</span>
+            </p>
+            <div class="data-browser__preset-list">
+              <div v-for="config in detailConfigs" :key="config.id" class="data-browser__preset">
+                <div>
+                  <strong>{{ config.name }}</strong>
+                </div>
+                <div class="data-browser__preset-actions">
+                  <button v-if="appStore.avatarId" @click="applyDetailConfig(config)">Apply</button>
+                  <button class="data-browser__delete" @click="deleteDetailConfig(config)">
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <p v-if="!detailConfigs.length" class="data-browser__empty">
+                No presets for this avatar{{ searchAvatar ? ' match your search' : '' }}. Saved
+                configurations are available below.
+              </p>
+            </div>
+            <details class="data-browser__tools">
+              <summary>Avatar and configuration tools</summary>
+              <div class="data-browser__tool-group">
+                <label>Avatar name <input v-model="selectedAvatar.name" type="text" /></label>
+                <label>Avatar ID <input v-model="editedAvatarId" type="text" /></label>
+                <div class="data-browser__tool-actions">
+                  <button
+                    class="data-browser__warning"
+                    @click="handleAvatarUpdate(selectedAvatar.avatarId)"
+                  >
+                    Save changes
+                  </button>
+                  <button @click="handleAvatarExport(selectedAvatar.avatarId)">
+                    Export avatar
+                  </button>
+                  <button
+                    class="data-browser__delete"
+                    @click="handleAvatarDelete(selectedAvatar.avatarId)"
+                  >
+                    Delete avatar
+                  </button>
+                </div>
+              </div>
+              <p class="data-browser__caption">
+                Saved configurations <span>{{ allConfigs?.length || 0 }}</span>
+              </p>
+              <details
+                v-for="config in allConfigs || []"
+                :key="config.id"
+                class="data-browser__tool-group"
+              >
+                <summary>{{ config.name }}</summary>
+                <label>Configuration name <input v-model="config.name" type="text" /></label>
+                <label class="data-browser__checkbox"
+                  >NSFW <input v-model="config.nsfw" type="checkbox"
+                /></label>
+                <p class="data-browser__caption">From file: {{ config.fromFile ? 'Yes' : 'No' }}</p>
+                <div class="data-browser__tool-actions">
+                  <button v-if="appStore.avatarId" @click="handleConfigApply(config.id!)">
+                    Apply
+                  </button>
+                  <button @click="handleConfigExport(config.id!)">Export</button>
+                  <button v-if="!config.isPreset" @click="handleCreatePreset(config.id!)">
+                    Create preset
+                  </button>
+                  <button class="data-browser__warning" @click="handleConfigUpdate(config.id!)">
+                    Save changes
+                  </button>
+                  <button class="data-browser__warning" @click="handleConfigReplace(config.id!)">
+                    Replace params from file
+                  </button>
+                  <button class="data-browser__delete" @click="handleConfigDelete(config.id!)">
+                    Delete config
+                  </button>
+                </div>
+                <div
+                  v-for="preset in allPresets.filter((entry) => entry.forUqid === config.uqid)"
+                  :key="preset.id"
+                  class="data-browser__tool-group"
+                >
+                  <label>Preset name <input v-model="preset.name" type="text" /></label>
+                  <label
+                    >Slot <input v-model.number="preset.unityParameter" type="number" min="1"
+                  /></label>
+                  <div class="data-browser__tool-actions">
+                    <button class="data-browser__warning" @click="handlePresetUpdate(preset.id!)">
+                      Update preset details
+                    </button>
+                  </div>
+                </div>
+              </details>
+            </details>
+          </template>
+          <p v-else class="data-browser__empty">Select an avatar to see its presets.</p>
+        </div>
+      </div>
+      <div class="data-browser__footer">
+        <LoadAvatarFile @uploaded="getAvatars" @notification="$emit('notification', $event)" />
+      </div>
+    </div>
     <component
       :is="appStore.lowPerformanceMode ? 'div' : OverlayScrollbarsComponent"
+      v-else
       ref="scrollContainer"
       v-bind="appStore.lowPerformanceMode ? {} : dataTableScrollOverlayProps"
     >
       <div class="data-table__content">
+        <button class="data-browser__back" @click="showManagement = false">
+          ← Back to avatars
+        </button>
         <Card>
           <LoadAvatarFile @uploaded="getAvatars" @notification="$emit('notification', $event)" />
         </Card>
@@ -1303,6 +1536,345 @@ const emit = defineEmits(['notification'])
     font-size: 0.9rem;
     opacity: 0.8;
     text-align: center;
+  }
+}
+
+.data-browser {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  padding: clamp(18px, 3vw, 30px);
+  border-radius: 23px;
+  background: var(--asm-panel);
+  color: var(--asm-text);
+
+  &__header,
+  &__detail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+
+  &__header {
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  &__header h1,
+  &__detail-head h2 {
+    display: block;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  &__detail-head h2 {
+    font-size: 1.25rem;
+  }
+  &__eyebrow {
+    margin: 0 0 7px;
+    color: var(--asm-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+  &__search {
+    min-width: min(100%, 230px);
+  }
+  &__search input {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 13px;
+    border: 1px solid var(--color--card-glass-border);
+    border-radius: 12px;
+    background: var(--asm-control);
+    color: var(--asm-text);
+  }
+  &__search input::placeholder {
+    color: var(--asm-muted);
+  }
+  &__search input:focus,
+  &__tool-group input:focus {
+    outline: 1px solid var(--color--primary-a3);
+  }
+  &__body {
+    display: grid;
+    grid-template-columns: minmax(170px, 32%) minmax(0, 1fr);
+    gap: clamp(16px, 3vw, 34px);
+    flex: 1;
+    min-height: 0;
+  }
+  &__avatars,
+  &__detail {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  &__caption {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 0 12px;
+    color: var(--asm-muted);
+    font-size: 0.82rem;
+  }
+  &__avatar-list {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 10px;
+    scrollbar-color: var(--color--secondary-a1) var(--asm-panel);
+  }
+  &__avatar-list::-webkit-scrollbar,
+  &__preset-list::-webkit-scrollbar {
+    width: 10px;
+  }
+  &__avatar-list::-webkit-scrollbar-thumb,
+  &__preset-list::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: var(--color--secondary-a1);
+  }
+  &__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 58px;
+    width: 100%;
+    gap: 10px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 17px;
+    background: var(--asm-control);
+    color: var(--asm-text);
+    text-align: left;
+    box-shadow: 0 3px 6px #0002;
+  }
+  &__avatar:hover {
+    background: var(--asm-control-hover);
+  }
+  &__avatar.is-selected {
+    background: var(--asm-selected);
+  }
+  &__avatar span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  &__avatar span:last-child {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+  &__detail {
+    padding: clamp(18px, 2vw, 26px);
+    border-radius: 18px;
+    background: var(--color--low-card-glass-bg);
+    border: 1px solid var(--color--card-glass-border);
+  }
+  &__detail-head {
+    margin-bottom: 24px;
+  }
+  &__avatar-id {
+    margin: 7px 0 0;
+    color: var(--asm-muted);
+    font-size: 0.77rem;
+    overflow-wrap: anywhere;
+  }
+  &__manage,
+  &__back,
+  &__preset-actions button {
+    padding: 8px 11px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--color--low-button);
+    color: var(--asm-text);
+    white-space: nowrap;
+  }
+  &__manage:hover,
+  &__back:hover,
+  &__preset-actions button:hover {
+    background: var(--color--low-button-hover);
+  }
+  &__preset-list {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  &__detail {
+    overflow-y: auto;
+    scrollbar-color: var(--color--secondary-a1) var(--asm-panel);
+  }
+  &__preset-list {
+    max-height: min(36vh, 350px);
+    flex: 0 1 auto;
+    scrollbar-color: var(--color--secondary-a1) var(--asm-panel);
+  }
+  &__tools {
+    margin-top: 16px;
+    border-top: 1px solid var(--color--card-glass-border);
+    padding-top: 14px;
+  }
+  &__tools > summary,
+  &__tool-group > summary {
+    cursor: pointer;
+    color: var(--asm-text);
+  }
+  &__tool-group {
+    display: grid;
+    gap: 10px;
+    margin: 14px 0;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--color--card-glass-bg);
+  }
+  &__tool-group label {
+    display: grid;
+    gap: 5px;
+    color: var(--asm-muted);
+    font-size: 0.85rem;
+  }
+  &__tool-group input {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--color--card-glass-border);
+    border-radius: 8px;
+    background: var(--asm-control);
+    color: var(--asm-text);
+  }
+  &__tool-group .data-browser__checkbox {
+    display: flex;
+    align-items: center;
+  }
+  &__checkbox input {
+    width: auto;
+  }
+  &__tool-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  &__tool-actions button {
+    padding: 8px 11px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--color--low-button);
+    color: var(--asm-text);
+  }
+  &__tool-actions .data-browser__warning {
+    background: var(--color--low-warning);
+  }
+  &__tool-actions .data-browser__delete {
+    background: var(--color--low-error);
+  }
+  &__tool-actions button:hover {
+    background: var(--color--low-button-hover);
+  }
+  &__tool-actions .data-browser__warning:hover {
+    background: var(--color--low-warning-hover);
+  }
+  &__tool-actions .data-browser__delete:hover,
+  &__preset-actions .data-browser__delete:hover {
+    background: var(--color--low-error-hover);
+  }
+  &__tool-actions button:active,
+  &__preset-actions button:active,
+  &__avatar:active {
+    filter: brightness(0.85);
+  }
+  &__preset {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 13px;
+    background: var(--color--card-glass-bg);
+    border: 1px solid var(--color--card-glass-border);
+  }
+  &__preset > div:first-child {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+  }
+  &__preset strong {
+    font-weight: 600;
+  }
+  &__preset span {
+    color: var(--asm-muted);
+    font-size: 0.8rem;
+  }
+  &__preset-actions {
+    display: flex;
+    gap: 7px;
+  }
+  &__preset-actions .data-browser__delete {
+    background: var(--asm-danger);
+  }
+  &__empty {
+    color: var(--asm-muted);
+    line-height: 1.5;
+  }
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+  &__footer :deep(.load-avatar-file) {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  &__footer :deep(.button__wrapper) {
+    background: var(--color--low-button);
+    border-radius: 12px;
+  }
+  &__footer :deep(.button__wrapper:hover) {
+    background: var(--color--low-button-hover);
+  }
+  &__back {
+    align-self: flex-start;
+    margin-bottom: 8px;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 800px) {
+  .data-browser__body {
+    grid-template-columns: minmax(125px, 38%) minmax(0, 1fr);
+    gap: 12px;
+  }
+  .data-browser__detail {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .data-browser__body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(130px, 30%) minmax(0, 1fr);
+  }
+  .data-browser__avatar-list {
+    gap: 6px;
+  }
+  .data-browser__avatar {
+    min-height: 42px;
   }
 }
 </style>

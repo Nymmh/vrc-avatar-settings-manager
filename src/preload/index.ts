@@ -40,6 +40,7 @@ const appApi = {
   isVRChatRunning: (): Promise<boolean> => {
     return ipcRenderer.invoke('isVRChatRunning')
   },
+  getOscStats: (): Promise<{ received: number; sent: number }> => ipcRenderer.invoke('getOscStats'),
   onVRChatStatusChanged: (meowback: (data: { isRunning: boolean }) => void): (() => void) => {
     const handler = (_event: IpcRendererEvent, data: { isRunning: boolean }): void => meowback(data)
     ipcRenderer.on('vrchat-status-changed', handler)
@@ -137,10 +138,7 @@ const avatarApi = {
     ipcRenderer.invoke('deleteConfig', id),
   getAllPresets: async (): Promise<avatarPresetsInterface[] | null> =>
     ipcRenderer.invoke('getAllPresets'),
-  applyPresetFromApp: async (
-    avatarId: string,
-    unityParameter: number
-  ): Promise<{ success: boolean }> =>
+  applyPresetFromApp: async (avatarId: string, unityParameter: number): Promise<boolean> =>
     ipcRenderer.invoke('applyPresetFromApp', avatarId, unityParameter),
   updatePresetFromApp: async (
     id: number,
@@ -187,7 +185,8 @@ const avatarApi = {
   applyCopiedCode: async (): Promise<exportConfigInterface> =>
     ipcRenderer.invoke('applyCopiedCode'),
   copyAvatarId: async (): Promise<{ success: boolean }> => ipcRenderer.invoke('copyAvatarId'),
-  randomParams: async (): Promise<{ success: boolean }> => ipcRenderer.invoke('randomParams')
+  randomParams: async (): Promise<{ success: boolean; cancelled?: boolean }> =>
+    ipcRenderer.invoke('randomParams')
 }
 
 if (process.contextIsolated) {

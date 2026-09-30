@@ -1,620 +1,887 @@
 <script setup lang="ts">
-import { onMounted, ref, toRaw } from 'vue'
+import { computed, onMounted, onUnmounted, ref, toRaw } from 'vue'
 import { useNotification } from '@kyvg/vue3-notification'
-import Button from './components/Button.vue'
-import Footer from './components/Footer.vue'
-import InputCheckbox from './components/InputCheckbox.vue'
-import InputSelect from './components/InputSelect.vue'
-import InputText from './components/InputText.vue'
-import LoadFile from './components/LoadFile.vue'
-import Menu from './components/Menu.vue'
-import Waiting from './components/Waiting.vue'
-import Card from './components/Card.vue'
-import PasteCode from './components/PasteCode.vue'
 import AllData from './views/AllData.vue'
 import Settings from './views/Settings.vue'
 import Privacy from './views/Privacy.vue'
 import Terms from './views/Terms.vue'
-import { InputSelectInterface } from './types/InputSelectInterface'
-import type { avatarConfigType } from '../../types/avatarConfigType'
-import { NotificationInterface } from './types/notificationInterface'
-import { savedNamesType } from './types/savedNamesInterface'
+import Waiting from './components/Waiting.vue'
+import LoadFile from './components/LoadFile.vue'
+import Icon from './components/Icon.vue'
 import { appStorage } from './composables/appStorage'
+import { handleChangeView } from './composables/changeView'
+import type { avatarConfigType } from '../../types/avatarConfigType'
+import type { NotificationInterface } from './types/notificationInterface'
 import 'overlayscrollbars/overlayscrollbars.css'
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
+import './styles/global.scss'
+
+type SavedConfig = NonNullable<Awaited<ReturnType<typeof window.avatarApi.getAllSaved>>>[number]
 
 const appStore = appStorage()
 const { notify } = useNotification()
-
-// Avatar state
-const showAvatarFoundFileMsg = ref(false)
 const avatarConfig = ref<avatarConfigType | null>(null)
-const holdSaveName = ref(false)
-
-// Save state
+const avatarName = computed(() => avatarConfig.value?.name || 'Current Avatar')
 const saveName = ref('')
-const saveNameError = ref('')
-const saveMessage = ref('')
-const saveSuccess = ref(false)
-const NSFWValue = ref(false)
-const NSFWError = ref('')
+const holdSaveName = ref(false)
+const nsfw = ref(false)
+const savedConfigs = ref<SavedConfig[]>([])
+const selectedPresetId = ref('')
+const vrchatRunning = ref(false)
+const oscStats = ref({ received: 0, sent: 0 })
+const version = ref('')
+let statusTimer: number | undefined
+let statsTimer: number | undefined
+const cleanup: Array<() => void> = []
 
-// Load/Apply state
-const configSelectValue = ref('')
-const configSelectOptions = ref<InputSelectInterface[]>([])
+const currentConfigs = computed(() =>
+  savedConfigs.value.filter((config) => config.avatarId === appStore.value.avatarId)
+)
+const selectedPreset = computed(() =>
+  currentConfigs.value.find((config) => String(config.id) === selectedPresetId.value)
+)
 
-// IPC cleanup
-let cleanupAvatarId: (() => void) | null = null
-let cleanupFoundAvatarFile: (() => void) | null = null
-let cleanupAvatarConfig: (() => void) | null = null
-let cleanupSavedNames: (() => void) | null = null
-let cleanupVRChatStatus: (() => void) | null = null
+function message(data: NotificationInterface): void {
+  notify({ type: data.type, title: data.title, text: data.text || '' })
+}
 
-const mainScrollOverlayProps = {
-  element: 'div',
-  defer: true,
-  options: {
-    scrollbars: {
-      autoHide: 'move',
-      autoHideDelay: 300,
-      clickScroll: false
-    },
-    overflow: {
-      x: 'hidden'
-    },
-    update: {
-      debounce: [0, 200]
-    }
+async function refreshSaved(): Promise<void> {
+  savedConfigs.value = (await window.avatarApi.getAllSaved()) || []
+  if (!currentConfigs.value.some((config) => String(config.id) === selectedPresetId.value)) {
+    selectedPresetId.value = ''
   }
+  appStore.value.dataTableRefresh = true
 }
 
-const resetVars = (): void => {
-  saveMessage.value = ''
-  saveSuccess.value = false
-  saveNameError.value = ''
-  NSFWError.value = ''
+async function refreshAvatar(): Promise<void> {
+  const result = await window.avatarApi.refreshAvatarFile()
+  if (!result.success) message({ type: 'error', title: 'Avatar refresh failed' })
 }
 
-const pushNotification = (data: NotificationInterface): void => {
-  notify({
-    type: data.type,
-    title: data.title,
-    text: data.text || ''
-  })
-}
-
-const getAvatarId = (): void => {
-  cleanupAvatarId?.()
-  cleanupAvatarId = window.avatarApi.avatarId((data) => {
-    appStore.value.avatarId = ''
-    saveName.value = ''
-    holdSaveName.value = false
-    resetVars()
-    if (appStore.value.currentView === 'Waiting' && data.id) {
-      appStore.value.currentView = 'Main'
-    }
-    appStore.value.avatarId = data.id
-  })
-}
-
-const savedConfigs = async (): Promise<void> => {
-  cleanupSavedNames?.()
-  cleanupSavedNames = await window.avatarApi.savedNames((data: savedNamesType[]) => {
-    configSelectOptions.value = data.map(({ id, name }) => ({
-      label: name,
-      value: id
-    }))
-  })
-}
-
-const refreshAvatarData = async (): Promise<void> => {
-  const res = await window.avatarApi.refreshAvatarFile()
-  appStore.value.avatarId = res.avatarId
-}
-
-const aviFileUpdate = (): void => {
-  appStore.value.avatarFoundFile = false
-  showAvatarFoundFileMsg.value = false
-  if (!holdSaveName.value) saveName.value = ''
-  resetVars()
-
-  cleanupFoundAvatarFile?.()
-  cleanupFoundAvatarFile = window.avatarApi.foundAvatarFile((data) => {
-    appStore.value.avatarFoundFile = data.success
-    showAvatarFoundFileMsg.value = true
-  })
-}
-
-const aviConfig = (): void => {
-  cleanupAvatarConfig?.()
-  cleanupAvatarConfig = window.avatarApi.avatarConfig((data) => {
-    resetVars()
-
-    avatarConfig.value = data
-    if (avatarConfig.value?.valuedParams) {
-      avatarConfig.value.valuedParams = undefined
-    }
-
-    if (!holdSaveName.value) saveName.value = avatarConfig.value?.name || ''
-  })
-}
-
-const handleSave = async (): Promise<void> => {
-  resetVars()
-
-  if (!saveName.value.trim()) {
-    saveMessage.value = 'Enter a valid save name'
-
-    pushNotification({
-      type: 'error',
-      title: 'Save Failed',
-      text: 'Enter a valid save name'
-    })
-    return
-  }
-
-  if (!avatarConfig.value) {
-    pushNotification({
-      type: 'error',
-      title: 'Save Failed',
-      text: 'No avatar config found'
-    })
+async function saveCurrent(): Promise<void> {
+  const name = saveName.value.trim()
+  if (!name || !avatarConfig.value || !appStore.value.avatarFoundFile) {
+    message({ type: 'error', title: 'Save failed', text: 'Enter a name and load an avatar first.' })
     return
   }
 
   holdSaveName.value = true
-
-  const res = await window.avatarApi.saveConfig(
-    toRaw(avatarConfig.value),
-    NSFWValue.value,
-    saveName.value || ''
-  )
-
-  saveMessage.value = res?.message || ''
-  saveSuccess.value = res?.success || false
-
-  if (res?.message) {
-    pushNotification({
-      type: res?.success ? 'success' : 'error',
-      title: res?.success ? 'Save Successful' : 'Save Failed',
-      text: res.message
-    })
-  }
-
-  if (res?.overwriteMessage) {
-    pushNotification({
-      type: res?.success ? 'success' : 'error',
-      title: res?.success ? 'Save Successful' : 'Save Failed',
-      text: res.overwriteMessage
-    })
-  }
-}
-
-const handleApply = async (): Promise<void> => {
-  resetVars()
-  saveName.value = ''
-
-  const res = await window.avatarApi.applyConfig(Number(configSelectValue.value))
-
-  pushNotification({
-    type: res?.success ? 'success' : 'error',
-    title: res?.success ? 'Apply Successful' : 'Apply Failed'
-  })
-}
-
-const handleCopyCode = async (): Promise<void> => {
-  const res = await window.avatarApi.copyConfigCode(Number(configSelectValue.value))
-
-  pushNotification({
-    type: res?.success ? 'success' : 'error',
-    title: res?.success ? 'Copy Successful' : 'Copy Failed',
-    text: res?.message || ''
-  })
-}
-
-const handleSavedUpdated = async (): Promise<void> => {
-  const res = await window.avatarApi.updateConfig(
-    Number(configSelectValue.value),
-    avatarConfig.value?.avatarId || 'Unknown',
-    avatarConfig.value?.avatarName || 'Unknown',
-    configSelectOptions.value.find((option) => option.value === Number(configSelectValue.value))
-      ?.label || ''
-  )
-
-  if (!res.success) {
-    pushNotification({
-      type: 'error',
-      title: 'Update Failed',
-      text: res.message
-    })
+  const result = await window.avatarApi.saveConfig(toRaw(avatarConfig.value), nsfw.value, name)
+  if (!result?.success) {
+    message({ type: 'error', title: 'Save failed', text: result?.message || '' })
     return
   }
 
-  pushNotification({
-    type: 'success',
-    title: 'Update Successful',
-    text: res.message
+  await refreshSaved()
+  message({ type: 'success', title: 'Preset saved' })
+}
+
+async function loadPreset(): Promise<void> {
+  const preset = selectedPreset.value
+  if (!preset?.id) return
+  const result = await window.avatarApi.applyConfig(preset.id)
+  message({
+    type: result.success ? 'success' : 'error',
+    title: result.success ? 'Preset loaded' : 'Preset load failed'
   })
 }
 
-const copyAvatarId = async (): Promise<void> => {
-  const res = await window.avatarApi.copyAvatarId()
+async function updatePreset(): Promise<void> {
+  const preset = selectedPreset.value
+  if (!preset?.id) {
+    message({ type: 'error', title: 'Update failed', text: 'Preset configuration was not found.' })
+    return
+  }
+  const result = await window.avatarApi.updateConfig(
+    preset.id,
+    preset.avatarId || 'Unknown',
+    preset.avatarName || 'Unknown',
+    preset.name || ''
+  )
+  message({
+    type: result.success ? 'success' : 'error',
+    title: result.success ? 'Preset updated' : 'Update failed',
+    text: result.message
+  })
+  if (result.success) await refreshSaved()
+}
 
-  pushNotification({
-    type: res ? 'success' : 'error',
-    title: res ? 'Copy Successful' : 'Copy Failed',
-    text: ''
+async function deletePreset(): Promise<void> {
+  const preset = selectedPreset.value
+  if (!preset?.id) return
+  const result = await window.avatarApi.deleteConfig(preset.id)
+  message({
+    type: result.success ? 'success' : 'error',
+    title: result.success ? 'Preset deleted' : 'Delete failed',
+    text: result.message
+  })
+  if (result.success) await refreshSaved()
+}
+
+async function copySelected(): Promise<void> {
+  const config = selectedPreset.value
+  if (!config?.id) {
+    message({ type: 'error', title: 'Select a preset to copy' })
+    return
+  }
+  const result = await window.avatarApi.copyConfigCode(config.id)
+  message({
+    type: result.success ? 'success' : 'error',
+    title: result.success ? 'Copied to clipboard' : 'Copy failed',
+    text: result.message
   })
 }
 
-const handleDelete = async (): Promise<void> => {
-  resetVars()
-  saveName.value = ''
-
-  const res = await window.avatarApi.deleteConfig(Number(configSelectValue.value))
-
-  pushNotification({
-    type: res?.success ? 'success' : 'error',
-    title: res?.success ? 'Delete Successful' : 'Delete Failed',
-    text: res?.message || ''
+async function applyCopied(): Promise<void> {
+  const result = await window.avatarApi.applyCopiedCode()
+  message({
+    type: result.success ? 'success' : 'error',
+    title: result.success ? 'Code applied' : 'Apply failed',
+    text: result.message
   })
+  await refreshSaved()
+}
 
-  if (res?.success) {
-    configSelectValue.value = ''
-    savedConfigs()
+async function randomize(): Promise<void> {
+  const result = await window.avatarApi.randomParams()
+  message({
+    type: result.success ? 'success' : result.cancelled ? 'info' : 'error',
+    title: result.success
+      ? 'Random values applied'
+      : result.cancelled
+        ? 'Randomization cancelled'
+        : 'Randomization failed'
+  })
+}
+
+async function copyAvatarId(): Promise<void> {
+  const result = await window.avatarApi.copyAvatarId()
+  message({
+    type: result.success ? 'success' : 'error',
+    title: result.success ? 'Avatar ID copied' : 'Copy failed'
+  })
+}
+
+async function refreshStatus(): Promise<void> {
+  try {
+    vrchatRunning.value = await window.appApi.isVRChatRunning()
+  } catch {
+    vrchatRunning.value = false
   }
 }
 
-const handleInputUpdate = ({ id, value, checked }): void => {
-  if (id == 'config-name-input') {
-    saveName.value = value
-  } else if (id == 'config-nsfw') {
-    NSFWValue.value = checked
-  } else if (id == 'select-config') {
-    configSelectValue.value = value
+async function refreshStats(): Promise<void> {
+  try {
+    oscStats.value = await window.appApi.getOscStats()
+  } catch {
+    // Keep the most recent counts while the main process is starting.
   }
-}
-
-const setupVRChatMonitor = (): void => {
-  cleanupVRChatStatus?.()
-  cleanupVRChatStatus = window.appApi.onVRChatStatusChanged((data) => {
-    if (!data.isRunning) {
-      appStore.value.currentView = 'Waiting'
-      appStore.value.avatarId = ''
-      appStore.value.avatarFoundFile = false
-      showAvatarFoundFileMsg.value = false
-      avatarConfig.value = null
-      saveName.value = ''
-      holdSaveName.value = false
-      configSelectValue.value = ''
-      resetVars()
-
-      pushNotification({
-        type: 'warn',
-        title: 'VRChat Closed'
-      })
-    } else {
-      pushNotification({
-        type: 'info',
-        title: 'VRChat Started'
-      })
-    }
-  })
-}
-
-const getLowPerformanceModeSetting = async (): Promise<void> => {
-  const setting = await window.appApi.getLowPerformanceModeSetting()
-  appStore.value.lowPerformanceMode = setting
 }
 
 onMounted(() => {
-  getLowPerformanceModeSetting()
-  appStore.value.avatarId = ''
-  appStore.value.avatarFoundFile = false
-  showAvatarFoundFileMsg.value = false
-  saveName.value = ''
-  resetVars()
-  getAvatarId()
-  aviFileUpdate()
-  savedConfigs()
-  aviConfig()
-  setupVRChatMonitor()
+  void window.appApi.getLowPerformanceModeSetting().then((value) => {
+    appStore.value.lowPerformanceMode = value
+  })
+  void window.appApi.appVersion().then((value) => {
+    version.value = value
+  })
+  void refreshStatus()
+  void refreshStats()
+  void refreshSaved()
+  statusTimer = window.setInterval(() => {
+    void refreshStatus()
+  }, 5000)
+  statsTimer = window.setInterval(() => {
+    void refreshStats()
+  }, 1000)
+
+  cleanup.push(
+    window.avatarApi.avatarId(({ id }) => {
+      appStore.value.avatarId = id
+      appStore.value.avatarFoundFile = false
+      avatarConfig.value = null
+      selectedPresetId.value = ''
+      saveName.value = ''
+      holdSaveName.value = false
+      if (id && appStore.value.currentView === 'Waiting') appStore.value.currentView = 'Main'
+      void refreshSaved()
+    })
+  )
+  cleanup.push(
+    window.avatarApi.foundAvatarFile(({ success }) => {
+      appStore.value.avatarFoundFile = success
+    })
+  )
+  cleanup.push(
+    window.avatarApi.avatarConfig((data) => {
+      avatarConfig.value = { ...data, valuedParams: undefined }
+      if (!holdSaveName.value) saveName.value = data.name || ''
+    })
+  )
+  cleanup.push(
+    window.avatarApi.savedNames(() => {
+      void refreshSaved()
+    })
+  )
+  cleanup.push(
+    window.avatarApi.dataTableRefresh(() => {
+      void refreshSaved()
+    })
+  )
+  cleanup.push(
+    window.appApi.onVRChatStatusChanged(({ isRunning }) => {
+      vrchatRunning.value = isRunning
+      if (!isRunning) {
+        appStore.value.avatarId = ''
+        appStore.value.avatarFoundFile = false
+        avatarConfig.value = null
+        holdSaveName.value = false
+        selectedPresetId.value = ''
+        appStore.value.currentView = 'Waiting'
+      }
+    })
+  )
+})
+
+onUnmounted(() => {
+  if (statusTimer !== undefined) window.clearInterval(statusTimer)
+  if (statsTimer !== undefined) window.clearInterval(statsTimer)
+  cleanup.forEach((dispose) => dispose())
 })
 </script>
 
 <template>
   <notifications class="notification" position="bottom left" />
-  <Menu @notification="pushNotification" />
-  <div :class="['main', { 'main--low-performance': appStore.lowPerformanceMode }]">
-    <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
-    <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
-    <Settings v-if="appStore.currentView === 'Settings'" @notification="pushNotification" />
-    <Privacy v-show="appStore.currentView === 'Privacy'" />
-    <Terms v-show="appStore.currentView === 'Terms'" />
-    <div v-show="appStore.currentView === 'Main'" class="main__wrapper">
-      <div
-        :class="['main__scroll', { 'main__scroll--low-performance': appStore.lowPerformanceMode }]"
-      >
-        <component
-          :is="appStore.lowPerformanceMode ? 'div' : OverlayScrollbarsComponent"
-          v-bind="appStore.lowPerformanceMode ? {} : mainScrollOverlayProps"
+  <div class="shell" :class="{ 'shell--low-performance': appStore.lowPerformanceMode }">
+    <aside class="sidebar">
+      <nav class="sidebar__nav" aria-label="Main navigation">
+        <button
+          class="sidebar__link"
+          :class="{
+            'is-active': appStore.currentView === 'Main' || appStore.currentView === 'Waiting'
+          }"
+          @click="handleChangeView('Main')"
         >
-          <div class="main__content">
-            <Card>
-              <div class="main__avatar-data">
-                <div class="main__avatar-data-file">
-                  <p
-                    :class="['main__avatar-found', appStore.avatarFoundFile ? 'success' : 'failed']"
-                  >
-                    {{
-                      appStore.avatarFoundFile ? 'Found avatar data' : 'Could not find avatar data'
-                    }}
-                  </p>
-                  <div v-if="!appStore.avatarFoundFile" class="main__avatar-error">
-                    <p>Change out of the current avatar to another avatar, then back.</p>
-                    <p>
-                      If you reset your avatar, it may take up to a minute for VRChat to regenerate
-                      the avatar data.
-                    </p>
-                    <Button label="Refresh" @click="refreshAvatarData" />
-                  </div>
-                </div>
-                <p v-if="appStore.avatarFoundFile" class="main__avatar-id">
-                  Avatar ID: <span class="main__avatar-id__id">{{ appStore.avatarId }}</span>
-                </p>
-                <p v-if="avatarConfig?.name && appStore.avatarFoundFile" class="main__avatar-name">
-                  Name: <span class="main__avatar-name__name">{{ avatarConfig?.name }}</span>
-                </p>
-                <div v-if="appStore.avatarFoundFile">
-                  <Button label="Copy Avatar ID" @click="copyAvatarId" />
-                </div>
-              </div>
-            </Card>
-            <Card v-if="appStore.avatarFoundFile">
-              <div class="main__buttons">
-                <div class="main__save-wrapper">
-                  <div class="main__save">
-                    <InputText
-                      id="config-name-input"
-                      label="Save Name: "
-                      :error="saveNameError"
-                      :model-value="saveName"
-                      @update:model-value="handleInputUpdate"
-                    />
-                    <InputCheckbox
-                      id="config-nsfw"
-                      label="NSFW"
-                      :error="NSFWError"
-                      :model-value="NSFWValue"
-                      @update:model-value="handleInputUpdate"
-                    />
-                    <Button label="Save Config" :hero="true" @click="handleSave" />
-                  </div>
-                  <div v-if="saveMessage" class="main__file-saved">
-                    <p :class="['main__file-saved', saveSuccess ? 'success' : 'failed']">
-                      {{ saveMessage }}
-                    </p>
-                  </div>
-                </div>
-                <div v-if="configSelectOptions.length" class="main__saved-wrapper">
-                  <div class="main__saved-current-avi">
-                    <InputSelect
-                      id="select-config"
-                      label="Saved Configs: "
-                      :model-value="configSelectValue"
-                      :options="configSelectOptions"
-                      @update:model-value="handleInputUpdate"
-                    />
-                  </div>
-                  <div v-if="configSelectValue" class="main__apply-buttons">
-                    <div class="main__apply-button">
-                      <Button label="Apply" tooltip="Apply selected config" @click="handleApply" />
-                    </div>
-                    <div class="main__apply-button">
-                      <Button
-                        label="Copy Share Code"
-                        tooltip="Copy config share code for these settings"
-                        @click="handleCopyCode"
-                      />
-                    </div>
-                    <div class="main__apply-button">
-                      <Button
-                        label="Update"
-                        tooltip="Update selected config with current avatar settings"
-                        :warning="true"
-                        @click="handleSavedUpdated"
-                      />
-                    </div>
-                    <div class="main__apply-button">
-                      <Button
-                        label="Delete"
-                        tooltip="Delete selected config"
-                        :error="true"
-                        @click="handleDelete"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-            <Card v-if="appStore.avatarFoundFile">
-              <PasteCode @notification="pushNotification" />
-              <LoadFile
-                :avatar-name="avatarConfig?.name"
-                :show-id-mismatch="false"
-                @notification="pushNotification"
-              />
-            </Card>
-          </div>
-        </component>
+          <Icon name="user" :size="22" />
+          Current Avatar
+        </button>
+        <button
+          class="sidebar__link"
+          :class="{ 'is-active': appStore.currentView === 'AllData' }"
+          @click="handleChangeView('AllData')"
+        >
+          <Icon name="database" :size="22" />
+          All Data
+        </button>
+      </nav>
+      <div class="sidebar__bottom">
+        <button
+          class="sidebar__link"
+          :class="{ 'is-active': ['Settings', 'Privacy', 'Terms'].includes(appStore.currentView) }"
+          @click="handleChangeView('Settings')"
+        >
+          <Icon name="gear" :size="22" />
+          Settings
+        </button>
+        <button class="sidebar__link" :disabled="!appStore.avatarFoundFile" @click="randomize">
+          <Icon name="shuffle" :size="22" />
+          Randomize
+        </button>
+        <div class="sidebar__social">
+          <a href="https://jinxxy.com/Nymh" target="_blank" rel="noopener noreferrer">Nymh</a>
+          <a href="https://discord.gg/rcCCkbDsY3" target="_blank" rel="noopener noreferrer"
+            >Discord</a
+          >
+        </div>
+        <small v-if="version" class="sidebar__version">v{{ version }}</small>
       </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="status-bar">
+        <span class="status-bar__connection" :class="{ 'is-connected': vrchatRunning }">
+          <span class="status-bar__dot" />VRChat {{ vrchatRunning ? 'connected' : 'disconnected' }}
+        </span>
+        <div class="status-bar__counts" aria-label="OSC message counts">
+          <span
+            >OSC received <strong>{{ oscStats.received.toLocaleString() }}</strong></span
+          >
+          <span
+            >OSC sent <strong>{{ oscStats.sent.toLocaleString() }}</strong></span
+          >
+        </div>
+      </header>
+
+      <main class="workspace__content">
+        <AllData v-if="appStore.currentView === 'AllData'" @notification="message" />
+        <Settings v-else-if="appStore.currentView === 'Settings'" @notification="message" />
+        <Privacy v-else-if="appStore.currentView === 'Privacy'" />
+        <Terms v-else-if="appStore.currentView === 'Terms'" />
+        <section v-else class="avatar-panel">
+          <Waiting v-if="!appStore.avatarId" />
+          <template v-else>
+            <div class="avatar-panel__identity">
+              <p class="eyebrow">Current Avatar</p>
+              <h1>{{ avatarName }}</h1>
+              <button class="avatar-panel__id" title="Copy Avatar ID" @click="copyAvatarId">
+                {{ appStore.avatarId }} <span>⧉</span>
+              </button>
+              <p v-if="!appStore.avatarFoundFile" class="avatar-panel__missing">
+                Could not find avatar data. Try changing avatars and back, or refresh after VRChat
+                regenerates its files.
+              </p>
+              <button
+                v-if="!appStore.avatarFoundFile"
+                class="action action--secondary"
+                @click="refreshAvatar"
+              >
+                Refresh avatar data
+              </button>
+            </div>
+
+            <div v-if="appStore.avatarFoundFile" class="avatar-panel__body">
+              <div class="preset-form">
+                <div class="field">
+                  <label for="current-preset">Saved presets for this avatar</label>
+                  <select id="current-preset" v-model="selectedPresetId">
+                    <option value="">Select a preset</option>
+                    <option
+                      v-for="config in currentConfigs"
+                      :key="config.id"
+                      :value="String(config.id)"
+                    >
+                      {{ config.name }}
+                    </option>
+                  </select>
+                </div>
+                <label class="check"><input v-model="nsfw" type="checkbox" /> NSFW</label>
+              </div>
+              <div class="save-form">
+                <div class="field">
+                  <label for="preset-name">Preset name</label>
+                  <input
+                    id="preset-name"
+                    v-model="saveName"
+                    type="text"
+                    placeholder="Name this setup"
+                  />
+                </div>
+                <button class="action action--save" @click="saveCurrent">
+                  <Icon name="save" :size="19" />Save Preset
+                </button>
+              </div>
+              <div class="selected-preset-actions">
+                <button
+                  class="action action--update"
+                  :disabled="!selectedPresetId"
+                  @click="updatePreset"
+                >
+                  <Icon name="refresh" :size="19" />
+                  Update
+                </button>
+                <button
+                  class="action action--apply"
+                  :disabled="!selectedPresetId"
+                  @click="loadPreset"
+                >
+                  <Icon name="download" :size="19" />
+                  Load
+                </button>
+                <button
+                  class="action action--delete"
+                  :disabled="!selectedPresetId"
+                  @click="deletePreset"
+                >
+                  <Icon name="trash" :size="19" />
+                  Delete
+                </button>
+              </div>
+
+              <div class="avatar-panel__spacer" />
+
+              <div class="avatar-panel__bottom">
+                <div class="avatar-panel__bottom-right">
+                  <button class="action" :disabled="!selectedPresetId" @click="copySelected">
+                    <Icon name="copy" :size="19" />
+                    Copy To Clipboard
+                  </button>
+                  <button class="action" @click="applyCopied">
+                    <Icon name="file" :size="19" />
+                    Apply Copied Code
+                  </button>
+                  <LoadFile
+                    :avatar-name="avatarConfig?.name"
+                    :show-id-mismatch="false"
+                    @notification="message"
+                    @uploaded="refreshSaved"
+                  />
+                </div>
+              </div>
+            </div>
+          </template>
+        </section>
+      </main>
     </div>
   </div>
-  <Footer @notification="pushNotification" />
 </template>
 
 <style lang="scss">
-@use './styles/global.scss';
-
-.main {
-  align-items: center;
-  contain: layout style;
-  display: flex;
-  flex-flow: column;
-  gap: 16px;
-  height: 94%;
-  justify-content: center;
+:root {
+  color-scheme: dark;
+  --asm-background: #080a0c;
+  --asm-sidebar: var(--color--low-card-glass-bg);
+  --asm-panel: var(--color--low-card-glass-bg);
+  --asm-control: var(--color--primary-a6);
+  --asm-control-hover: var(--color--low-select-hover);
+  --asm-selected: var(--color--primary-a4);
+  --asm-danger: var(--color--low-error);
+  --asm-text: var(--color--primary-a2);
+  --asm-muted: var(--color--secondary-a1);
+}
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
   overflow: hidden;
-  padding-left: 16px;
-  padding-right: 16px;
-  pointer-events: auto;
-
-  &__wrapper {
-    height: 100%;
-    width: 100%;
-  }
-
-  &__scroll {
-    contain: layout;
-    display: flex;
-    flex-flow: column;
-    gap: 28px;
-    height: 100%;
-    justify-content: center;
-    overflow: hidden;
-    width: 100%;
-
-    &--low-performance {
-      justify-content: flex-start !important;
-      overflow: auto !important;
-    }
-  }
-
-  &__content {
-    align-items: center;
-    display: flex;
-    flex-flow: column nowrap;
-    gap: 36px;
-    justify-content: center;
-    padding-bottom: 22px;
-    padding-top: 22px;
-    width: 100%;
-  }
-
-  &__avatar-error {
-    align-items: center;
-    display: flex;
-    flex-flow: column;
-    gap: 12px;
-    justify-content: center;
-  }
-
-  &__avatar-data {
-    align-items: center;
-    display: flex;
-    flex-flow: column;
-    gap: 16px;
-    justify-content: center;
-    width: 100%;
-  }
-
-  &__avatar-data-file {
-    align-items: center;
-    display: flex;
-    flex-flow: column;
-    gap: 16px;
-  }
-
-  &__avatar-found {
-    font-weight: 700;
-  }
-
-  &__avatar-id,
-  &__avatar-name {
-    &__id,
-    &__name {
-      font-weight: 700;
-    }
-  }
-
-  &__buttons {
-    align-items: center;
-    display: flex;
-    flex-flow: column;
-    gap: 18px;
-    width: 100%;
-  }
-
-  &__save-wrapper,
-  &__saved-wrapper {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    width: 100%;
-  }
-
-  &__save {
-    white-space: nowrap;
-  }
-
-  &__save,
-  &__save-exists {
-    align-items: center;
-    display: flex;
-    gap: 18px;
-    justify-content: center;
-  }
-
-  &__apply-buttons {
-    display: grid;
-    gap: 18px;
-    grid-template-columns: repeat(2, auto);
-    justify-content: center;
-  }
-
-  &__apply-button {
-    align-items: center;
-    display: flex;
-    justify-content: center;
-  }
-
-  &__file-saved {
-    font-weight: 700;
-  }
 }
-
+body {
+  margin: 0;
+  background: var(--asm-background);
+  color: var(--asm-text);
+}
+body::before {
+  display: none !important;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+.shell {
+  display: grid;
+  grid-template-columns: clamp(190px, 20vw, 255px) minmax(0, 1fr);
+  width: 100%;
+  height: 100vh;
+  min-height: 0;
+  background: var(--asm-background);
+}
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 28px 20px 20px;
+  background: var(--asm-sidebar);
+}
+.sidebar__nav {
+  display: grid;
+  gap: 18px;
+  margin-top: 0;
+}
+.sidebar__bottom {
+  margin-top: auto;
+  display: grid;
+  gap: 24px;
+}
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  min-height: 55px;
+  padding: 11px 15px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--color--low-button);
+  color: var(--asm-text);
+  text-align: center;
+  font-size: 1.1rem;
+  box-shadow: 0 5px 10px #0002;
+}
+.sidebar__link:hover {
+  background: var(--color--low-button-hover);
+}
+.sidebar__link.is-active {
+  background: var(--color--low-button-hover);
+}
+.sidebar__link:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+.sidebar__link:active,
+.action:active {
+  filter: brightness(0.85);
+}
+.sidebar__social {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sidebar__social a {
+  color: var(--color--primary-a3);
+  font-size: 0.9rem;
+}
+.sidebar__version {
+  color: var(--asm-muted);
+  opacity: 0.7;
+}
+.workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 28px clamp(20px, 4vw, 46px);
+  gap: 24px;
+}
+.status-bar {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  min-height: 58px;
+  padding: 10px 20px;
+  border-radius: 13px;
+  background: var(--asm-panel);
+}
+.status-bar__connection {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--color--failed);
+  font-size: clamp(1.15rem, 2vw, 1.8rem);
+}
+.status-bar__connection.is-connected {
+  color: var(--color--success);
+}
+.status-bar__dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-bar__counts {
+  display: grid;
+  gap: 3px;
+  color: var(--asm-muted);
+  font-size: 0.77rem;
+  white-space: nowrap;
+}
+.status-bar__counts span {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+.status-bar__counts strong {
+  color: var(--asm-text);
+}
+.workspace__content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.avatar-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  height: 100%;
+  overflow: auto;
+  border-radius: 23px;
+  background: var(--asm-panel);
+  padding: clamp(24px, 4vw, 48px);
+}
+.avatar-panel__identity {
+  text-align: center;
+}
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--asm-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.17em;
+}
+.avatar-panel h1 {
+  margin: 0;
+  display: block;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 600;
+}
+.avatar-panel__id {
+  border: 0;
+  background: none;
+  color: var(--asm-muted);
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+.avatar-panel__id:hover {
+  color: var(--asm-text);
+}
+.avatar-panel__id span {
+  padding-left: 6px;
+}
+.avatar-panel__missing {
+  max-width: 480px;
+  margin: 25px auto;
+  color: var(--asm-muted);
+}
+.avatar-panel__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: clamp(24px, 5vh, 60px);
+}
+.preset-form {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 22px;
+}
+.field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.field label {
+  color: var(--asm-muted);
+  font-size: 0.85rem;
+}
+.field input,
+.field select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 15px;
+  border: 1px solid var(--color--card-glass-border);
+  border-radius: 12px;
+  background: var(--asm-control);
+  color: var(--asm-text);
+  outline: none;
+}
+.field input:focus,
+.field select:focus {
+  border-color: var(--color--primary-a3);
+}
+.field input::placeholder {
+  color: var(--asm-muted);
+}
+.preset-form .field {
+  width: min(100%, 450px);
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 46px;
+  white-space: nowrap;
+}
+.check input {
+  appearance: auto;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--asm-selected);
+}
+.save-form {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+.save-form .field {
+  width: min(100%, 440px);
+}
+.selected-preset-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.selected-preset-actions {
+  margin-top: 24px;
+}
+.action {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--color--low-button);
+  color: var(--asm-text);
+  box-shadow: 0 4px 7px #0002;
+  white-space: nowrap;
+}
+.action:hover {
+  background: var(--color--low-button-hover);
+}
+.action--danger {
+  background: var(--asm-danger);
+}
+.action--danger:hover {
+  background: var(--color--low-error-hover);
+}
+.action--save {
+  background: var(--color--low-hero);
+}
+.action--save:hover {
+  background: var(--color--low-hero-hover);
+}
+.action--update {
+  background: var(--color--low-warning);
+}
+.action--update:hover {
+  background: var(--color--low-warning-hover);
+}
+.action--apply {
+  background: var(--color--low-button);
+}
+.action--apply:hover {
+  background: var(--color--low-button-hover);
+}
+.action--delete {
+  background: var(--color--low-error);
+}
+.action--delete:hover {
+  background: var(--color--low-error-hover);
+}
+.action:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+.action:disabled:active {
+  filter: none;
+}
+.avatar-panel__spacer {
+  flex: 1;
+  min-height: 50px;
+}
+.avatar-panel__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.avatar-panel__bottom-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.avatar-panel__bottom .load-file {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.avatar-panel__bottom .load-file > .button__wrapper {
+  margin: 0;
+}
+.avatar-panel__bottom .load-file .button__wrapper {
+  background: var(--color--low-button);
+  border-radius: 13px;
+}
+.avatar-panel__bottom .load-file .button__wrapper:hover {
+  background: var(--color--low-button-hover);
+}
+.avatar-panel__bottom .load-file__load-options {
+  flex-basis: 100%;
+}
 .notification {
-  .vue-notification-template {
-    font-size: 1rem;
-  }
-
-  .success {
-    color: var(--color--primary-a1);
-  }
+  z-index: 5000;
 }
-
-.os-theme-dark {
-  --os-handle-bg: linear-gradient(135deg, rgba(63, 81, 102, 0.4) 0%, rgba(47, 90, 145, 0.4) 100%);
-  --os-handle-bg-hover: linear-gradient(
-    135deg,
-    rgba(63, 81, 102, 0.7) 0%,
-    rgba(47, 90, 145, 0.7) 100%
-  );
-  --os-handle-bg-active: linear-gradient(
-    135deg,
-    rgba(63, 81, 102, 0.7) 0%,
-    rgba(47, 90, 145, 0.7) 100%
-  );
+.notification .vue-notification.success,
+.notification .vue-notification.warn {
+  color: #080a0c;
 }
-
-// Overrides
-body:has(.main--low-performance) a {
+.notification .vue-notification.error,
+.notification .vue-notification.info {
+  color: #fff;
+}
+.shell--low-performance *,
+.shell--low-performance *::before,
+.shell--low-performance *::after {
+  animation: none !important;
   transition: none !important;
-  will-change: unset !important;
+  backdrop-filter: none !important;
 }
-
-body:has(.main--low-performance)::before {
-  background: none !important;
+.avatar-panel .waiting {
+  margin: auto;
+  max-width: 650px;
+  text-align: center;
+  color: var(--asm-muted);
+}
+.avatar-panel .waiting h1 {
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  line-height: 1.55;
+}
+.shell .settings__cards-row {
+  flex-wrap: wrap;
+}
+@media (max-width: 820px) {
+  .shell {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+  .sidebar {
+    padding: 18px 10px;
+  }
+  .workspace {
+    padding: 16px;
+    gap: 16px;
+  }
+  .preset-form,
+  .avatar-panel__bottom {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+@media (max-width: 600px) {
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .sidebar {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    min-height: 68px;
+    padding: 10px;
+  }
+  .sidebar__nav {
+    display: flex;
+    gap: 6px;
+    margin: 0;
+  }
+  .sidebar__bottom {
+    margin: 0 0 0 auto;
+    display: flex;
+  }
+  .sidebar__social,
+  .sidebar__version {
+    display: none;
+  }
+  .sidebar__link {
+    min-height: 40px;
+    padding: 7px;
+    font-size: 0.75rem;
+  }
+  .status-bar {
+    padding: 10px;
+  }
+  .status-bar__counts {
+    font-size: 0.65rem;
+  }
+  .avatar-panel {
+    padding: 18px;
+  }
 }
 </style>

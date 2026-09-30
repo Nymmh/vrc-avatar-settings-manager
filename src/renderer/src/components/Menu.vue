@@ -9,9 +9,13 @@ const randomParams = async (): Promise<void> => {
   const res = await window.avatarApi.randomParams()
 
   emit('notification', {
-    type: res ? 'success' : 'error',
+    type: res.success ? 'success' : res.cancelled ? 'info' : 'error',
     title: 'Random Changes',
-    text: res ? 'Random applied successfully.' : 'Failed to apply random.'
+    text: res.success
+      ? 'Random applied successfully.'
+      : res.cancelled
+        ? 'Randomization cancelled.'
+        : 'Failed to apply random.'
   })
 }
 

@@ -16,6 +16,8 @@ import { deleteDatabase } from '../../database/deleteDatabase'
 import { getExportedFileCount } from '../../file/getExportedFileCount'
 import { getLowPerformanceModeSetting } from '../../database/getLowPerformanceModeSetting'
 import { setLowPerformanceModeSetting } from '../../database/setLowPerformanceModeSetting'
+import { getOscStats } from '../../osc/oscStats'
+import { isVRChatRunning } from '../../helpers/isVRChatRunning'
 
 interface DataFolder {
   folderPath: string
@@ -39,6 +41,9 @@ export function appHandlers(context: appHandlersContext): void {
     context.log.info('Fetching app version...')
     return app.getVersion()
   })
+
+  ipcMain.handle('isVRChatRunning', () => isVRChatRunning())
+  ipcMain.handle('getOscStats', () => getOscStats())
 
   ipcMain.handle('getLogFileSize', async () => {
     context.log.info('Fetching log file size...')

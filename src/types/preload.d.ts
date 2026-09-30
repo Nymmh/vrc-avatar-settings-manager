@@ -42,7 +42,7 @@ export interface avatarApi {
   replaceParams: (id: number) => replaceParamsInterface
   deleteConfig: (id: number) => deleteConfigInterface
   getAllPresets: () => Promise<getAllPresetsInterface[] | null>
-  applyPresetFromApp: (avatarId: string, unityParameter: number) => { success: boolean }
+  applyPresetFromApp: (avatarId: string, unityParameter: number) => Promise<boolean>
   updatePresetFromApp: (id: number, saveName: string, parameter: number) => updatePresetInterface
   deletePresetFromApp: (id: number) => deletePresetInterface
   createPresetFromApp: (id: number) => createPresetInterface
@@ -65,12 +65,12 @@ export interface avatarApi {
   getLogFileSize: () => Promise<string>
   copyConfigCode: (id: number) => exportConfigInterface
   applyCopiedCode: () => exportConfigInterface
-  copyAvatarId: () => Promise<boolean>
-  randomParams: () => Promise<boolean>
+  copyAvatarId: () => Promise<{ success: boolean }>
+  randomParams: () => Promise<{ success: boolean; cancelled?: boolean }>
 }
 
 export interface appApi {
-  appVersion: () => string
+  appVersion: () => Promise<string>
   getLogFileSize: () => Promise<string>
   openLogFile: () => void
   deleteLogFile: () => Promise<boolean>
@@ -83,6 +83,7 @@ export interface appApi {
   deleteDatabase: () => Promise<boolean>
   getExportedFileCount: () => Promise<exportedFileCountInterface>
   isVRChatRunning: () => Promise<boolean>
+  getOscStats: () => Promise<{ received: number; sent: number }>
   onVRChatStatusChanged: (meowback: (data: { isRunning: boolean }) => void) => () => void
   getApplyConfigBufferSetting: () => Promise<boolean>
   setApplyConfigBufferSetting: (value: boolean) => Promise<boolean>
