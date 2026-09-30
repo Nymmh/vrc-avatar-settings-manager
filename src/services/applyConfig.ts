@@ -1,5 +1,6 @@
 import { Logger } from 'electron-log'
 import { Client, Bundle } from 'node-osc'
+import { recordOscSent } from '../osc/oscStats'
 
 type ArgumentType = string | number | boolean | { type: string; value: string | number | boolean }
 type MessageLike = { address: string; args: ArgumentType[] }
@@ -57,6 +58,7 @@ export async function applyConfig(
             return
           }
 
+          recordOscSent(chunks[i].length)
           res()
         })
       })

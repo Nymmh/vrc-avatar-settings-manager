@@ -19,7 +19,7 @@ export async function generateRandomParams(
   avatarId: string,
   OSCClient: Client,
   storage: ASMStorage
-): Promise<boolean> {
+): Promise<{ success: boolean; cancelled?: boolean }> {
   try {
     const check1 = await showDialogNoSound(
       ['Yes', 'No'],
@@ -31,7 +31,7 @@ export async function generateRandomParams(
 
     if (check1.response !== 0) {
       log.info('User cancelled random parameter generation')
-      return false
+      return { success: false, cancelled: true }
     }
 
     const check2 = await showDialogNoSound(
@@ -44,7 +44,7 @@ export async function generateRandomParams(
 
     if (check2.response !== 0) {
       log.info('User cancelled random parameter generation at second prompt')
-      return false
+      return { success: false, cancelled: true }
     }
 
     const aviConfig = lookForConfig(avatarId, vrcPath, log)
@@ -52,7 +52,7 @@ export async function generateRandomParams(
 
     if (!aviConfig || !aviCache) {
       log.error('Avatar config or cache file not found')
-      return false
+      return { success: false }
     }
 
     const aviConfigData = cleanJson(fs.readFileSync(path.join(vrcPath, 'OSC', aviConfig), 'utf-8'))
@@ -64,7 +64,7 @@ export async function generateRandomParams(
     const parsedCache = JSON.parse(aviCacheData)
 
     if (!Array.isArray(parsedCache.animationParameters) || !Array.isArray(parsedConfig.parameters))
-      return false
+      return { success: false }
 
     const parameterMap = new Map(
       parsedConfig.parameters.map((pm) => [pm.name, pm.input?.type === 'Float' ? 'f' : 'i'])
@@ -110,7 +110,7 @@ export async function generateRandomParams(
     const pendingChanges = new Map(randomParams.map((param) => [param.name!, param.value]))
     if (!storage.setPendingChangesBulk(pendingChanges)) {
       log.warn('Random parameters exceed pending-state limits or contain unsupported values')
-      return false
+      return { success: false }
     }
 
     log.info(`Generated ${randomParams.length} random parameters for avatarId: ${avatarId}`)
@@ -119,13 +119,13 @@ export async function generateRandomParams(
 
     if (upload) {
       log.info('Random parameters applied successfully')
-      return true
+      return { success: true }
     } else {
       log.error('Failed to apply random parameters')
-      return false
+      return { success: false }
     }
   } catch (e) {
     log.error(`Error generating random parameters: ${e}`)
-    return false
+    return { success: false }
   }
 }

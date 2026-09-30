@@ -9,6 +9,7 @@ import { updatePreset } from '../database/updatePreset'
 import { ASMStorage } from '../main/ASMStorage'
 import { readOscConfig } from '../file/readOscConfig'
 import { clearNonExcludedFromCache, isExcluded } from '../helpers/excludedParameters'
+import { recordOscReceived } from './oscStats'
 
 export class OSCHandler {
   private readonly PARAM_PREFIX = '/avatar/parameters/'
@@ -66,6 +67,8 @@ export class OSCHandler {
       this.log.warn('Received malformed OSC address')
       return
     }
+
+    recordOscReceived()
 
     const canonicalName = this.outputNames.get(address)
     if (address !== '/avatar/change' && canonicalName === null) {
