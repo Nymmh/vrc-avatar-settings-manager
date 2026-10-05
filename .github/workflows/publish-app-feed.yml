@@ -1,0 +1,107 @@
+name: Publish App update feed
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published Electron Latest tag (app-v<version>, or v<version> for bootstrap)'
+        required: true
+        type: string
+      bootstrap_legacy:
+        description: 'Seed the feed from an existing v<version> Electron release'
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-update-feed
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'Nymmh/vrc-avatar-settings-manager' &&
+      ((github.event_name == 'release' && startsWith(github.event.release.tag_name, 'app-v')) ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      APP_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      BOOTSTRAP_LEGACY: ${{ inputs.bootstrap_legacy || false }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the App feed tools from main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.19.0'
+
+      - name: Install feed tooling
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.34.5 --activate
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Test the App feed
+        run: pnpm test:app-updates
+
+      - name: Download metadata from the current Electron release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" > "$RUNNER_TEMP/release.json"
+          jq -e --arg tag "$APP_TAG" \
+            '.tag_name == $tag and .draft == false and .prerelease == false' \
+            "$RUNNER_TEMP/release.json" > /dev/null
+          mkdir "$RUNNER_TEMP/app-metadata"
+          gh release download "$APP_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'latest*.yml' --dir "$RUNNER_TEMP/app-metadata"
+
+      - name: Prepare the dedicated App feed
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ "$BOOTSTRAP_LEGACY" == "true" ]]; then
+            args+=(--bootstrap-legacy)
+          fi
+          node scripts/prepare-app-feed.mjs "$RUNNER_TEMP/release.json" \
+            "$RUNNER_TEMP/app-metadata" "$RUNNER_TEMP/app-site" "${args[@]}"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the App feed
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/app-site
+
+      - name: Confirm the selected release is still current
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
+          [[ "$latest_tag" == "$APP_TAG" ]] || {
+            echo 'Electron Latest changed while preparing the feed; rerun for the current release.' >&2
+            exit 1
+          }
+
+      - name: Deploy the App feed
+        id: deployment
+        uses: actions/deploy-pages@v4

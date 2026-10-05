@@ -1,3 +1,4 @@
 provider: generic
-url: https://github.com/Nymmh/vrc-avatar-settings-manager
+url: https://nymmh.github.io/vrc-avatar-settings-manager/updates/app/
+useMultipleRangeRequest: false
 updaterCacheDirName: avatar-settings-manager-updater
