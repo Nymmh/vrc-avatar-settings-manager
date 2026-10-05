@@ -1,3 +1,9 @@
+# Version 1.1.5 (Unreleased)
+
+## Changes
+
+- App updates now use a dedicated feed
+
 # Version 1.1.4 - 2026-09-25
 
 ## Fixes
