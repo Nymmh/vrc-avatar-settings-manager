@@ -3,6 +3,18 @@
 ## Changes
 
 - App updates now use a dedicated feed
+- Loading avatar data now waits for OSC before loading
+- OSC will now retry on different ports if it fails
+- Replaced `oscquery` with a local version
+
+## Additions
+
+- Added OSC connection notifications and help instructions on the waiting screen
+- Added a skip button when waiting for VRChat in case it dose not detect it automatically
+
+## Fixes
+
+- Fixed missing first OSC response when VRC was already running
 
 # Version 1.1.4 - 2026-09-25
 

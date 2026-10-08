@@ -4,22 +4,29 @@ import { isVRChatRunning } from '../helpers/isVRChatRunning'
 import { ASMStorage } from './ASMStorage'
 import { VRChatLogMonitor } from '../file/getVRChatLog'
 import { OSCHandler } from '../osc/oscHandler'
+import type { OSCStartupStatus } from '../types/osc'
 
 export class VRChatMonitor {
   private isRunning: boolean = false
+  private vrchatCheckSkipped: boolean = false
   private checkInterval: NodeJS.Timeout | null = null
   private avatarPollingInterval: NodeJS.Timeout | null = null
   private isCheckingStatus: boolean = false
   private isCheckingAvatarId: boolean = false
   private avatarPollingGeneration: number = 0
+  private oscConnectedAt: number | null = null
+  private oscWaitTimeout: NodeJS.Timeout | null = null
+  private connectionAttempt: number = 0
   private readonly POLL_INTERVAL = 5000 // 5 seconds
+  private readonly OSC_WAIT_TIMEOUT = 15000
 
   constructor(
     private log: Logger,
     private mainWindow: BrowserWindow,
     private storage: ASMStorage,
     private vrchatLog: VRChatLogMonitor,
-    private oscHandler: OSCHandler
+    private oscHandler: OSCHandler,
+    private reportOSCStatus: (status: OSCStartupStatus) => void
   ) {}
 
   async start(): Promise<void> {
@@ -34,7 +41,10 @@ export class VRChatMonitor {
     this.log.info(`Initial VRChat status: ${this.isRunning ? 'running' : 'not running'}`)
 
     if (this.isRunning) {
+      this.waitForOSC()
       this.vrchatLog.start()
+    } else {
+      this.reportWaitingForVRChat()
     }
 
     this.mainWindow.webContents.send('vrchat-status-changed', { isRunning: this.isRunning })
@@ -44,7 +54,7 @@ export class VRChatMonitor {
   }
 
   private async checkStatus(): Promise<void> {
-    if (this.isCheckingStatus) {
+    if (this.isCheckingStatus || this.vrchatCheckSkipped) {
       return
     }
 
@@ -52,22 +62,25 @@ export class VRChatMonitor {
 
     try {
       const currentStatus = await isVRChatRunning()
+      if (this.vrchatCheckSkipped || this.isRunning === currentStatus) return
 
-      if (this.isRunning !== currentStatus) {
-        this.isRunning = currentStatus
+      this.isRunning = currentStatus
 
-        if (currentStatus) {
-          this.log.info('VRChat started')
-          this.vrchatLog.start()
-          this.mainWindow.webContents.send('vrchat-status-changed', { isRunning: true })
-        } else {
-          this.log.info('VRChat closed - cleaning up data')
-          this.stopAvatarIdPolling()
-          this.storage.cleanState()
-          this.vrchatLog.stop()
-          this.mainWindow.webContents.send('vrchat-status-changed', { isRunning: false })
-        }
+      if (currentStatus) {
+        this.log.info('VRChat started')
+        this.waitForOSC()
+        this.vrchatLog.start()
+      } else {
+        this.log.info('VRChat closed - cleaning up data')
+        this.stopAvatarIdPolling()
+        this.clearOSCWait()
+        this.oscConnectedAt = null
+        this.storage.cleanState()
+        this.vrchatLog.stop()
+        this.reportWaitingForVRChat()
       }
+
+      this.mainWindow.webContents.send('vrchat-status-changed', { isRunning: currentStatus })
     } catch (error) {
       this.log.error('Error checking VRChat status:', error)
     } finally {
@@ -77,18 +90,103 @@ export class VRChatMonitor {
 
   stop(): void {
     this.isRunning = false
+    this.vrchatCheckSkipped = false
     if (this.checkInterval) {
       clearInterval(this.checkInterval)
       this.checkInterval = null
     }
 
     this.stopAvatarIdPolling()
+    this.clearOSCWait()
+    this.oscConnectedAt = null
     this.vrchatLog.stop()
     this.log.info('VRChat monitor stopped')
   }
 
   getStatus(): boolean {
     return this.isRunning
+  }
+
+  skipVRChatCheck(): boolean {
+    if (this.isRunning || !this.checkInterval) return false
+
+    this.vrchatCheckSkipped = true
+    this.isRunning = true
+    this.log.info('VRChat check skipped by user. Assuming VRChat is running until the app closes.')
+    this.waitForOSC()
+    this.vrchatLog.start()
+
+    return true
+  }
+
+  private clearOSCWait(): void {
+    if (this.oscWaitTimeout) clearTimeout(this.oscWaitTimeout)
+    this.oscWaitTimeout = null
+  }
+
+  private reportWaitingForVRChat(): void {
+    this.reportOSCStatus({
+      state: 'waiting-vrchat',
+      attempt: this.connectionAttempt,
+      message: 'Waiting for VRChat...'
+    })
+  }
+
+  private waitForOSC(): void {
+    this.clearOSCWait()
+    this.oscConnectedAt = null
+    this.connectionAttempt++
+    this.reportOSCStatus({
+      state: 'waiting-osc',
+      attempt: this.connectionAttempt,
+      vrchatCheckSkipped: this.vrchatCheckSkipped,
+      message: this.vrchatCheckSkipped
+        ? 'Waiting for an OSC response...'
+        : 'VRChat is running.\nWaiting for an OSC response...'
+    })
+
+    this.oscWaitTimeout = setTimeout(() => {
+      this.oscWaitTimeout = null
+      this.reportOSCStatus({
+        state: 'failed',
+        attempt: this.connectionAttempt,
+        vrchatCheckSkipped: this.vrchatCheckSkipped,
+        message:
+          'No OSC response received.\nEnable OSC in VRChat under Options > OSC.\nStill waiting for OSC...'
+      })
+    }, this.OSC_WAIT_TIMEOUT)
+  }
+
+  async handleOSCMessage(data: unknown[]): Promise<void> {
+    if (!this.isRunning || !Array.isArray(data)) return
+    if (this.oscConnectedAt === null) {
+      const [address, payload] = data
+      const isAvatarChange =
+        address === '/avatar/change' &&
+        typeof payload === 'string' &&
+        /^avtr_[a-zA-Z0-9_-]+$/.test(payload)
+
+      const isParameter =
+        typeof address === 'string' &&
+        address.startsWith('/avatar/parameters/') &&
+        address.length > '/avatar/parameters/'.length &&
+        (typeof payload === 'boolean' ||
+          typeof payload === 'string' ||
+          (typeof payload === 'number' && Number.isFinite(payload)))
+
+      if (!isAvatarChange && !isParameter) return
+
+      this.oscConnectedAt = Date.now()
+      this.clearOSCWait()
+      this.reportOSCStatus({
+        state: 'ready',
+        attempt: this.connectionAttempt,
+        message: 'Receiving OSC from VRChat.'
+      })
+    }
+
+    await this.oscHandler.handleMessage(data)
+    if (this.isRunning && !this.storage.hasOscAvatarId()) this.startAvatarIdPolling()
   }
 
   public onNewLogFileFound(): void {
@@ -99,11 +197,14 @@ export class VRChatMonitor {
     const logCreatedAt = this.vrchatLog.getCurrentLog()?.createdAt
     if (logCreatedAt && !this.storage.hasOscAvatarId(logCreatedAt.getTime())) {
       this.storage.cleanState()
+      if (this.oscConnectedAt !== null && this.oscConnectedAt < logCreatedAt.getTime()) {
+        this.waitForOSC()
+      }
     }
 
     this.log.info('New VRChat log detected, restarting avatar ID polling')
     this.stopAvatarIdPolling()
-    this.startAvatarIdPolling()
+    if (this.oscConnectedAt !== null) this.startAvatarIdPolling()
   }
 
   private startAvatarIdPolling(): void {
@@ -128,7 +229,7 @@ export class VRChatMonitor {
   }
 
   private async checkAvatarIdFromLog(): Promise<void> {
-    if (this.isCheckingAvatarId || !this.isRunning) {
+    if (this.isCheckingAvatarId || !this.isRunning || this.oscConnectedAt === null) {
       return
     }
 

@@ -1,3 +1,4 @@
+import type { OSCStartupStatus } from './osc'
 import { ElectronAPI } from '@electron-toolkit/preload'
 import { saveConfigInterface } from './saveConfigInterface'
 import { loadConfigInterface } from './loadConfigInterface'
@@ -70,6 +71,8 @@ export interface avatarApi {
 }
 
 export interface appApi {
+  skipVRChatCheck: () => Promise<boolean>
+  onOSCStartupStatus: (callback: (status: OSCStartupStatus) => void) => () => void
   appVersion: () => string
   getLogFileSize: () => Promise<string>
   openLogFile: () => void
