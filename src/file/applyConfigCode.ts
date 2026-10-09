@@ -1,3 +1,4 @@
+import type { operationResultInterface } from '../types/ipc'
 import { BrowserWindow, clipboard } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
@@ -25,7 +26,7 @@ export async function applyConfigCode(
   OSC_CLIENT: Client,
   fileData: string | undefined = undefined,
   skipUpload: boolean = false
-): Promise<exportConfigInterface | avatarDBInterface> {
+): Promise<operationResultInterface | avatarDBInterface> {
   try {
     let clipboardText = fileData ? fileData.trim() : clipboard.readText().trim()
 
@@ -119,10 +120,6 @@ export async function applyConfigCode(
       presets: data.pr || {}
     }
 
-    let nsfwResponse = 0
-    let upload: unknown
-    let saveResponse = 0
-
     if (currentAviId !== config.avatarId) {
       const userResponse = await showDialogNoSound(
         ['Yes', 'No'],
@@ -136,6 +133,7 @@ export async function applyConfigCode(
         log.info('Upload cancelled by user due to avatar ID mismatch')
         return {
           success: false,
+          cancelled: true,
           message: 'Upload cancelled by user'
         }
       }
@@ -152,7 +150,9 @@ export async function applyConfigCode(
         mainWindow
       )
 
-      nsfwResponse = userResponse.response
+      if (userResponse.response !== 0) {
+        return { success: false, cancelled: true, message: 'Upload cancelled by user' }
+      }
     }
 
     log.info('Fetching avatar config for avatarId:', config.avatarId)
@@ -187,15 +187,10 @@ export async function applyConfigCode(
       return formattedDataConfig
     }
 
-    if (nsfwResponse === 0) {
-      const valuedParams = Array.isArray(formattedDataConfig.valuedParams)
-        ? formattedDataConfig.valuedParams
-        : []
-      upload = applyConfig(log, valuedParams, OSC_CLIENT)
-    } else {
-      log.info('Upload cancelled by user due to NSFW warning')
-      upload = false
-    }
+    const valuedParams = Array.isArray(formattedDataConfig.valuedParams)
+      ? formattedDataConfig.valuedParams
+      : []
+    const upload = applyConfig(log, valuedParams, OSC_CLIENT)
 
     const saveRequest = await showDialogNoSound(
       ['Yes', 'No'],
@@ -205,9 +200,7 @@ export async function applyConfigCode(
       mainWindow
     )
 
-    saveResponse = saveRequest.response
-
-    if (saveResponse === 0) {
+    if (saveRequest.response === 0) {
       formattedDataConfig.uqid = config.uqid || ''
       formattedDataConfig.name = config.name || new Date().toISOString()
       formattedDataConfig.avatarName = config.avatarName || 'Unknown'
@@ -225,11 +218,14 @@ export async function applyConfigCode(
       )
     }
 
-    const u = (await upload) as boolean
+    const applied = await upload
 
-    log.info(`Upload: ${u ? 'successful' : 'failed'}`)
+    log.info(`Upload: ${applied ? 'successful' : 'failed'}`)
 
-    return { success: true, message: 'Config code applied successfully' }
+    return {
+      success: applied,
+      message: applied ? 'Config code applied successfully' : 'Failed to apply config code'
+    }
   } catch (e) {
     log.error('Error applying config code:', e)
     return { success: false, message: 'Error applying config code' }
