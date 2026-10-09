@@ -26,21 +26,24 @@ export async function deleteAvatar(
       }
     }
 
-    const deleteAvatar = db.prepare('DELETE FROM avatarStorage WHERE avatarId = ?').run(avatarId)
-    db.prepare('DELETE FROM avatars WHERE avatarId = ?').run(avatarId)
-    db.prepare('DELETE FROM presets WHERE avatarId = ?').run(avatarId)
+    const deleted = db.transaction(() => {
+      const result = db.prepare('DELETE FROM avatarStorage WHERE avatarId = ?').run(avatarId)
+      db.prepare('DELETE FROM avatars WHERE avatarId = ?').run(avatarId)
+      db.prepare('DELETE FROM presets WHERE avatarId = ?').run(avatarId)
+      return result
+    })()
 
-    if (deleteAvatar.changes > 0) {
+    if (deleted.changes > 0) {
       log.info(`Deleted avatar`)
       return {
         success: true
       }
-    } else {
-      log.warn(`No avatar found`)
-      return {
-        success: false,
-        message: 'No avatar found with the provided ID.'
-      }
+    }
+
+    log.warn(`No avatar found`)
+    return {
+      success: false,
+      message: 'No avatar found with the provided ID.'
     }
   } catch {
     log.error(`Error deleting avatar`)

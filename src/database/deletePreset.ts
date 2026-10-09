@@ -38,14 +38,22 @@ export async function deletePreset(
       return { success: false, message: 'Delete cancelled' }
     }
 
-    db.prepare(
-      `UPDATE avatars
+    const deleted = db.transaction(() => {
+      const res = db
+        .prepare('DELETE FROM presets WHERE id = ? AND forUqid = ?')
+        .run(id, existing.forUqid)
+      if (res.changes === 0) return false
+
+      db.prepare(
+        `UPDATE avatars
             SET isPreset = 0
             WHERE uqid = ?`
-    ).run(existing.forUqid)
+      ).run(existing.forUqid)
 
-    db.prepare('DELETE FROM presets WHERE id = ?').run(id)
+      return true
+    })()
 
+    if (!deleted) return { success: false, message: 'Preset not found' }
     log.info('Preset deleted successfully')
     return { success: true, message: 'Preset deleted successfully.' }
   } catch (e) {
