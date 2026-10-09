@@ -1,34 +1,31 @@
 import path from 'path'
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { electronApp, is } from '@electron-toolkit/utils'
-import { Client, Server } from 'node-osc'
 import log from 'electron-log/main'
 import { avatarDatabase } from './avatarDatabase'
 import icon from '../../resources/icon.png?asset'
 import { syncAllAvatarNames } from '../database/syncAllAvatarNames'
 import { checkDataFolder } from '../file/checkDataFolder'
-import { oscClient } from '../osc/oscClient'
-import { oscServer } from '../osc/oscServer'
-import { oscQuery } from '../osc/oscQuery'
+import { startOSC } from '../osc/startOSC'
+import type { OSCConnection } from '../types/osc'
+import { registerOSCStartupNotifications } from './oscStartupNotifications'
 import { OSCHandler } from '../osc/oscHandler'
 import { ASMStorage } from './ASMStorage'
 import { ipcHandlers } from '../ipc/handlers/ipcHandler'
 import { deleteOldLog } from '../file/deleteOldLog'
-import { OSCQueryServer } from 'oscquery'
 import { update } from './update'
 import { VRChatMonitor } from './VRChatMonitor'
 import { VRChatLogMonitor } from '../file/getVRChatLog'
 
 let mainWindow: BrowserWindow | null = null
-let OSC_CLIENT: Client | null = null
-let OSC_SERVER: Server | null = null
-let OSC_QUERY: OSCQueryServer | null = null
-let oscHandler: OSCHandler | null = null
-let oscMsgHandler: ((data: unknown[], rinfo?: { address?: string; port?: number }) => void) | null =
-  null
+let oscConnection: OSCConnection | null = null
+const oscStartup = new AbortController()
+const reportOSCStartup = registerOSCStartupNotifications(ipcMain, () => mainWindow)
+let oscSetup: Promise<boolean> | null = null
+let shutdownStarted = false
+let shutdownComplete = false
 let asmStorage: ASMStorage | null = null
 let vrchatMonitor: VRChatMonitor | null = null
-let vrchatLog: VRChatLogMonitor | null = null
 
 const dataFolder = checkDataFolder()
 
@@ -75,68 +72,73 @@ function createWindow(): void {
   }
 }
 
-async function setupOSC(): Promise<void> {
-  log.info('Setting up OSC...')
-
-  try {
-    const { port: PORT, service } = await oscQuery(log)
-    OSC_QUERY = service
-    OSC_SERVER = await oscServer(log, PORT)
-    OSC_CLIENT = await oscClient(log)
-
-    if (!mainWindow || !asmStorage || !OSC_CLIENT) {
-      log.error('Required dependencies not initialized')
-      throw new Error('Required dependencies not initialized')
+async function setupOSC(): Promise<boolean> {
+  const connection = await startOSC(log, reportOSCStartup, oscStartup.signal, async (client) => {
+    if (!mainWindow || !asmStorage) throw new Error('App closed during OSC setup')
+    const handler = new OSCHandler(log, mainWindow, avatarDB, client, asmStorage)
+    const logMonitor = new VRChatLogMonitor(log, () => monitor.onNewLogFileFound())
+    const monitor = new VRChatMonitor(
+      log,
+      mainWindow,
+      asmStorage,
+      logMonitor,
+      handler,
+      reportOSCStartup
+    )
+    vrchatMonitor = monitor
+    const stop = (): void => {
+      monitor.stop()
+      handler.cleanup()
     }
 
-    asmStorage.setPendingState(false)
-    oscHandler = new OSCHandler(log, mainWindow, avatarDB, OSC_CLIENT, asmStorage)
-
-    if (oscMsgHandler) {
-      OSC_SERVER.off('message', oscMsgHandler)
+    try {
+      await monitor.start()
+    } catch (error) {
+      stop()
+      throw error
     }
 
-    oscMsgHandler = (data: unknown[]) => {
-      oscHandler?.handleMessage(data)
+    return {
+      handleMessage: (data) => {
+        void monitor.handleOSCMessage(data).catch((error) => {
+          log.error('Error handling OSC message:', error)
+        })
+      },
+      stop
     }
+  })
 
-    OSC_SERVER.on('message', oscMsgHandler)
-
-    log.info('OSC setup complete')
-  } catch (e) {
-    log.error('Error setting up OSC:', e)
-    app.quit()
+  if (!connection) return false
+  if (oscStartup.signal.aborted || !mainWindow || !asmStorage) {
+    await connection.stop()
+    return false
   }
+
+  oscConnection = connection
+  asmStorage.setPendingState(false)
+  return true
 }
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.nymh.avatarsettingsmanager')
-  // app.on('browser-window-created', (_, window) => {
-  //   optimizer.watchWindowShortcuts(window)
-  // })
-
   asmStorage = new ASMStorage()
   ipcHandlers({
     log,
     avatarDB,
     storage: asmStorage,
     getMainWindow: () => mainWindow,
-    getOSCClient: () => OSC_CLIENT,
+    getOSCClient: () => oscConnection?.client ?? null,
     dataFolder
+  })
+  ipcMain.handle('skipVRChatCheck', (event) => {
+    if (event.sender !== mainWindow?.webContents) return false
+    return vrchatMonitor?.skipVRChatCheck() ?? false
   })
   createWindow()
   syncAllAvatarNames(log, avatarDB)
-  await setupOSC()
+  oscSetup = setupOSC()
+  if (!(await oscSetup) || oscStartup.signal.aborted) return
   update(log, avatarDB)
-
-  if (mainWindow && asmStorage && oscHandler) {
-    vrchatLog = new VRChatLogMonitor(log, () => {
-      vrchatMonitor?.onNewLogFileFound()
-    })
-
-    vrchatMonitor = new VRChatMonitor(log, mainWindow, asmStorage, vrchatLog, oscHandler)
-    await vrchatMonitor.start()
-  }
 
   log.info('App is ready')
 })
@@ -145,21 +147,30 @@ app.on('activate', function () {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-app.on('will-quit', () => {
+app.on('will-quit', async (event) => {
+  if (shutdownComplete) return
+  event.preventDefault()
+  if (shutdownStarted) return
+  shutdownStarted = true
+
   log.info('Meow Meow is shutting down...')
-  oscHandler?.cleanup()
-  asmStorage?.cleanState()
-  vrchatMonitor?.stop()
-  vrchatLog?.stop()
-  avatarDB.close()
-  OSC_CLIENT?.close()
-  OSC_SERVER?.close()
-  OSC_QUERY?.stop()
-  log.info('Everything cleaned up!')
-  log.info('---------------------------------------')
+  try {
+    await oscSetup
+    await oscConnection?.stop()
+    asmStorage?.cleanState()
+    avatarDB.close()
+    log.info('Everything cleaned up!')
+  } catch (error) {
+    log.error('Shutdown failed:', error)
+  } finally {
+    shutdownComplete = true
+    log.info('---------------------------------------')
+    app.quit()
+  }
 })
 
 app.on('before-quit', () => {
+  oscStartup.abort()
   ipcMain.removeAllListeners()
   mainWindow = null
 })

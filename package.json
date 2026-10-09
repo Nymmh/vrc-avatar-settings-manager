@@ -22,17 +22,18 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
-    "publish": "electron-builder --publish always"
+    "publish": "electron-builder --publish always",
+    "prepare:app-feed": "node scripts/prepare-app-feed.mjs"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@homebridge/ciao": "1.3.6",
     "better-sqlite3": "^12.8.0",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.8.3",
     "ms": "^2.1.3",
-    "node-osc": "^11.4.0",
-    "oscquery": "^1.1.1"
+    "node-osc": "^11.4.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "3.0.0",
@@ -48,6 +49,7 @@
     "electron-vite": "^4.0.1",
     "eslint": "^9.36.0",
     "eslint-plugin-vue": "^10.8.0",
+    "js-yaml": "^4.1.1",
     "overlayscrollbars": "^2.15.1",
     "overlayscrollbars-vue": "^0.5.9",
     "prettier": "^3.8.1",

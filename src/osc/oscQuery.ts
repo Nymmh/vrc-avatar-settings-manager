@@ -1,28 +1,30 @@
-import { OSCQAccess, OSCQueryServer, OSCTypeSimple } from 'oscquery'
+import { OSCQueryService } from './OSCQueryService'
 import { Logger } from 'electron-log'
 import { randomNumber } from '../helpers/randomNumber'
 
-export async function oscQuery(log: Logger): Promise<{ port: number; service: OSCQueryServer }> {
-  log.info('Starting Query...')
+export async function oscQuery(
+  log: Logger,
+  signal?: AbortSignal,
+  oscPort: number = randomNumber()
+): Promise<{ port: number; service: OSCQueryService }> {
+  signal?.throwIfAborted()
+  log.info(`Starting Query on port ${oscPort}...`)
+  const service = new OSCQueryService(oscPort, log)
 
-  const oscPort = randomNumber()
-  const service = new OSCQueryServer({
-    oscPort,
-    httpPort: oscPort,
-    serviceName: 'Nymh-avatar-settings-manager'
-  })
-
-  service.addMethod('/avatar/change', {
-    access: OSCQAccess.WRITEONLY,
-    arguments: [{ type: OSCTypeSimple.STRING }]
-  })
-
+  let onAbort: (() => void) | undefined
   try {
-    await service.start()
+    const cancelled = new Promise<never>((_, reject) => {
+      onAbort = () => reject(signal?.reason)
+      signal?.addEventListener('abort', onAbort, { once: true })
+    })
+    await Promise.race([service.start(), cancelled])
+    signal?.throwIfAborted()
     log.info(`Query is listening on port ${oscPort}`)
-    return { port: oscPort, service }
-  } catch (e) {
-    log.error('Failed to start Query:', e)
-    throw new Error('Failed to start Query')
+    return { port: service.port, service }
+  } catch (error) {
+    await service.stop().catch((cleanupError) => log.error('Failed to stop Query:', cleanupError))
+    throw error
+  } finally {
+    if (onAbort) signal?.removeEventListener('abort', onAbort)
   }
 }

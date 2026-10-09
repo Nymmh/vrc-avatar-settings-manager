@@ -1,23 +1,41 @@
 import { Server } from 'node-osc'
 import { Logger } from 'electron-log'
 
-export function oscServer(log: Logger, PORT: number): Promise<Server> {
+export function oscServer(log: Logger, PORT: number, signal?: AbortSignal): Promise<Server> {
+  signal?.throwIfAborted()
   log.info('Starting OSC Server...')
 
-  if (process.argv[2]?.startsWith('port=')) {
-    PORT = parseInt(process.argv[2].slice(5), 10)
-    log.info(`Using custom port from command line argument: ${PORT}`)
-  }
+  return new Promise((resolve, reject) => {
+    let settled = false
 
-  return new Promise((res, rej) => {
-    const OSC_SERVER = new Server(PORT, '0.0.0.0', () => {
+    const server = new Server(PORT, '0.0.0.0', () => {
+      if (settled) return
+      settled = true
+      signal?.removeEventListener('abort', onAbort)
       log.info(`Server listening on port: ${PORT}`)
-      res(OSC_SERVER)
+      resolve(server)
     })
 
-    OSC_SERVER.on('error', (e) => {
-      log.error('OSC server error:', e)
-      rej(e)
+    const fail = (error: unknown): void => {
+      if (settled) return
+      settled = true
+      signal?.removeEventListener('abort', onAbort)
+
+      try {
+        server.close(() => reject(error))
+      } catch (cleanupError) {
+        log.error('Failed to close OSC server:', cleanupError)
+        reject(error)
+      }
+    }
+
+    const onAbort = (): void => fail(signal?.reason)
+
+    signal?.addEventListener('abort', onAbort, { once: true })
+
+    server.on('error', (error) => {
+      if (settled) log.error('OSC server error:', error)
+      else fail(error)
     })
   })
 }

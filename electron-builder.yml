@@ -20,7 +20,6 @@ electronLanguages:
   - en-US
 win:
   executableName: VRC Avatar Settings Manager
-  publish: github
   target: nsis
 nsis:
   artifactName: ${productName} ${version} setup.${ext}
@@ -53,7 +52,13 @@ removePackageScripts: true
 nodeGypRebuild: false
 buildDependenciesFromSource: false
 publish:
-  provider: generic
-  url: https://github.com/Nymmh/vrc-avatar-settings-manager/releases/download/latest/
+  - provider: generic
+    url: https://nymmh.github.io/vrc-avatar-settings-manager/updates/app/
+    useMultipleRangeRequest: false
+  - provider: github
+    owner: Nymmh
+    repo: vrc-avatar-settings-manager
+    tagNamePrefix: app-v
+    releaseType: draft
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

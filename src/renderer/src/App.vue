@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, toRaw } from 'vue'
+import { onMounted, onUnmounted, ref, toRaw } from 'vue'
 import { useNotification } from '@kyvg/vue3-notification'
 import Button from './components/Button.vue'
 import Footer from './components/Footer.vue'
@@ -17,6 +17,7 @@ import Privacy from './views/Privacy.vue'
 import Terms from './views/Terms.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
 import type { avatarConfigType } from '../../types/avatarConfigType'
+import type { OSCStartupStatus } from '../../types/osc'
 import { NotificationInterface } from './types/notificationInterface'
 import { savedNamesType } from './types/savedNamesInterface'
 import { appStorage } from './composables/appStorage'
@@ -49,6 +50,13 @@ let cleanupFoundAvatarFile: (() => void) | null = null
 let cleanupAvatarConfig: (() => void) | null = null
 let cleanupSavedNames: (() => void) | null = null
 let cleanupVRChatStatus: (() => void) | null = null
+let cleanupOSCStartup: (() => void) | null = null
+let lastOSCStartup: OSCStartupStatus | null = null
+const oscStartupStatus = ref<OSCStartupStatus>({
+  state: 'starting',
+  attempt: 0,
+  message: 'Starting OSC...'
+})
 
 const mainScrollOverlayProps = {
   element: 'div',
@@ -275,19 +283,23 @@ const handleInputUpdate = ({ id, value, checked }): void => {
   }
 }
 
+const clearAvatarData = (): void => {
+  if (appStore.value.currentView === 'Main') appStore.value.currentView = 'Waiting'
+  appStore.value.avatarId = ''
+  appStore.value.avatarFoundFile = false
+  showAvatarFoundFileMsg.value = false
+  avatarConfig.value = null
+  saveName.value = ''
+  holdSaveName.value = false
+  configSelectValue.value = ''
+  resetVars()
+}
+
 const setupVRChatMonitor = (): void => {
   cleanupVRChatStatus?.()
   cleanupVRChatStatus = window.appApi.onVRChatStatusChanged((data) => {
     if (!data.isRunning) {
-      appStore.value.currentView = 'Waiting'
-      appStore.value.avatarId = ''
-      appStore.value.avatarFoundFile = false
-      showAvatarFoundFileMsg.value = false
-      avatarConfig.value = null
-      saveName.value = ''
-      holdSaveName.value = false
-      configSelectValue.value = ''
-      resetVars()
+      clearAvatarData()
 
       pushNotification({
         type: 'warn',
@@ -308,6 +320,28 @@ const getLowPerformanceModeSetting = async (): Promise<void> => {
 }
 
 onMounted(() => {
+  cleanupOSCStartup = window.appApi.onOSCStartupStatus((status) => {
+    if (lastOSCStartup?.attempt === status.attempt && lastOSCStartup.state === status.state) return
+
+    lastOSCStartup = status
+    oscStartupStatus.value = status
+
+    if (status.state === 'ready') {
+      pushNotification({
+        type: 'success',
+        title: 'OSC Connected'
+      })
+      return
+    }
+
+    clearAvatarData()
+    if (status.state === 'retrying' || status.state === 'failed') {
+      pushNotification({
+        type: 'error',
+        title: 'OSC Connection Failed'
+      })
+    }
+  })
   getLowPerformanceModeSetting()
   appStore.value.avatarId = ''
   appStore.value.avatarFoundFile = false
@@ -320,6 +354,9 @@ onMounted(() => {
   aviConfig()
   setupVRChatMonitor()
 })
+onUnmounted(() => {
+  cleanupOSCStartup?.()
+})
 </script>
 
 <template>
@@ -327,11 +364,17 @@ onMounted(() => {
   <Menu @notification="pushNotification" />
   <div :class="['main', { 'main--low-performance': appStore.lowPerformanceMode }]">
     <AllData v-if="appStore.currentView === 'AllData'" @notification="pushNotification" />
-    <Waiting v-if="!appStore.avatarId && appStore.currentView === 'Waiting'" />
+    <Waiting
+      v-if="!appStore.avatarId && appStore.currentView === 'Waiting'"
+      :status="oscStartupStatus"
+    />
     <Settings v-if="appStore.currentView === 'Settings'" @notification="pushNotification" />
     <Privacy v-show="appStore.currentView === 'Privacy'" />
     <Terms v-show="appStore.currentView === 'Terms'" />
-    <div v-show="appStore.currentView === 'Main'" class="main__wrapper">
+    <div
+      v-show="appStore.currentView === 'Main' && oscStartupStatus.state === 'ready'"
+      class="main__wrapper"
+    >
       <div
         :class="['main__scroll', { 'main__scroll--low-performance': appStore.lowPerformanceMode }]"
       >

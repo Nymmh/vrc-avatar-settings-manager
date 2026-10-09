@@ -1,8 +1,16 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import { saveConfigInterface } from '../types/saveConfigInterface'
 import { loadConfigInterface } from '../types/loadConfigInterface'
+import type { OSCStartupStatus } from '../types/osc'
 
 const appApi = {
+  skipVRChatCheck: (): Promise<boolean> => ipcRenderer.invoke('skipVRChatCheck'),
+  onOSCStartupStatus: (callback: (status: OSCStartupStatus) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, status: OSCStartupStatus): void => callback(status)
+    ipcRenderer.on('osc-startup-status', handler)
+    ipcRenderer.send('osc-startup-subscribe')
+    return () => ipcRenderer.removeListener('osc-startup-status', handler)
+  },
   appVersion: (): Promise<string> => ipcRenderer.invoke('appVersion'),
   getLogFileSize: async (): Promise<string> => ipcRenderer.invoke('getLogFileSize'),
   openLogFile: (): void => {
