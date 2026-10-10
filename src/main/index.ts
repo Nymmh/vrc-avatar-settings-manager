@@ -1,3 +1,4 @@
+import { handleIpc } from '../ipc/handleIpc'
 import path from 'path'
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { electronApp, is } from '@electron-toolkit/utils'
@@ -130,7 +131,7 @@ app.whenReady().then(async () => {
     getOSCClient: () => oscConnection?.client ?? null,
     dataFolder
   })
-  ipcMain.handle('skipVRChatCheck', (event) => {
+  handleIpc('skipVRChatCheck', (event) => {
     if (event.sender !== mainWindow?.webContents) return false
     return vrchatMonitor?.skipVRChatCheck() ?? false
   })

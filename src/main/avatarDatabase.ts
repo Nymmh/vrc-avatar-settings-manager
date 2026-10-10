@@ -12,9 +12,30 @@ export function avatarDatabase(log: Logger): DBType {
 
   const db: DBType = new Database(path.join(dbPath, 'meow.db'))
 
-  db.pragma('journal_mode = WAL')
+  try {
+    migrateAvatarDatabase(db, log)
+    db.pragma('synchronous = NORMAL')
+    db.pragma('cache_size = -7168')
+    db.pragma('temp_store = MEMORY')
+    log.info('Meow Storage initialized successfully')
+    return db
+  } catch (error) {
+    db.close()
+    log.error('Failed to initialize Meow Storage:', error)
+    throw error
+  }
+}
 
+function migrateAvatarDatabase(db: DBType, log: Logger): void {
   let version = db.pragma('user_version', { simple: true }) as number
+
+  if (version > 6) {
+    throw new Error(
+      `Database version ${version} is newer than supported version 6. Update the app to open it.`
+    )
+  }
+
+  db.pragma('journal_mode = WAL')
 
   if (version === 0) {
     db.transaction(() => {
@@ -121,10 +142,13 @@ export function avatarDatabase(log: Logger): DBType {
       db.prepare(
         `INSERT OR IGNORE INTO settings (key, value) VALUES ('saveConfigVersion', '1')`
       ).run()
-      db.prepare(`ALTER TABLE avatars ADD COLUMN saveVersion INTEGER DEFAULT 1 NOT NULL`).run()
-    })()
 
-    db.pragma('user_version = 5')
+      const columns = db.pragma('table_info(avatars)') as { name: string }[]
+      if (!columns.some((column) => column.name === 'saveVersion')) {
+        db.prepare(`ALTER TABLE avatars ADD COLUMN saveVersion INTEGER DEFAULT 1 NOT NULL`).run()
+      }
+      db.pragma('user_version = 5')
+    })()
 
     version = 5
     log.info('Meow Storage upgraded to version 5')
@@ -143,11 +167,4 @@ export function avatarDatabase(log: Logger): DBType {
     version = 6
     log.info('Meow Storage upgraded to version 6')
   }
-
-  db.pragma('synchronous = NORMAL')
-  db.pragma('cache_size = -7168')
-  db.pragma('temp_store = MEMORY')
-
-  log.info('Meow Storage initialized successfully')
-  return db
 }

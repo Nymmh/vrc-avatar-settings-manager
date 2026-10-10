@@ -17,7 +17,7 @@ import Privacy from './views/Privacy.vue'
 import Terms from './views/Terms.vue'
 import { InputSelectInterface } from './types/InputSelectInterface'
 import type { avatarConfigType } from '../../types/avatarConfigType'
-import type { OSCStartupStatus } from '../../types/osc'
+import type { OSCStartupStatus } from '../../types/oscStartupStatus'
 import { NotificationInterface } from './types/notificationInterface'
 import { savedNamesType } from './types/savedNamesInterface'
 import { appStorage } from './composables/appStorage'
@@ -246,13 +246,16 @@ const handleSavedUpdated = async (): Promise<void> => {
 }
 
 const copyAvatarId = async (): Promise<void> => {
-  const res = await window.avatarApi.copyAvatarId()
-
-  pushNotification({
-    type: res ? 'success' : 'error',
-    title: res ? 'Copy Successful' : 'Copy Failed',
-    text: ''
-  })
+  try {
+    const res = await window.avatarApi.copyAvatarId()
+    pushNotification({
+      type: res.success ? 'success' : 'error',
+      title: res.success ? 'Copy Successful' : 'Copy Failed',
+      text: res.message || ''
+    })
+  } catch {
+    pushNotification({ type: 'error', title: 'Copy Failed' })
+  }
 }
 
 const handleDelete = async (): Promise<void> => {

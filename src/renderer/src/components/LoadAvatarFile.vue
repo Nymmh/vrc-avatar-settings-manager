@@ -22,13 +22,17 @@ const handleLoad = async (): Promise<void> => {
 
   if (!res) return
 
-  loadedConfigName.value = res.name
+  if ('success' in res) {
+    if (!res.success) {
+      emit('notification', { type: 'error', title: 'Load Failed', text: res.message || '' })
+    }
+    return
+  }
+  loadedConfigName.value = res.name || ''
 }
 
 const handleUpload = async (): Promise<void> => {
-  let res: Awaited<ReturnType<typeof window.avatarApi.uploadAvatarConfig>>
-
-  res = await window.avatarApi.uploadAvatarConfig()
+  const res = await window.avatarApi.uploadAvatarConfig()
 
   resetVars()
   uploadStatus.value = res.success

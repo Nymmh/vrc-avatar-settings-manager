@@ -6,7 +6,10 @@
     "src/renderer/src/**/*.vue",
     "src/types/avatarConfigType.ts",
     "src/types/preload.d.ts",
-    "src/types/avatarConfig.d.ts",
+    "src/types/ipc.ts",
+    "src/types/oscStartupStatus.ts",
+    "src/types/saveConfigInterface.ts",
+    "src/types/loadConfigInterface.ts",
     "src/types/interfaces.d.ts"
   ],
   "compilerOptions": {

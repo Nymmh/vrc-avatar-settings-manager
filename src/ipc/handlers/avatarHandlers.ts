@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow, dialog, clipboard } from 'electron'
+import { handleIpc } from '../handleIpc'
+import { BrowserWindow, dialog, clipboard } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
@@ -24,7 +25,7 @@ interface AvatarHandlerContext {
 export function avatarHandlers(context: AvatarHandlerContext): void {
   const { log, avatarDB, storage, getMainWindow, getOSCClient } = context
 
-  ipcMain.handle('loadAvatarConfig', async () => {
+  handleIpc('loadAvatarConfig', async () => {
     log.info('Load avatar config...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -41,7 +42,7 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     const loadedAvatarJson = await loadAvatarConfig(log, mainWindow)
 
     if (typeof loadedAvatarJson === 'string') {
-      const convertConfig = (await applyConfigCode(
+      const convertedConfig = await applyConfigCode(
         log,
         avatarDB,
         mainWindow,
@@ -49,29 +50,35 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
         OSCClient,
         loadedAvatarJson,
         true
-      )) as exportAllConfigsInterface
-      storage.setLoadedAvatarJson(convertConfig)
-      return convertConfig
-    } else {
-      storage.setLoadedAvatarJson(loadedAvatarJson)
-      log.info(`Config version: ${loadedAvatarJson?.version || 'unknown'}`)
-      log.info('Avatar config loaded')
-      return loadedAvatarJson
+      )
+
+      if ('success' in convertedConfig) {
+        storage.setLoadedAvatarJson(null)
+        return convertedConfig
+      }
+
+      storage.setLoadedAvatarJson(convertedConfig)
+      return convertedConfig
     }
+
+    storage.setLoadedAvatarJson(loadedAvatarJson)
+    log.info(`Config version: ${loadedAvatarJson?.version || 'unknown'}`)
+    log.info('Avatar config loaded')
+    return loadedAvatarJson
   })
 
-  ipcMain.handle('uploadAvatarConfig', async () => {
+  handleIpc('uploadAvatarConfig', async () => {
     log.info('Upload avatar config...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
       log.error('Dependency not found')
-      return { upload: false }
+      return { upload: false, success: false }
     }
 
     const loadedAvatarJson = storage.getLoadedAvatarJson()
     if (!loadedAvatarJson) {
       log.error('No avatar config loaded')
-      return { upload: false }
+      return { upload: false, success: false }
     }
 
     const res = await uploadAvatarConfig(log, avatarDB, loadedAvatarJson, mainWindow)
@@ -81,11 +88,9 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     return res
   })
 
-  ipcMain.handle('getAllAvatars', async () => {
-    return await getAvatars(log, avatarDB)
-  })
+  handleIpc('getAllAvatars', async () => await getAvatars(log, avatarDB))
 
-  ipcMain.handle('deleteAvatar', async (_event, avatarId: string) => {
+  handleIpc('deleteAvatar', async (_event, avatarId) => {
     log.info('Delete avatar...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -100,7 +105,7 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     return del
   })
 
-  ipcMain.handle('exportAvatar', async (_event, avatarId: string) => {
+  handleIpc('exportAvatar', async (_event, avatarId) => {
     log.info('Export avatar...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -111,25 +116,22 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     return await exportAvatar(log, avatarDB, dialog, mainWindow, avatarId)
   })
 
-  ipcMain.handle(
-    'updateAvatarData',
-    async (_event, avatarId: string, name: string, updateId: string) => {
-      log.info('Update avatar data...')
-      const mainWindow = getMainWindow()
-      if (!mainWindow) {
-        log.error('Dependency not found')
-        return { success: false }
-      }
-
-      const res = await updateAvatarData(log, avatarDB, mainWindow, avatarId, name, updateId)
-      const currentAviId = storage.getCurrentAvatarId()
-      getNames(log, avatarDB, mainWindow, currentAviId)
-      log.info('Update avatar data completed')
-      return res
+  handleIpc('updateAvatarData', async (_event, avatarId, name, updateId) => {
+    log.info('Update avatar data...')
+    const mainWindow = getMainWindow()
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
     }
-  )
 
-  ipcMain.handle('copyAvatarId', async () => {
+    const res = await updateAvatarData(log, avatarDB, mainWindow, avatarId, name, updateId)
+    const currentAviId = storage.getCurrentAvatarId()
+    getNames(log, avatarDB, mainWindow, currentAviId)
+    log.info('Update avatar data completed')
+    return res
+  })
+
+  handleIpc('copyAvatarId', async () => {
     context.log.info('Copying avatar ID to clipboard...')
     const mainWindow = getMainWindow()
     const currentAviId = storage.getCurrentAvatarId()
@@ -144,7 +146,7 @@ export function avatarHandlers(context: AvatarHandlerContext): void {
     return { success: true }
   })
 
-  ipcMain.handle('randomParams', async () => {
+  handleIpc('randomParams', async () => {
     context.log.info('Generating random parameters for current avatar...')
     const mainWindow = getMainWindow()
     const avatarId = storage.getCurrentAvatarId()

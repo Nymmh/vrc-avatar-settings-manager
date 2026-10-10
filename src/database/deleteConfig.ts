@@ -38,14 +38,18 @@ export async function deleteConfig(
       return { success: false, message: 'Delete cancelled' }
     }
 
-    const deleteResult = db.prepare('DELETE FROM avatars WHERE id = ?').run(id)
+    const deleteResult = db.transaction(() => {
+      const res = db.prepare('DELETE FROM avatars WHERE id = ? AND uqid = ?').run(id, q.uqid)
+      if (res.changes > 0) {
+        db.prepare('DELETE FROM presets WHERE forUqid = ?').run(q.uqid)
+      }
+      return res
+    })()
 
     if (deleteResult.changes === 0) {
       log.error('Failed to delete config')
       return { success: false, message: 'Failed to delete config' }
     }
-
-    db.prepare('DELETE FROM presets WHERE forUqid = ?').run(q.uqid)
 
     log.info('Config deleted successfully')
     return { success: true, message: 'Config deleted successfully' }
