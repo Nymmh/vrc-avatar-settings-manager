@@ -1,4 +1,6 @@
-import { ipcMain, app, BrowserWindow, shell } from 'electron'
+import { isVRChatRunning } from '../../helpers/isVRChatRunning'
+import { handleIpc } from '../handleIpc'
+import { app, BrowserWindow, shell } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { ASMStorage } from '../../main/ASMStorage'
@@ -35,19 +37,19 @@ interface appHandlersContext {
 
 export function appHandlers(context: appHandlersContext): void {
   const { avatarDB, getMainWindow, dataFolder } = context
-  ipcMain.handle('appVersion', () => {
+  handleIpc('isVRChatRunning', () => isVRChatRunning())
+  handleIpc('appVersion', () => {
     context.log.info('Fetching app version...')
     return app.getVersion()
   })
 
-  ipcMain.handle('getLogFileSize', async () => {
+  handleIpc('getLogFileSize', async () => {
     context.log.info('Fetching log file size...')
     const logFilePath = path.join(dataFolder.folderPath, 'meow.log')
 
     try {
       const stats = await fs.promises.stat(logFilePath)
-      const fileSizeInBytes = stats.size
-      const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2)
+      const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
       return `${fileSizeInMB} MB`
     } catch (e) {
       context.log.error('Error fetching log file size', e)
@@ -55,28 +57,32 @@ export function appHandlers(context: appHandlersContext): void {
     }
   })
 
-  ipcMain.handle('openLogFile', () => {
+  handleIpc('openLogFile', async () => {
     try {
       context.log.info('Opening log file location...')
-      const logFilePath = path.join(dataFolder.folderPath)
-      shell.openPath(logFilePath)
+      const logDir = path.join(dataFolder.folderPath)
+      const error = await shell.openPath(logDir)
+      if (error) throw new Error(error)
     } catch (e) {
       context.log.error('Error opening log file location', e)
+      throw e
     }
   })
 
-  ipcMain.handle('openExportDirectory', () => {
+  handleIpc('openExportDirectory', async () => {
     try {
       context.log.info('Opening export directory...')
       const exportPath = path.join(dataFolder.folderPath, 'exports')
       fs.mkdirSync(exportPath, { recursive: true })
-      shell.openPath(exportPath)
+      const err = await shell.openPath(exportPath)
+      if (err) throw new Error(err)
     } catch (e) {
       context.log.error('Error opening export directory', e)
+      throw e
     }
   })
 
-  ipcMain.handle('deleteLogFile', async () => {
+  handleIpc('deleteLogFile', async () => {
     context.log.info('Delete log file...')
     const logFilePath = path.join(dataFolder.folderPath, 'meow.log')
 
@@ -104,44 +110,37 @@ export function appHandlers(context: appHandlersContext): void {
     }
   })
 
-  ipcMain.handle('getSaveFaceTrackingSetting', async () => {
-    return getSaveFaceTrackingSetting(avatarDB, context.log)
+  handleIpc('getSaveFaceTrackingSetting', async () =>
+    getSaveFaceTrackingSetting(avatarDB, context.log)
+  )
+
+  handleIpc('setSaveFaceTrackingSetting', async (_, value) =>
+    setSaveFaceTrackingSetting(avatarDB, value, context.log)
+  )
+
+  handleIpc('getCopyForDiscordSetting', async () => getCopyForDiscordSetting(avatarDB, context.log))
+
+  handleIpc('setCopyForDiscordSetting', async (_, value) =>
+    setCopyForDiscordSetting(avatarDB, value, context.log)
+  )
+
+  handleIpc('getApplyConfigBufferSetting', async () =>
+    getApplyConfigBufferSetting(avatarDB, context.log)
+  )
+
+  handleIpc('setApplyConfigBufferSetting', async (_, value) =>
+    setApplyConfigBufferSetting(avatarDB, value, context.log)
+  )
+
+  handleIpc('getLowPerformanceModeSetting', async () =>
+    getLowPerformanceModeSetting(avatarDB, context.log)
+  )
+
+  handleIpc('setLowPerformanceModeSetting', async (_, value) => {
+    return await setLowPerformanceModeSetting(avatarDB, value, context.log)
   })
 
-  ipcMain.handle('setSaveFaceTrackingSetting', async (_, value: boolean) => {
-    return setSaveFaceTrackingSetting(avatarDB, value, context.log)
-  })
-
-  ipcMain.handle('getCopyForDiscordSetting', async () => {
-    return getCopyForDiscordSetting(avatarDB, context.log)
-  })
-
-  ipcMain.handle('setCopyForDiscordSetting', async (_, value: boolean) => {
-    return setCopyForDiscordSetting(avatarDB, value, context.log)
-  })
-
-  ipcMain.handle('getApplyConfigBufferSetting', async () => {
-    return getApplyConfigBufferSetting(avatarDB, context.log)
-  })
-
-  ipcMain.handle('setApplyConfigBufferSetting', async (_, value: boolean) => {
-    return setApplyConfigBufferSetting(avatarDB, value, context.log)
-  })
-
-  ipcMain.handle('getLowPerformanceModeSetting', async () => {
-    return getLowPerformanceModeSetting(avatarDB, context.log)
-  })
-
-  ipcMain.handle('setLowPerformanceModeSetting', async (_, value: boolean) => {
-    const lowPerformanceModeSetting = await setLowPerformanceModeSetting(
-      avatarDB,
-      value,
-      context.log
-    )
-    return lowPerformanceModeSetting
-  })
-
-  ipcMain.handle('deleteDatabase', async () => {
+  handleIpc('deleteDatabase', async () => {
     if (!getMainWindow()) {
       context.log.error('Dependency not found')
       return false
@@ -150,7 +149,5 @@ export function appHandlers(context: appHandlersContext): void {
     return deleteDatabase(context.log, avatarDB, getMainWindow()!)
   })
 
-  ipcMain.handle('getExportedFileCount', async () => {
-    return await getExportedFileCount(context.log, dataFolder)
-  })
+  handleIpc('getExportedFileCount', async () => await getExportedFileCount(context.log, dataFolder))
 }

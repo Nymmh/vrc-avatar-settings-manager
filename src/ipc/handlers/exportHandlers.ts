@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow, dialog } from 'electron'
+import { handleIpc } from '../handleIpc'
+import { BrowserWindow, dialog } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
@@ -21,7 +22,7 @@ interface ExportHandlerContext {
 export function exportHandlers(context: ExportHandlerContext): void {
   const { log, avatarDB, storage, getMainWindow, getOSCClient } = context
 
-  ipcMain.handle('exportConfig', async (_event, id: number) => {
+  handleIpc('exportConfig', async (_event, id) => {
     log.info('Export config...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -32,7 +33,7 @@ export function exportHandlers(context: ExportHandlerContext): void {
     return await exportConfig(log, avatarDB, dialog, mainWindow, id)
   })
 
-  ipcMain.handle('exportAllConfigs', async () => {
+  handleIpc('exportAllConfigs', async () => {
     log.info('Export all configs...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -43,7 +44,7 @@ export function exportHandlers(context: ExportHandlerContext): void {
     return await exportAllConfigs(log, avatarDB, mainWindow, dialog)
   })
 
-  ipcMain.handle('importAllConfigs', async () => {
+  handleIpc('importAllConfigs', async () => {
     log.info('Import all configs...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -58,7 +59,7 @@ export function exportHandlers(context: ExportHandlerContext): void {
     return res
   })
 
-  ipcMain.handle('copyConfigCode', async (_event, id: number) => {
+  handleIpc('copyConfigCode', async (_event, id) => {
     log.info('Copy config code...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -69,7 +70,7 @@ export function exportHandlers(context: ExportHandlerContext): void {
     return await copyConfigCode(log, avatarDB, dialog, mainWindow, id)
   })
 
-  ipcMain.handle('applyCopiedCode', async () => {
+  handleIpc('applyCopiedCode', async () => {
     log.info('Apply copied code...')
     const mainWindow = getMainWindow()
     const oscClient = getOSCClient()
