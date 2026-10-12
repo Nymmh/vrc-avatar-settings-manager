@@ -40,5 +40,6 @@ export function insertPreset(
     )
   } catch (e) {
     log.error(`Failed to insert preset: ${e}`)
+    throw e
   }
 }

@@ -12,31 +12,28 @@ export async function createPreset(
   presetId: number,
   pendingChanges: Map<string, unknown>,
   mainWindow: BrowserWindow,
-  name?: string | undefined
+  name?: string
 ): Promise<void> {
   try {
     log.info('Trying to create preset...')
-    const existing = checkIfPresetExists(db, avatarId, presetId, log)
-    let uqid: string
-
-    if (existing) {
-      uqid = existing
-    } else {
-      uqid = generateUqid(avatarId)
-    }
-
     const aviData = await avatarConfig(db, avatarId, mainWindow, pendingChanges, log)
 
-    db.prepare(
-      `
+    db.transaction(() => {
+      const existingUqid = checkIfPresetExists(db, avatarId, presetId, log)
+      const uqid = existingUqid || generateUqid(avatarId)
+
+      db.prepare(
+        `
       INSERT INTO avatarStorage (avatarId, name)
       VALUES (?, ?)
       ON CONFLICT(avatarId) DO NOTHING
-    `
-    ).run(avatarId, aviData?.name || 'Unknown')
-
-    db.prepare(
       `
+      ).run(avatarId, aviData?.name || 'Unknown')
+
+      const presetName = name === undefined ? aviData?.name + ' Preset ' + presetId : name
+
+      db.prepare(
+        `
       INSERT INTO avatars (uqid, avatarId, name, avatarName, parameters, fromFile, isPreset)
       VALUES (?, ?, ?, ?, ?, 0, 1)
       ON CONFLICT(uqid) DO UPDATE SET
@@ -47,28 +44,24 @@ export async function createPreset(
           WHEN excluded.name != '' THEN excluded.name
           ELSE name
         END
-    `
-    ).run(
-      uqid,
-      avatarId,
-      name === undefined ? aviData?.name + ' Preset ' + presetId : name,
-      aviData?.name || '',
-      JSON.stringify(aviData?.valuedParams || [])
-    )
-
-    if (!existing) {
-      db.prepare(
         `
-        INSERT INTO presets (forUqid, avatarId, name, unityParameter)
-        VALUES (?, ?, ?, ?)
-      `
       ).run(
         uqid,
         avatarId,
-        name === undefined ? aviData?.name + ' Preset ' + presetId : name,
-        presetId
+        presetName,
+        aviData?.name || '',
+        JSON.stringify(aviData?.valuedParams || [])
       )
-    }
+
+      if (!existingUqid) {
+        db.prepare(
+          `
+        INSERT INTO presets (forUqid, avatarId, name, unityParameter)
+        VALUES (?, ?, ?, ?)
+        `
+        ).run(uqid, avatarId, presetName, presetId)
+      }
+    })()
 
     mainWindow.webContents.send('dataTableRefresh')
 

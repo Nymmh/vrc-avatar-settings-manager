@@ -46,74 +46,74 @@ export async function updateSavedConfigData(
 
     avatarId = avatarId.trim() || 'Unknown'
 
-    log.info(`Checking for name conflicts`)
-    const currentConfig = db
-      .prepare(
+    return db.transaction(() => {
+      log.info(`Checking for name conflicts`)
+      const currentConfig = db
+        .prepare(
+          `
+        SELECT name, avatarId, uqid FROM avatars where id = ?
         `
-      SELECT name, avatarId, uqid FROM avatars where id = ?
-      `
-      )
-      .get(id) as { name: string; avatarId: string; uqid: string } | undefined
+        )
+        .get(id) as { name: string; avatarId: string; uqid: string } | undefined
 
-    if (
-      currentConfig &&
-      (currentConfig.name.trim() !== saveName || currentConfig.avatarId.trim() !== avatarId)
-    ) {
-      let updateName = saveName
-      let counter = 1
-      const maxAttempts = 1000
+      if (!currentConfig) return { success: false, message: 'No config found' }
 
-      while (counter <= maxAttempts) {
-        const dup = db
-          .prepare(
+      if (currentConfig.name.trim() !== saveName || currentConfig.avatarId.trim() !== avatarId) {
+        let updateName = saveName
+        let counter = 1
+        const maxAttempts = 1000
+
+        while (counter <= maxAttempts) {
+          const dup = db
+            .prepare(
+              `
+            SELECT id FROM avatars WHERE name = ? AND avatarId = ? AND id != ?
             `
-          SELECT id FROM avatars WHERE name = ? AND avatarId = ? AND id != ?
+            )
+            .get(updateName, avatarId, id)
+
+          if (!dup) break
+          updateName = `${saveName} (${counter})`
+          counter++
+        }
+
+        if (counter > maxAttempts) {
+          log.error('Max attempts reached generating unique name')
+          return { success: false, message: 'Failed to generate unique name' }
+        }
+
+        saveName = updateName
+      }
+
+      if (nsfw !== undefined) {
+        const nsfwConvert = nsfw ? 1 : 0
+        db.prepare('UPDATE avatars SET avatarId = ?, name = ?, nsfw = ? WHERE id = ?').run(
+          avatarId,
+          saveName,
+          nsfwConvert,
+          id
+        )
+      } else {
+        db.prepare('UPDATE avatars SET avatarId = ?, name = ? WHERE id = ?').run(
+          avatarId,
+          saveName,
+          id
+        )
+      }
+
+      db.prepare(
         `
-          )
-          .get(updateName, avatarId, id)
+        UPDATE presets SET avatarId = ? WHERE forUqid = ?
+        `
+      ).run(avatarId, currentConfig.uqid)
 
-        if (!dup) break
+      log.info(`Config ${saveName} updated`)
 
-        updateName = `${saveName} (${counter})`
-        counter++
+      return {
+        success: true,
+        message: `Config ${saveName} updated`
       }
-
-      if (counter > maxAttempts) {
-        log.error('Max attempts reached generating unique name')
-        return { success: false, message: 'Failed to generate unique name' }
-      }
-
-      saveName = updateName
-    }
-
-    if (nsfw !== undefined) {
-      const nsfwConvert = nsfw ? 1 : 0
-      db.prepare('UPDATE avatars SET avatarId = ?, name = ?, nsfw = ? WHERE id = ?').run(
-        avatarId,
-        saveName,
-        nsfwConvert,
-        id
-      )
-    } else {
-      db.prepare('UPDATE avatars SET avatarId = ?, name = ? WHERE id = ?').run(
-        avatarId,
-        saveName,
-        id
-      )
-    }
-
-    db.prepare(
-      `
-      UPDATE presets SET avatarId = ? WHERE forUqid = ?
-      `
-    ).run(avatarId, currentConfig?.uqid)
-
-    log.info(`Config ${saveName} updated`)
-
-    return {
-      success: true,
-      message: `Config ${saveName} updated`
-    }
+    })()
   } catch (error) {
     log.error('Error updating config:', error)
     return { success: false, message: 'Error updating config' }

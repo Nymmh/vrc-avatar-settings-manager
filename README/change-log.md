@@ -19,6 +19,9 @@
 - Fixed some actions incorrectly reporting success after failing
 - Avatar share code wont save invalid data
 - Missing parameters now render as empty instead of zero
+- Fixed database updates and saves sometimes leaving partial changes on fail
+- Fixed database race conditions
+- Fixed database version compatibility
 
 # Version 1.1.4 - 2026-09-25
 

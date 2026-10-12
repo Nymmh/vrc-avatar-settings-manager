@@ -36,5 +36,6 @@ export function insertConfig(
     log.info(`Config inserted successfully`)
   } catch (e) {
     log.error(`Failed to insert config: ${e}`)
+    throw e
   }
 }

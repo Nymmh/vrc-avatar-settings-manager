@@ -35,8 +35,8 @@ export function updateSavedConfig(
     const currentConfig = db
       .prepare(
         `
-      SELECT name, avatarId, uqid FROM avatars where id = ?
-      `
+        SELECT name, avatarId, uqid FROM avatars where id = ?
+        `
       )
       .get(id) as { name: string; avatarId: string; uqid: string } | undefined
 
@@ -49,17 +49,19 @@ export function updateSavedConfig(
 
     const config = avatarConfigResult.valuedParams
 
-    db.prepare(
-      `
-      UPDATE presets SET avatarId = ? WHERE forUqid = ?
-      `
-    ).run(avatarId, currentConfig?.uqid)
+    db.transaction(() => {
+      db.prepare(
+        `
+        UPDATE presets SET avatarId = ? WHERE forUqid = ?
+        `
+      ).run(avatarId, currentConfig?.uqid)
 
-    db.prepare(
-      `
-      UPDATE avatars SET parameters = ? WHERE id = ?
-    `
-    ).run(JSON.stringify(config), id)
+      db.prepare(
+        `
+        UPDATE avatars SET parameters = ? WHERE id = ?
+        `
+      ).run(JSON.stringify(config), id)
+    })()
 
     log.info(`Config ${saveName} updated`)
     return {

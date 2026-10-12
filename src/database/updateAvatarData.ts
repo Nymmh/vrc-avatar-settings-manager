@@ -14,7 +14,7 @@ export async function updateAvatarData(
   updateId: string
 ): Promise<updateAvatarDataInterface> {
   try {
-    log.info('Starting avatar data update process')
+    log.info('Updating avatar data...')
     if (!avatarId || !avatarName || !updateId) {
       log.error('Avatar ID and name are required')
       return { success: false, message: 'Avatar ID and name are required' }
@@ -33,52 +33,54 @@ export async function updateAvatarData(
       return { success: false, message: 'Update cancelled' }
     }
 
-    const q = db.prepare('UPDATE avatarStorage SET name = ? WHERE avatarId = ?')
-    const result = q.run(avatarName, avatarId)
+    const result = db.transaction(() => {
+      const updated = db
+        .prepare('UPDATE avatarStorage SET name = ? WHERE avatarId = ?')
+        .run(avatarName, avatarId)
+      if (updated.changes === 0) return updated
 
-    if (updateId !== avatarId) {
-      const avatarStorageSearch = db.prepare(
-        'SELECT avatarId FROM avatarStorage WHERE avatarId = ? LIMIT 1'
-      )
-      const avatarStorageExists = avatarStorageSearch.get(updateId)
-      if (!avatarStorageExists) {
-        const asu = db.prepare('UPDATE avatarStorage SET avatarId = ? WHERE avatarId = ?')
-        asu.run(updateId, avatarId)
-
-        const au = db.prepare('UPDATE avatars SET avatarId = ? WHERE avatarId = ?')
-        au.run(updateId, avatarId)
-
-        const pu = db.prepare('UPDATE presets SET avatarId = ? WHERE avatarId = ?')
-        pu.run(updateId, avatarId)
-      } else {
-        const au = db.prepare('UPDATE avatars SET avatarId = ? WHERE avatarId = ?')
-        au.run(updateId, avatarId)
-
-        const presetsToUpdate = db
-          .prepare('SELECT id, unityParameter FROM presets WHERE avatarId = ?')
-          .all(avatarId) as { id: number; unityParameter: number }[]
-
-        for (const preset of presetsToUpdate) {
-          const presetNumber = generateNextPresetNumber(db, avatarId)
-
-          db.prepare('UPDATE presets SET avatarId = ?, unityParameter = ? WHERE id = ?').run(
+      if (updateId !== avatarId) {
+        const avatarStorageExists = db
+          .prepare('SELECT avatarId FROM avatarStorage WHERE avatarId = ? LIMIT 1')
+          .get(updateId)
+        if (!avatarStorageExists) {
+          db.prepare('UPDATE avatarStorage SET avatarId = ? WHERE avatarId = ?').run(
             updateId,
-            presetNumber,
-            preset.id
+            avatarId
           )
-        }
 
-        const das = db.prepare('DELETE FROM avatarStorage WHERE avatarId = ?')
-        das.run(avatarId)
+          db.prepare('UPDATE avatars SET avatarId = ? WHERE avatarId = ?').run(updateId, avatarId)
+
+          db.prepare('UPDATE presets SET avatarId = ? WHERE avatarId = ?').run(updateId, avatarId)
+        } else {
+          db.prepare('UPDATE avatars SET avatarId = ? WHERE avatarId = ?').run(updateId, avatarId)
+
+          const presetsToUpdate = db
+            .prepare('SELECT id, unityParameter FROM presets WHERE avatarId = ?')
+            .all(avatarId) as { id: number; unityParameter: number }[]
+
+          for (const preset of presetsToUpdate) {
+            const presetNumber = generateNextPresetNumber(db, avatarId)
+
+            db.prepare('UPDATE presets SET avatarId = ?, unityParameter = ? WHERE id = ?').run(
+              updateId,
+              presetNumber,
+              preset.id
+            )
+          }
+
+          db.prepare('DELETE FROM avatarStorage WHERE avatarId = ?').run(avatarId)
+        }
       }
-    }
+
+      if (!syncAvatarNames(log, db, updateId)) throw new Error('Failed to sync avatar names')
+      return updated
+    })()
 
     if (result.changes === 0) {
       log.error('No avatar found with the provided ID')
       return { success: false, message: 'No avatar found with the provided ID' }
     }
-
-    syncAvatarNames(log, db, avatarId)
 
     log.info('Avatar data updated successfully')
 

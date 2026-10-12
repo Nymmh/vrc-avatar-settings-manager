@@ -7,56 +7,50 @@ export async function createPresetFromApp(
   id: number
 ): Promise<createPresetInterface> {
   try {
-    const avatarData = db.prepare('SELECT uqid,avatarId,name FROM avatars WHERE id = ?').get(id)
+    return db.transaction(() => {
+      const avatarData = db.prepare('SELECT uqid,avatarId,name FROM avatars WHERE id = ?').get(id)
 
-    if (!avatarData?.uqid) {
-      log.error('Avatar config not found')
-      return { success: false, message: 'Avatar config not found' }
-    }
+      if (!avatarData?.uqid) {
+        log.error('Avatar config not found')
+        return { success: false, message: 'Avatar config not found' }
+      }
 
-    const presetExisting = db
-      .prepare('SELECT id FROM presets WHERE forUqid = ?')
-      .get(avatarData.uqid)
+      const presetExisting = db
+        .prepare('SELECT id FROM presets WHERE forUqid = ?')
+        .get(avatarData.uqid)
 
-    if (presetExisting) {
-      log.error('Preset already exists')
-      return { success: false, message: 'Preset already exists' }
-    }
+      if (presetExisting) {
+        log.error('Preset already exists')
+        return { success: false, message: 'Preset already exists' }
+      }
 
-    let saveName = avatarData.name
-    let presetNumber = 1
+      let presetNumber = 1
 
-    const allPresetForAvatar = db
-      .prepare('SELECT unityParameter FROM presets WHERE avatarId = ? ORDER BY unityParameter ASC')
-      .all(avatarData.avatarId) as Array<{ unityParameter: number }>
+      const avatarPresets = db
+        .prepare(
+          'SELECT unityParameter FROM presets WHERE avatarId = ? ORDER BY unityParameter ASC'
+        )
+        .all(avatarData.avatarId) as Array<{ unityParameter: number }>
 
-    if (allPresetForAvatar && allPresetForAvatar.length) {
-      const existingNumbers = new Set<number>(allPresetForAvatar.map((p) => p.unityParameter))
-
+      const existingNumbers = new Set(avatarPresets.map((p) => p.unityParameter))
       while (existingNumbers.has(presetNumber)) {
         presetNumber++
       }
-    }
 
-    saveName += ' Preset ' + presetNumber
+      const saveName = avatarData.name + ' Preset ' + presetNumber
 
-    db.prepare(
-      `
-        UPDATE avatars
-        SET isPreset = 1
-        WHERE uqid = ?
-      `
-    ).run(avatarData.uqid)
+      db.prepare('UPDATE avatars SET isPreset = 1 WHERE uqid = ?').run(avatarData.uqid)
 
-    db.prepare(
-      `
+      db.prepare(
+        `
         INSERT INTO presets (forUqid, avatarId, name, unityParameter)
         VALUES (?, ?, ?, ?)
         `
-    ).run(avatarData.uqid, avatarData.avatarId, saveName, presetNumber)
+      ).run(avatarData.uqid, avatarData.avatarId, saveName, presetNumber)
 
-    log.info('Preset created from app successfully')
-    return { success: true, message: 'Preset created successfully' }
+      log.info('Preset created from app successfully')
+      return { success: true, message: 'Preset created successfully' }
+    })()
   } catch (e) {
     log.error('Error creating preset from app:', e)
     return { success: false, message: 'Error creating preset' }
