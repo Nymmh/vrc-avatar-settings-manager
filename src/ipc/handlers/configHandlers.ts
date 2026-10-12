@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { handleIpc } from '../handleIpc'
+import { BrowserWindow } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
@@ -30,7 +31,7 @@ interface ConfigHandlerContext {
 export function configHandlers(context: ConfigHandlerContext): void {
   const { log, avatarDB, storage, getMainWindow, getOSCClient } = context
 
-  ipcMain.handle('saveConfig', async (_event, { content, saveName, nsfw }) => {
+  handleIpc('saveConfig', async (_event, { saveName, nsfw }) => {
     log.info('Save config...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -41,7 +42,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     const currentAviId = storage.getCurrentAvatarId()
     const pendingChanges = storage.getPendingChanges()
 
-    content = await avatarConfig(avatarDB, currentAviId, mainWindow, pendingChanges, log)
+    const content = await avatarConfig(avatarDB, currentAviId, mainWindow, pendingChanges, log)
 
     if (!content) {
       log.info('Failed to get avatar config')
@@ -53,7 +54,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return savedConfig
   })
 
-  ipcMain.handle('loadConfig', async () => {
+  handleIpc('loadConfig', async () => {
     log.info('Loading config...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -78,11 +79,8 @@ export function configHandlers(context: ConfigHandlerContext): void {
         dataParsedConfig.toString()
       )
 
-      if (res && 'success' in res && res.success) {
-        return { error: '' }
-      } else {
-        return { error: 'Failed to apply share code' }
-      }
+      const applied = res && 'success' in res && res.success
+      return { name: '', match: false, error: applied ? '' : 'Failed to apply share code' }
     }
     if (!dataParsedConfig.avatarId) {
       log.warn('Loaded config is missing ID')
@@ -103,7 +101,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return { name: avatarName, match: dataParsedConfig.avatarId === currentAviId, error: '' }
   })
 
-  ipcMain.handle('applyConfig', async (_event, id: number) => {
+  handleIpc('applyConfig', async (_event, id) => {
     log.info(`Applying config...`)
 
     const mainWindow = getMainWindow()
@@ -133,16 +131,16 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return { success: !!res }
   })
 
-  ipcMain.handle(
+  handleIpc(
     'uploadConfigAndApply',
-    async (_event, saveName: string | '', saveOption: boolean, avatarName: string | 'Unknown') => {
+    async (_event, saveName = '', saveOption = false, avatarName = 'Unknown') => {
       log.info('Uploading config and applying...')
 
       const mainWindow = getMainWindow()
       const oscClient = getOSCClient()
       if (!mainWindow || !oscClient) {
         log.error('Required dependencies not found')
-        return { success: false }
+        return { success: false, upload: false }
       }
 
       const loadedJson = storage.getLoadedJson()
@@ -150,7 +148,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
 
       if (!loadedJson) {
         log.info('No configuration loaded to upload')
-        return { success: false }
+        return { success: false, upload: false }
       }
 
       const uploadingResult = await uploadConfigAndApply(
@@ -171,41 +169,30 @@ export function configHandlers(context: ConfigHandlerContext): void {
     }
   )
 
-  ipcMain.handle(
-    'uploadConfig',
-    async (_event, saveName: string | '', nsfw: boolean, avatarId: string | '') => {
-      log.info('Uploading configuration...')
-      const mainWindow = getMainWindow()
-      if (!mainWindow) {
-        log.error('Dependency not found')
-        return { success: false }
-      }
-
-      const loadedJson = storage.getLoadedJson()
-      if (!loadedJson) {
-        log.info('No configuration loaded to upload')
-        return { success: false }
-      }
-
-      const currentAviId = storage.getCurrentAvatarId()
-
-      const res = await uploadConfig(
-        log,
-        avatarDB,
-        saveName,
-        nsfw,
-        avatarId,
-        loadedJson,
-        mainWindow
-      )
-      getNames(log, avatarDB, mainWindow, currentAviId)
-
-      log.info('Upload process completed')
-      return res
+  handleIpc('uploadConfig', async (_event, saveName = '', nsfw = false, avatarId = '') => {
+    log.info('Uploading configuration...')
+    const mainWindow = getMainWindow()
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false, upload: false }
     }
-  )
 
-  ipcMain.handle('refreshAvatarFile', async () => {
+    const loadedJson = storage.getLoadedJson()
+    if (!loadedJson) {
+      log.info('No configuration loaded to upload')
+      return { success: false, upload: false }
+    }
+
+    const currentAviId = storage.getCurrentAvatarId()
+
+    const res = await uploadConfig(log, avatarDB, saveName, nsfw, avatarId, loadedJson, mainWindow)
+    getNames(log, avatarDB, mainWindow, currentAviId)
+
+    log.info('Upload process completed')
+    return res
+  })
+
+  handleIpc('refreshAvatarFile', async () => {
     log.info('Refreshing avatar config...')
     const mainWindow = getMainWindow()
 
@@ -242,15 +229,11 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return { success: true, avatarId: currentAviId }
   })
 
-  ipcMain.handle('getAllSaved', async () => {
-    return await getAllSaved(log, avatarDB)
-  })
+  handleIpc('getAllSaved', async () => await getAllSaved(log, avatarDB))
 
-  ipcMain.handle('getConfigByUqid', async (_event, uqid: string) => {
-    return await getAllSaved(log, avatarDB, uqid)
-  })
+  handleIpc('getConfigByUqid', async (_event, uqid) => await getAllSaved(log, avatarDB, uqid))
 
-  ipcMain.handle('updateConfig', async (_event, id, avatarId, avatarName, saveName) => {
+  handleIpc('updateConfig', async (_event, id, avatarId, avatarName, saveName) => {
     log.info('Update config...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -283,7 +266,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
       id,
       avatarId,
       avatarName,
-      saveName,
+      saveName ?? '',
       mainWindow,
       pendingChanges
     )
@@ -294,7 +277,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return res
   })
 
-  ipcMain.handle('updateConfigData', async (_event, id, avatarId, saveName, nsfw) => {
+  handleIpc('updateConfigData', async (_event, id, avatarId, saveName, nsfw) => {
     log.info('Updating config data...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -302,7 +285,15 @@ export function configHandlers(context: ConfigHandlerContext): void {
       return { success: false }
     }
 
-    const res = await updateSavedConfigData(log, avatarDB, mainWindow, id, avatarId, saveName, nsfw)
+    const res = await updateSavedConfigData(
+      log,
+      avatarDB,
+      mainWindow,
+      id,
+      avatarId,
+      saveName ?? '',
+      nsfw
+    )
     const currentAviId = storage.getCurrentAvatarId()
 
     getNames(log, avatarDB, mainWindow, currentAviId)
@@ -311,7 +302,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return res
   })
 
-  ipcMain.handle('replaceParams', async (_event, id: number) => {
+  handleIpc('replaceParams', async (_event, id) => {
     log.info('Replacing parameters...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -322,7 +313,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return await replaceParams(log, avatarDB, mainWindow, id)
   })
 
-  ipcMain.handle('deleteConfig', async (_event, id: number) => {
+  handleIpc('deleteConfig', async (_event, id) => {
     log.info('Delete config...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -337,7 +328,7 @@ export function configHandlers(context: ConfigHandlerContext): void {
     return del
   })
 
-  ipcMain.handle('getConfigById', async (_event, avatarId: string) => {
+  handleIpc('getConfigById', async (_event, avatarId) => {
     log.info('Get config by Id....')
     const mainWindow = getMainWindow()
     if (!mainWindow) {

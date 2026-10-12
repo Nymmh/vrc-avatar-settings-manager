@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
-import type { OSCStartupStatus } from '../../../types/osc'
+import type { OSCStartupStatus } from '../../../types/oscStartupStatus'
 import Button from './Button.vue'
 
 const props = defineProps<{ status: OSCStartupStatus }>()

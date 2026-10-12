@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { handleIpc } from '../handleIpc'
+import { BrowserWindow } from 'electron'
 import { Logger } from 'electron-log'
 import Database from 'better-sqlite3'
 import { Client } from 'node-osc'
@@ -21,17 +22,17 @@ interface PresetHandlerContext {
 export function presetHandlers(context: PresetHandlerContext): void {
   const { log, avatarDB, storage, getMainWindow, getOSCClient } = context
 
-  ipcMain.handle('getAllPresets', async () => {
+  handleIpc('getAllPresets', async () => {
     log.info('Get all presets...')
     return await getAllPresets(log, avatarDB)
   })
 
-  ipcMain.handle('getPresetsByUqid', async (_event, uqid: string) => {
+  handleIpc('getPresetsByUqid', async (_event, uqid) => {
     log.info('Get all presets by uqid...')
     return await getAllPresets(log, avatarDB, uqid)
   })
 
-  ipcMain.handle('applyPresetFromApp', async (_event, avatarId: string, unityParameter: number) => {
+  handleIpc('applyPresetFromApp', async (_event, avatarId, unityParameter) => {
     log.info('Apply preset from app...')
     const mainWindow = getMainWindow()
     const oscClient = getOSCClient()
@@ -43,21 +44,18 @@ export function presetHandlers(context: PresetHandlerContext): void {
     return await applyPreset(log, mainWindow, avatarDB, avatarId, unityParameter, oscClient, true)
   })
 
-  ipcMain.handle(
-    'updatePresetFromApp',
-    async (_event, id: number, saveName: string, parameter: number) => {
-      log.info('Update preset from app...')
-      const mainWindow = getMainWindow()
-      if (!mainWindow) {
-        log.error('Dependency not found')
-        return { success: false }
-      }
-
-      return await updatePresetData(log, avatarDB, mainWindow, id, saveName, parameter)
+  handleIpc('updatePresetFromApp', async (_event, id, saveName, parameter) => {
+    log.info('Update preset from app...')
+    const mainWindow = getMainWindow()
+    if (!mainWindow) {
+      log.error('Dependency not found')
+      return { success: false }
     }
-  )
 
-  ipcMain.handle('deletePresetFromApp', async (_event, id: number) => {
+    return await updatePresetData(log, avatarDB, mainWindow, id, saveName, parameter)
+  })
+
+  handleIpc('deletePresetFromApp', async (_event, id) => {
     log.info('Delete preset from app...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {
@@ -72,7 +70,7 @@ export function presetHandlers(context: PresetHandlerContext): void {
     return del
   })
 
-  ipcMain.handle('createPresetFromApp', async (_event, id: number) => {
+  handleIpc('createPresetFromApp', async (_event, id) => {
     log.info('Create preset from app...')
     const mainWindow = getMainWindow()
     if (!mainWindow) {

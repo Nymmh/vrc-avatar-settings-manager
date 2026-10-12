@@ -43,12 +43,20 @@ const getLogFileSize = async (): Promise<void> => {
   logFileSize.value = size
 }
 
-const openExportDirectory = (): void => {
-  window.appApi.openExportDirectory()
+const openExportDirectory = async (): Promise<void> => {
+  try {
+    await window.appApi.openExportDirectory()
+  } catch {
+    emit('notification', { type: 'error', title: 'Could Not Open Export Folder' })
+  }
 }
 
-const openLogDirectory = (): void => {
-  window.appApi.openLogFile()
+const openLogDirectory = async (): Promise<void> => {
+  try {
+    await window.appApi.openLogFile()
+  } catch {
+    emit('notification', { type: 'error', title: 'Could Not Open Log Folder' })
+  }
 }
 
 const deleteLogFile = async (): Promise<void> => {
@@ -171,6 +179,7 @@ const deleteDatabase = async (): Promise<void> => {
 
 const getExportedFileCount = async (): Promise<void> => {
   const res = await window.appApi.getExportedFileCount()
+  if (!res) return
   exportedFiles.value.fullExports = res.fullExports
   exportedFiles.value.avatarExports = res.avatarExports
   exportedFiles.value.configExports = res.configExports

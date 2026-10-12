@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { useDebounceFn } from '@vueuse/core'
 import { computed } from 'vue'
+import type { PropType } from 'vue'
 import { appStorage } from '../composables/appStorage'
 
 const appStore = appStorage()
@@ -12,8 +13,8 @@ const props = defineProps({
     default: '123'
   },
   modelValue: {
-    type: Number,
-    default: 0
+    type: Number as PropType<number | null>,
+    default: null
   },
   id: {
     type: String,
@@ -35,17 +36,17 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const increment = (currentValue: number, step: number = 1): void => {
+const increment = (currentValue: number | null, step: number = 1): void => {
   emit('update:modelValue', {
     id: props.id,
-    value: currentValue + step
+    value: (currentValue ?? 0) + step
   })
 }
 
-const decrement = (currentValue: number, step: number = 1): void => {
+const decrement = (currentValue: number | null, step: number = 1): void => {
   emit('update:modelValue', {
     id: props.id,
-    value: currentValue - step
+    value: (currentValue ?? 0) - step
   })
 }
 

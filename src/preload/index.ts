@@ -1,201 +1,121 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
-import { saveConfigInterface } from '../types/saveConfigInterface'
-import { loadConfigInterface } from '../types/loadConfigInterface'
-import type { OSCStartupStatus } from '../types/osc'
+import { contextBridge, ipcRenderer } from 'electron'
+import type { IpcRendererEvent } from 'electron'
 
-const appApi = {
-  skipVRChatCheck: (): Promise<boolean> => ipcRenderer.invoke('skipVRChatCheck'),
-  onOSCStartupStatus: (callback: (status: OSCStartupStatus) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, status: OSCStartupStatus): void => callback(status)
-    ipcRenderer.on('osc-startup-status', handler)
-    ipcRenderer.send('osc-startup-subscribe')
-    return () => ipcRenderer.removeListener('osc-startup-status', handler)
-  },
-  appVersion: (): Promise<string> => ipcRenderer.invoke('appVersion'),
-  getLogFileSize: async (): Promise<string> => ipcRenderer.invoke('getLogFileSize'),
-  openLogFile: (): void => {
-    ipcRenderer.invoke('openLogFile')
-  },
-  openExportDirectory: (): void => {
-    ipcRenderer.invoke('openExportDirectory')
-  },
-  deleteLogFile: (): Promise<boolean> => {
-    return ipcRenderer.invoke('deleteLogFile')
-  },
-  getSaveFaceTrackingSetting: (): Promise<boolean> => {
-    return ipcRenderer.invoke('getSaveFaceTrackingSetting')
-  },
-  setSaveFaceTrackingSetting: (value: boolean): Promise<boolean> => {
-    return ipcRenderer.invoke('setSaveFaceTrackingSetting', value)
-  },
-  parameterRateUpdate: (meowback: (rate: string) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, data: string): void => meowback(data)
-    ipcRenderer.on('parameterRateUpdate', handler)
-    return () => ipcRenderer.removeListener('parameterRateUpdate', handler)
-  },
-  getCopyForDiscordSetting: (): Promise<boolean> => {
-    return ipcRenderer.invoke('getCopyForDiscordSetting')
-  },
-  setCopyForDiscordSetting: (value: boolean): Promise<boolean> => {
-    return ipcRenderer.invoke('setCopyForDiscordSetting', value)
-  },
-  deleteDatabase: (): Promise<boolean> => {
-    return ipcRenderer.invoke('deleteDatabase')
-  },
-  getExportedFileCount: (): Promise<exportedFileCountInterface> => {
-    return ipcRenderer.invoke('getExportedFileCount')
-  },
-  isVRChatRunning: (): Promise<boolean> => {
-    return ipcRenderer.invoke('isVRChatRunning')
-  },
-  onVRChatStatusChanged: (meowback: (data: { isRunning: boolean }) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, data: { isRunning: boolean }): void => meowback(data)
-    ipcRenderer.on('vrchat-status-changed', handler)
-    return () => ipcRenderer.removeListener('vrchat-status-changed', handler)
-  },
-  getApplyConfigBufferSetting: (): Promise<boolean> => {
-    return ipcRenderer.invoke('getApplyConfigBufferSetting')
-  },
-  setApplyConfigBufferSetting: (value: boolean): Promise<boolean> => {
-    return ipcRenderer.invoke('setApplyConfigBufferSetting', value)
-  },
-  getLowPerformanceModeSetting: (): Promise<boolean> => {
-    return ipcRenderer.invoke('getLowPerformanceModeSetting')
-  },
-  setLowPerformanceModeSetting: (value: boolean): Promise<boolean> => {
-    return ipcRenderer.invoke('setLowPerformanceModeSetting', value)
+import type {
+  appApiInterface,
+  avatarApiInterface,
+  ipcArgsType,
+  ipcChannelType,
+  ipcResultType,
+  ipcEventInterface
+} from '../types/ipc'
+
+function invoke<Ch extends ipcChannelType>(
+  channel: Ch,
+  ...args: ipcArgsType<Ch>
+): Promise<ipcResultType<Ch>> {
+  return ipcRenderer.invoke(channel, ...args)
+}
+
+function subscribe<Ei extends keyof ipcEventInterface>(
+  channel: Ei,
+  callback: (data: ipcEventInterface[Ei]) => void
+): () => void {
+  const handler = (_event: IpcRendererEvent, data: ipcEventInterface[Ei]): void => callback(data)
+  ipcRenderer.on(channel, handler)
+  return () => {
+    ipcRenderer.removeListener(channel, handler)
   }
 }
 
-const avatarApi = {
-  avatarId: (meowback: (data: { id: string }) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, data: { id: string }): void => meowback(data)
-    ipcRenderer.on('avatarId', handler)
-    return () => ipcRenderer.removeListener('avatarId', handler)
+const appApi: appApiInterface = {
+  skipVRChatCheck: () => invoke('skipVRChatCheck'),
+  onOSCStartupStatus: (callback) => {
+    const unsubscribe = subscribe('osc-startup-status', callback)
+    ipcRenderer.send('osc-startup-subscribe')
+    return unsubscribe
   },
-  foundAvatarFile: (meowback: (data: { success: boolean }) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, data: { success: boolean }): void => meowback(data)
-    ipcRenderer.on('foundAvatarFile', handler)
-    return () => ipcRenderer.removeListener('foundAvatarFile', handler)
-  },
-  avatarConfig: (meowback: (data: avatarDBInterface) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, data: avatarDBInterface): void => meowback(data)
-    ipcRenderer.on('avatarConfig', handler)
-    return () => ipcRenderer.removeListener('avatarConfig', handler)
-  },
-  saveConfig: async (
-    data: avatarDBInterface,
-    nsfw: boolean,
-    saveName?: string
-  ): Promise<saveConfigInterface> => {
-    const dataString: string = JSON.stringify(data)
-    return ipcRenderer.invoke('saveConfig', {
-      content: dataString,
+  appVersion: () => invoke('appVersion'),
+  getLogFileSize: async () => invoke('getLogFileSize'),
+  openLogFile: () => invoke('openLogFile'),
+  openExportDirectory: () => invoke('openExportDirectory'),
+  deleteLogFile: () => invoke('deleteLogFile'),
+  getSaveFaceTrackingSetting: () => invoke('getSaveFaceTrackingSetting'),
+  setSaveFaceTrackingSetting: (value) => invoke('setSaveFaceTrackingSetting', value),
+  parameterRateUpdate: (callback) => subscribe('parameterRateUpdate', callback),
+  getCopyForDiscordSetting: () => invoke('getCopyForDiscordSetting'),
+  setCopyForDiscordSetting: (value) => invoke('setCopyForDiscordSetting', value),
+  deleteDatabase: () => invoke('deleteDatabase'),
+  getExportedFileCount: () => invoke('getExportedFileCount'),
+  isVRChatRunning: () => invoke('isVRChatRunning'),
+  onVRChatStatusChanged: (callback) => subscribe('vrchat-status-changed', callback),
+  getApplyConfigBufferSetting: () => invoke('getApplyConfigBufferSetting'),
+  setApplyConfigBufferSetting: (value) => invoke('setApplyConfigBufferSetting', value),
+  getLowPerformanceModeSetting: () => invoke('getLowPerformanceModeSetting'),
+  setLowPerformanceModeSetting: (value) => invoke('setLowPerformanceModeSetting', value)
+}
+
+const avatarApi: avatarApiInterface = {
+  avatarId: (callback) => subscribe('avatarId', callback),
+  foundAvatarFile: (callback) => subscribe('foundAvatarFile', callback),
+  avatarConfig: (callback) => subscribe('avatarConfig', callback),
+  saveConfig: async (data, nsfw, saveName) => {
+    return invoke('saveConfig', {
+      content: JSON.stringify(data),
       saveName: saveName?.trim() ? saveName : data?.name || 'Unknown',
       nsfw
     })
   },
-  loadConfig: async (): Promise<loadConfigInterface> => ipcRenderer.invoke('loadConfig'),
-  uploadConfigAndApply: async (
-    saveName?: string,
-    saveOption?: boolean,
-    avatarName?: string
-  ): Promise<uploadConfigAndApplyTypeInterface> =>
-    ipcRenderer.invoke('uploadConfigAndApply', saveName, saveOption, avatarName),
-  uploadConfig: async (
-    saveName?: string,
-    nsfw: boolean = false,
-    avatarId: string = ''
-  ): Promise<uploadConfigInterface> => ipcRenderer.invoke('uploadConfig', saveName, nsfw, avatarId),
-  refreshAvatarFile: async (): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('refreshAvatarFile'),
-  savedNames: (meowback: (data: savedNamesInterface[]) => void): (() => void) => {
-    const handler = (
-      _event: IpcRendererEvent,
-      data: {
-        name: string
-        id: number
-      }[]
-    ): void => meowback(data)
-    ipcRenderer.on('savedNames', handler)
-    return () => ipcRenderer.removeListener('savedNames', handler)
+  loadConfig: async () => invoke('loadConfig'),
+  uploadConfigAndApply: async (saveName, saveOption, avatarName) =>
+    invoke('uploadConfigAndApply', saveName, saveOption, avatarName),
+  uploadConfig: async (saveName, nsfw = false, avatarId = '') =>
+    invoke('uploadConfig', saveName, nsfw, avatarId),
+  refreshAvatarFile: async () => invoke('refreshAvatarFile'),
+  savedNames: (callback) => subscribe('savedNames', callback),
+  applyConfig: async (id) => invoke('applyConfig', id),
+  getAllSaved: async () => invoke('getAllSaved'),
+  updateConfig: async (id, avatarId, avatarName, saveName) =>
+    invoke('updateConfig', id, avatarId, avatarName, saveName),
+  updateConfigData: async (id, avatarId, saveName, nsfw) =>
+    invoke('updateConfigData', id, avatarId, saveName, nsfw),
+  exportConfig: async (id) => invoke('exportConfig', id),
+  replaceParams: async (id) => invoke('replaceParams', id),
+  deleteConfig: async (id) => invoke('deleteConfig', id),
+  getAllPresets: async () => invoke('getAllPresets'),
+  applyPresetFromApp: async (avatarId, unityParameter) => {
+    const result = await invoke('applyPresetFromApp', avatarId, unityParameter)
+    return typeof result === 'boolean' ? { success: result } : result
   },
-  applyConfig: async (id: number): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('applyConfig', id),
-  getAllSaved: async (): Promise<avatarDBInterface[] | null> => ipcRenderer.invoke('getAllSaved'),
-  updateConfig: async (
-    id: number,
-    avatarId: string | 'Unknown',
-    avatarName: string | 'Unknown',
-    saveName: string
-  ): Promise<updateConfigInterface> =>
-    ipcRenderer.invoke('updateConfig', id, avatarId, avatarName, saveName),
-  updateConfigData: async (
-    id: number,
-    avatarId: string | 'Unknown',
-    saveName: string,
-    nsfw: boolean | undefined
-  ): Promise<updateConfigInterface> =>
-    ipcRenderer.invoke('updateConfigData', id, avatarId, saveName, nsfw),
-  exportConfig: async (id: number): Promise<exportConfigInterface> =>
-    ipcRenderer.invoke('exportConfig', id),
-  replaceParams: async (id: number): Promise<replaceParamsInterface> =>
-    ipcRenderer.invoke('replaceParams', id),
-  deleteConfig: async (id: number): Promise<deleteConfigInterface> =>
-    ipcRenderer.invoke('deleteConfig', id),
-  getAllPresets: async (): Promise<avatarPresetsInterface[] | null> =>
-    ipcRenderer.invoke('getAllPresets'),
-  applyPresetFromApp: async (
-    avatarId: string,
-    unityParameter: number
-  ): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('applyPresetFromApp', avatarId, unityParameter),
-  updatePresetFromApp: async (
-    id: number,
-    saveName: string,
-    parameter: number
-  ): Promise<updatePresetInterface> =>
-    ipcRenderer.invoke('updatePresetFromApp', id, saveName, parameter),
-  deletePresetFromApp: async (id: number): Promise<deletePresetInterface> =>
-    ipcRenderer.invoke('deletePresetFromApp', id),
-  createPresetFromApp: async (id: number): Promise<createPresetInterface> =>
-    ipcRenderer.invoke('createPresetFromApp', id),
-  getConfigByUqid: async (uqid: string): Promise<avatarDBInterface[] | null> =>
-    ipcRenderer.invoke('getConfigByUqid', uqid),
-  getPresetsByUqid: async (uqid: string): Promise<avatarPresetsInterface[] | null> =>
-    ipcRenderer.invoke('getPresetsByUqid', uqid),
-  uploadAvatarConfig: async (): Promise<uploadAvatarConfigInterface> =>
-    ipcRenderer.invoke('uploadAvatarConfig'),
-  loadAvatarConfig: async (): Promise<loadAvatarConfigInterface> =>
-    ipcRenderer.invoke('loadAvatarConfig'),
-  getAllAvatars: async (): Promise<getAllAvatarsInterface[]> => ipcRenderer.invoke('getAllAvatars'),
-  deleteAvatar: async (avatarId: string): Promise<deleteAvatarInterface> =>
-    ipcRenderer.invoke('deleteAvatar', avatarId),
-  exportAvatar: async (avatarId: string): Promise<exportAvatarInterface> =>
-    ipcRenderer.invoke('exportAvatar', avatarId),
-  updateAvatarData: async (
-    avatarId: string,
-    name: string,
-    updateId: string
-  ): Promise<updateAvatarDataInterface> =>
-    ipcRenderer.invoke('updateAvatarData', avatarId, name, updateId),
-  exportAllConfigs: async (): Promise<exportAllConfigsInterface> =>
-    ipcRenderer.invoke('exportAllConfigs'),
-  importAllConfigs: async (): Promise<importAllConfigsInterface> =>
-    ipcRenderer.invoke('importAllConfigs'),
-  getConfigById: async (avatarId: string): Promise<avatarDBInterface[] | null> =>
-    ipcRenderer.invoke('getConfigById', avatarId),
-  dataTableRefresh: (meowback: () => void): (() => void) => {
-    const handler = (): void => meowback()
-    ipcRenderer.on('dataTableRefresh', handler)
-    return () => ipcRenderer.removeListener('dataTableRefresh', handler)
+  updatePresetFromApp: async (id, saveName, parameter) =>
+    invoke('updatePresetFromApp', id, saveName, parameter),
+  deletePresetFromApp: async (id) => invoke('deletePresetFromApp', id),
+  createPresetFromApp: async (id) => invoke('createPresetFromApp', id),
+  getConfigByUqid: async (uqid) => invoke('getConfigByUqid', uqid),
+  getPresetsByUqid: async (uqid) => invoke('getPresetsByUqid', uqid),
+  uploadAvatarConfig: async () => invoke('uploadAvatarConfig'),
+  loadAvatarConfig: async () => invoke('loadAvatarConfig'),
+  getAllAvatars: async () => invoke('getAllAvatars'),
+  deleteAvatar: async (avatarId) => invoke('deleteAvatar', avatarId),
+  exportAvatar: async (avatarId) => invoke('exportAvatar', avatarId),
+  updateAvatarData: async (avatarId, name, updateId) =>
+    invoke('updateAvatarData', avatarId, name, updateId),
+  exportAllConfigs: async () => invoke('exportAllConfigs'),
+  importAllConfigs: async () => invoke('importAllConfigs'),
+  getConfigById: async (avatarId) => invoke('getConfigById', avatarId),
+  dataTableRefresh: (callback) => subscribe('dataTableRefresh', callback),
+  copyConfigCode: async (id) => invoke('copyConfigCode', id),
+  applyCopiedCode: async () => {
+    const result = await invoke('applyCopiedCode')
+    return 'success' in result
+      ? result
+      : { success: false, message: 'Use Upload Avatar From File to import an avatar share code.' }
   },
-  copyConfigCode: async (id: number): Promise<exportConfigInterface> =>
-    ipcRenderer.invoke('copyConfigCode', id),
-  applyCopiedCode: async (): Promise<exportConfigInterface> =>
-    ipcRenderer.invoke('applyCopiedCode'),
-  copyAvatarId: async (): Promise<{ success: boolean }> => ipcRenderer.invoke('copyAvatarId'),
-  randomParams: async (): Promise<{ success: boolean }> => ipcRenderer.invoke('randomParams')
+  copyAvatarId: async () => invoke('copyAvatarId'),
+  randomParams: async () => {
+    const result = await invoke('randomParams')
+    return typeof result === 'boolean' ? { success: result } : result
+  }
 }
 
 if (process.contextIsolated) {
@@ -206,8 +126,6 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore (define in dts)
   window.appApi = appApi
-  // @ts-ignore (define in dts)
   window.avatarApi = avatarApi
 }

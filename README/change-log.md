@@ -1,4 +1,4 @@
-# Version 1.1.5 (Unreleased)
+# Version 1.2.0 (Unreleased)
 
 ## Changes
 
@@ -6,6 +6,7 @@
 - Loading avatar data now waits for OSC before loading
 - OSC will now retry on different ports if it fails
 - Replaced `oscquery` with a local version
+- IPC bindings are now shared
 
 ## Additions
 
@@ -15,6 +16,9 @@
 ## Fixes
 
 - Fixed missing first OSC response when VRC was already running
+- Fixed some actions incorrectly reporting success after failing
+- Avatar share code wont save invalid data
+- Missing parameters now render as empty instead of zero
 
 # Version 1.1.4 - 2026-09-25
 

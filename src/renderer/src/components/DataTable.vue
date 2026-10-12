@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import type { OverlayScrollbars } from 'overlayscrollbars'
+import type { operationResultInterface, savedPresetInterface } from '../../../types/ipc'
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
 import Button from './Button.vue'
 import Card from './Card.vue'
@@ -11,7 +12,6 @@ import InputText from './InputText.vue'
 import InputNumber from './InputNumber.vue'
 import { appStorage } from '../composables/appStorage'
 
-type OpResult = { success: boolean; message?: string }
 type FailedOperation<T = string | number> = { id: T; action: string }
 
 const appStore = appStorage()
@@ -19,9 +19,9 @@ const appStore = appStorage()
 const failedAvatarUpdates = ref<FailedOperation<string>[]>([])
 const failedConfigUpdates = ref<FailedOperation[]>([])
 const failedPresetUpdates = ref<FailedOperation[]>([])
-const allAvatars = ref<Awaited<ReturnType<typeof window.avatarApi.getAllAvatars>>>([])
+const allAvatars = ref<NonNullable<Awaited<ReturnType<typeof window.avatarApi.getAllAvatars>>>>([])
 const allConfigs = ref<Awaited<ReturnType<typeof window.avatarApi.getConfigById>>>([])
-const allPresets = ref<Awaited<ReturnType<typeof window.avatarApi.getPresetsByUqid>>>([])
+const allPresets = ref<savedPresetInterface[]>([])
 const expandedAvatarRow = ref<string | null>(null)
 const expandedConfigRow = ref<number | null>(null)
 const expandedActionGroups = ref<Set<string>>(new Set())
@@ -51,7 +51,7 @@ const dataTableScrollOverlayProps = {
 const avatarLoadTriggerOffset = 800
 
 const hasConfigs = computed(() => allConfigs.value && allConfigs.value.length > 0)
-const hasPresets = computed(() => allPresets.value?.length > 0)
+const hasPresets = computed(() => allPresets.value.length > 0)
 
 const getPresetsForConfig = (uqid: string): typeof allPresets.value => {
   if (!uqid) return []
@@ -197,7 +197,11 @@ const addFailed = <T,>(array: FailedOperation<T>[], id: T, action: string): void
   array.push({ id, action })
 }
 
-const pushNotification = (result: OpResult, successTitle: string, errorTitle: string): void => {
+const pushNotification = (
+  result: operationResultInterface,
+  successTitle: string,
+  errorTitle: string
+): void => {
   emit('notification', {
     type: result.success ? 'success' : 'error',
     title: result.success ? successTitle : errorTitle,
@@ -206,7 +210,7 @@ const pushNotification = (result: OpResult, successTitle: string, errorTitle: st
 }
 
 const handleOperation = <T,>(
-  result: OpResult,
+  result: operationResultInterface,
   successTitle: string,
   errorTitle: string,
   id: T,
@@ -235,7 +239,7 @@ const getAvatars = async (): Promise<void> => {
   failedAvatarUpdates.value = []
   failedConfigUpdates.value = []
   failedPresetUpdates.value = []
-  allAvatars.value = await window.avatarApi.getAllAvatars()
+  allAvatars.value = (await window.avatarApi.getAllAvatars()) ?? []
 }
 
 const getConfigsByAvatar = async (avatarId: string): Promise<void> => {
@@ -257,7 +261,7 @@ const getPresetsByConfig = async (idx: number): Promise<void> => {
   }
 
   allPresets.value = []
-  allPresets.value = await window.avatarApi.getPresetsByUqid(uqid)
+  allPresets.value = (await window.avatarApi.getPresetsByUqid(uqid)) ?? []
 }
 
 const isAvatarExpanded = (aviId: string): boolean => expandedAvatarRow.value === aviId
@@ -530,10 +534,18 @@ const handleConfigDelete = async (configId: number): Promise<void> => {
 
 const handlePresetApply = async (presetId: number): Promise<void> => {
   const preset = allPresets.value.find((p) => p.id === presetId)
+  if (!preset || preset.unityParameter === null) {
+    emit('notification', {
+      type: 'error',
+      title: 'Apply Failed',
+      text: 'Preset parameter is missing.'
+    })
+    return
+  }
   const res = await window.avatarApi.applyPresetFromApp(preset.avatarId, preset.unityParameter)
 
   handleOperation(
-    { success: Boolean(res), message: '' },
+    res,
     'Apply Successful',
     'Apply Failed',
     preset.id,
@@ -544,10 +556,11 @@ const handlePresetApply = async (presetId: number): Promise<void> => {
 
 const handlePresetUpdate = async (presetId: number): Promise<void> => {
   const preset = allPresets.value.find((p) => p.id === presetId)
+  if (!preset) return
   clearFailed(failedPresetUpdates.value, preset.id)
 
   const validationError = validatePreset(preset)
-  if (validationError) {
+  if (validationError || preset.unityParameter === null) {
     addFailed(failedPresetUpdates.value, preset.id, 'update')
     emit('notification', {
       type: 'error',
@@ -574,6 +587,7 @@ const handlePresetUpdate = async (presetId: number): Promise<void> => {
 
 const handlePresetDelete = async (presetId: number): Promise<void> => {
   const preset = allPresets.value.find((p) => p.id === presetId)
+  if (!preset) return
   const res = await window.avatarApi.deletePresetFromApp(preset.id)
 
   handleOperation(
